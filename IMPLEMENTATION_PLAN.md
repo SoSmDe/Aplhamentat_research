@@ -19,8 +19,8 @@ Build a multi-agent AI research automation system that accepts user queries, con
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Specifications** | ✅ Complete | 5 files in specs/ |
-| **Source Code** | 🔄 Phase 1 Complete | Config + Schemas |
-| **Tests** | 🔄 In Progress | 71 tests passing |
+| **Source Code** | 🔄 Phase 2 Complete | Config + Schemas + Errors/Logging/Retry |
+| **Tests** | 🔄 In Progress | 153 tests passing |
 | **Frontend** | ❌ Not Started | Placeholder only |
 | **Last Updated** | 2026-01-19 | |
 
@@ -361,83 +361,100 @@ Reference: specs/DATA_SCHEMAS.md
 ### 2.1 Error Classes
 Reference: specs/ARCHITECTURE.md (Section 6: Error Handling)
 
-- [ ] Create `src/tools/errors.py`:
+- [x] Create `src/tools/errors.py`:
 
   **Base Error**:
-  - [ ] `RalphError(Exception)` - base with message, code, details, recoverable flag
+  - [x] `RalphError(Exception)` - base with message, code, details, recoverable flag
 
   **Transient Errors** (retryable):
-  - [ ] `TransientError(RalphError)` - base for retryable
-  - [ ] `APITimeoutError(TransientError)` - API timeout
-  - [ ] `RateLimitError(TransientError)` - rate limit hit, retry_after field
-  - [ ] `NetworkError(TransientError)` - network issues
-  - [ ] `ServiceUnavailableError(TransientError)` - service down
+  - [x] `TransientError(RalphError)` - base for retryable
+  - [x] `APITimeoutError(TransientError)` - API timeout
+  - [x] `RateLimitError(TransientError)` - rate limit hit, retry_after field
+  - [x] `NetworkError(TransientError)` - network issues
+  - [x] `ServiceUnavailableError(TransientError)` - service down
 
   **Permanent Errors** (not retryable):
-  - [ ] `PermanentError(RalphError)` - base for non-retryable
-  - [ ] `InvalidInputError(PermanentError)` - bad input data
-  - [ ] `AuthenticationError(PermanentError)` - auth failure
-  - [ ] `QuotaExceededError(PermanentError)` - quota exceeded
-  - [ ] `DataNotFoundError(PermanentError)` - data not available
+  - [x] `PermanentError(RalphError)` - base for non-retryable
+  - [x] `InvalidInputError(PermanentError)` - bad input data
+  - [x] `AuthenticationError(PermanentError)` - auth failure
+  - [x] `QuotaExceededError(PermanentError)` - quota exceeded
+  - [x] `DataNotFoundError(PermanentError)` - data not available
 
   **System Errors** (requires intervention):
-  - [ ] `SystemError(RalphError)` - base for system errors
-  - [ ] `DatabaseError(SystemError)` - database failure
-  - [ ] `StorageFullError(SystemError)` - storage full
-  - [ ] `ConfigurationError(SystemError)` - bad configuration
+  - [x] `SystemError(RalphError)` - base for system errors
+  - [x] `DatabaseError(SystemError)` - database failure
+  - [x] `StorageFullError(SystemError)` - storage full
+  - [x] `ConfigurationError(SystemError)` - bad configuration
 
   **Session Errors**:
-  - [ ] `SessionNotFoundError(PermanentError)` - session not found
-  - [ ] `SessionFailedError(PermanentError)` - session in failed state
-  - [ ] `BriefNotApprovedError(PermanentError)` - brief not approved yet
+  - [x] `SessionNotFoundError(PermanentError)` - session not found
+  - [x] `SessionFailedError(PermanentError)` - session in failed state
+  - [x] `BriefNotApprovedError(PermanentError)` - brief not approved yet
 
   **Retry Errors**:
-  - [ ] `RetryExhaustedError(PermanentError)` - max retries reached
-  - [ ] `CircuitOpenError(TransientError)` - circuit breaker open
+  - [x] `RetryExhaustedError(PermanentError)` - max retries reached
+  - [x] `CircuitOpenError(TransientError)` - circuit breaker open
+
+  **Agent Errors** (additional):
+  - [x] `AgentError(RalphError)` - base for agent errors
+  - [x] `AgentTimeoutError(AgentError, TransientError)` - agent timed out
+  - [x] `AgentExecutionError(AgentError)` - agent execution failed
 
 ### 2.2 Logging Setup
-- [ ] Create `src/tools/logging.py`:
-  - [ ] Configure structlog with JSON output
-  - [ ] `get_logger(name: str)` factory function
-  - [ ] Context processors: timestamp, level, logger name
-  - [ ] Bind common fields: session_id, agent, task_id, round
-  - [ ] Ensure sensitive data (API keys) never logged
-  - [ ] Log level from settings
+- [x] Create `src/tools/logging.py`:
+  - [x] Configure structlog with JSON output
+  - [x] `get_logger(name: str)` factory function
+  - [x] Context processors: timestamp, level, logger name
+  - [x] `bind_context()` for session_id, agent, task_id, round
+  - [x] `LogContext` context manager for temporary context binding
+  - [x] `filter_sensitive_data` processor - API keys never logged
+  - [x] `truncate_large_values` processor - prevent log bloat
+  - [x] Log level configurable via `configure_logging()`
 
 ### 2.3 Retry Logic
 Reference: specs/ARCHITECTURE.md (Section 7: Retry Logic)
 
-- [ ] Create `src/tools/retry.py`:
+- [x] Create `src/tools/retry.py`:
 
   **Configuration**:
-  - [ ] `RetryConfig` dataclass:
+  - [x] `RetryConfig` dataclass:
     - max_attempts: int = 3
     - base_delay: float = 1.0
     - max_delay: float = 60.0
     - exponential_base: float = 2.0
     - jitter: float = 0.25
+    - retryable_exceptions: tuple of exception types
+    - rate_limit_delay: float = 60.0
 
-  - [ ] `RETRY_CONFIGS` dict for operation types:
+  - [x] `RETRY_CONFIGS` dict for operation types:
     - llm_call: RetryConfig(max_attempts=3, base_delay=2.0)
     - api_call: RetryConfig(max_attempts=3, base_delay=1.0)
-    - web_search: RetryConfig(max_attempts=2, base_delay=1.0)
+    - web_search: RetryConfig(max_attempts=2, base_delay=5.0)
+    - file_generation: RetryConfig(max_attempts=2, base_delay=1.0)
+    - database: RetryConfig(max_attempts=3, base_delay=0.5)
 
   **Retry Handler**:
-  - [ ] `RetryHandler` class:
+  - [x] `RetryHandler` class:
     - `__init__(config: RetryConfig)`
     - `async execute(func, *args, **kwargs)` - execute with retry
-    - `_calculate_delay(attempt)` - exponential backoff with jitter
-    - `_is_retryable(error)` - check error type
+    - `_calculate_delay(attempt, error)` - exponential backoff with jitter
+    - RateLimitError uses retry_after from error
 
-  - [ ] `@with_retry(config_name: str)` decorator
+  - [x] `@with_retry(config_name: str)` decorator
 
   **Circuit Breaker**:
-  - [ ] `CircuitState` enum: CLOSED, OPEN, HALF_OPEN
-  - [ ] `CircuitBreaker` class:
-    - `__init__(failure_threshold=5, recovery_timeout=60, half_open_max_calls=3)`
+  - [x] `CircuitState` enum: CLOSED, OPEN, HALF_OPEN
+  - [x] `CircuitBreaker` class:
+    - `__init__(name, failure_threshold=5, recovery_timeout=60, half_open_max_calls=3)`
     - `async execute(func, *args, **kwargs)`
-    - `_record_success()` / `_record_failure()`
-    - `_check_state()` - state transitions
+    - `_on_success()` / `_on_failure()` - state recording
+    - `_can_execute()` - state-based permission check
+    - `_transition_to_open/half_open/closed()` - state transitions
+    - `reset()` - manual reset
+    - `get_stats()` - circuit statistics
+
+  **Combined Executor**:
+  - [x] `ResilientExecutor` class - combines retry + circuit breaker
 
 ---
 
