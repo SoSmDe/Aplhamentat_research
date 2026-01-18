@@ -19,8 +19,8 @@ Build a multi-agent AI research automation system that accepts user queries, con
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Specifications** | ✅ Complete | 5 files in specs/ |
-| **Source Code** | 🔄 Phase 0 Complete | Bootstrap only |
-| **Tests** | 🔄 In Progress | 7 tests (health endpoint) |
+| **Source Code** | 🔄 Phase 1 Complete | Config + Schemas |
+| **Tests** | 🔄 In Progress | 71 tests passing |
 | **Frontend** | ❌ Not Started | Placeholder only |
 | **Last Updated** | 2026-01-19 | |
 
@@ -224,15 +224,15 @@ Research Builder                            ator                         │
 ### 1.1 Configuration System
 Reference: specs/ARCHITECTURE.md
 
-- [ ] Create `src/config/settings.py`:
-  - [ ] `Settings` class using pydantic-settings BaseSettings
-  - [ ] Environment variable loading with validation
-  - [ ] Required: ANTHROPIC_API_KEY
-  - [ ] Defaults for all optional settings
-  - [ ] `get_settings()` cached function
+- [x] Create `src/config/settings.py`:
+  - [x] `Settings` class using pydantic-settings BaseSettings
+  - [x] Environment variable loading with validation
+  - [x] Required: ANTHROPIC_API_KEY
+  - [x] Defaults for all optional settings
+  - [x] `get_settings()` cached function
 
-- [ ] Create `src/config/models.py`:
-  - [ ] `AGENT_MODELS` dict:
+- [x] Create `src/config/models.py`:
+  - [x] `AGENT_MODELS` dict:
     ```python
     AGENT_MODELS = {
         "initial_research": "claude-opus-4-20250514",
@@ -244,111 +244,111 @@ Reference: specs/ARCHITECTURE.md
         "reporter": "claude-opus-4-20250514",
     }
     ```
-  - [ ] `get_model_for_agent(agent_name: str) -> str` function
+  - [x] `get_model_for_agent(agent_name: str) -> str` function
 
 ### 1.2 Core Data Models (Pydantic)
 Reference: specs/DATA_SCHEMAS.md
 
-- [ ] Create `src/api/schemas.py` with all models:
+- [x] Create `src/api/schemas.py` with all models:
 
   **Enums** (define first, used by models):
-  - [ ] `SessionStatus` - CREATED, INITIAL_RESEARCH, BRIEF, PLANNING, EXECUTING, AGGREGATING, REPORTING, DONE, FAILED
-  - [ ] `BriefStatus` - DRAFT, APPROVED
-  - [ ] `TaskStatus` - PENDING, RUNNING, DONE, FAILED, PARTIAL
-  - [ ] `Priority` - HIGH, MEDIUM, LOW
-  - [ ] `ScopeType` - DATA, RESEARCH, BOTH
-  - [ ] `DataSource` - FINANCIAL_API, WEB_SEARCH, CUSTOM_API, DATABASE
-  - [ ] `SourceType` - NEWS, REPORTS, COMPANY_WEBSITE, ANALYST_REPORTS, SEC_FILINGS
-  - [ ] `FindingType` - FACT, OPINION, ANALYSIS
-  - [ ] `Confidence` - HIGH, MEDIUM, LOW
-  - [ ] `Sentiment` - POSITIVE, NEGATIVE, NEUTRAL, MIXED
-  - [ ] `OutputFormat` - PDF, EXCEL, PPTX, CSV
-  - [ ] `UserIntent` - INVESTMENT, MARKET_RESEARCH, COMPETITIVE, LEARNING, OTHER
-  - [ ] `EntityType` - COMPANY, MARKET, CONCEPT, PRODUCT, PERSON, SECTOR
-  - [ ] `DataFreshness` - REAL_TIME, DAILY, WEEKLY, MONTHLY, QUARTERLY, ANNUAL
-  - [ ] `RiskProfile` - CONSERVATIVE, MODERATE, AGGRESSIVE
-  - [ ] `SourceTypeResult` - NEWS, REPORT, WEBSITE, FILING, ACADEMIC, OTHER
-  - [ ] `PlannerDecisionStatus` - CONTINUE, DONE
+  - [x] `SessionStatus` - CREATED, INITIAL_RESEARCH, BRIEF, PLANNING, EXECUTING, AGGREGATING, REPORTING, DONE, FAILED
+  - [x] `BriefStatus` - DRAFT, APPROVED
+  - [x] `TaskStatus` - PENDING, RUNNING, DONE, FAILED, PARTIAL
+  - [x] `Priority` - HIGH, MEDIUM, LOW
+  - [x] `ScopeType` - DATA, RESEARCH, BOTH
+  - [x] `DataSource` - FINANCIAL_API, WEB_SEARCH, CUSTOM_API, DATABASE
+  - [x] `SourceType` - NEWS, REPORTS, COMPANY_WEBSITE, ANALYST_REPORTS, SEC_FILINGS
+  - [x] `FindingType` - FACT, OPINION, ANALYSIS
+  - [x] `Confidence` - HIGH, MEDIUM, LOW
+  - [x] `Sentiment` - POSITIVE, NEGATIVE, NEUTRAL, MIXED
+  - [x] `OutputFormat` - PDF, EXCEL, PPTX, CSV
+  - [x] `UserIntent` - INVESTMENT, MARKET_RESEARCH, COMPETITIVE, LEARNING, OTHER
+  - [x] `EntityType` - COMPANY, MARKET, CONCEPT, PRODUCT, PERSON, SECTOR
+  - [x] `DataFreshness` - REAL_TIME, DAILY, WEEKLY, MONTHLY, QUARTERLY, ANNUAL
+  - [x] `RiskProfile` - CONSERVATIVE, MODERATE, AGGRESSIVE
+  - [x] `SourceTypeResult` - NEWS, REPORT, WEBSITE, FILING, ACADEMIC, OTHER
+  - [x] `PlannerDecisionStatus` - CONTINUE, DONE
 
   **Session Models**:
-  - [ ] `Session` - id, user_id, status, current_round, error, created_at, updated_at
-  - [ ] `SessionError` - code, message, details, recoverable
+  - [x] `Session` - id, user_id, status, current_round, error, created_at, updated_at
+  - [x] `SessionError` - code, message, details, recoverable
 
   **Initial Context Models**:
-  - [ ] `QueryAnalysis` - original_query, detected_language, detected_intent, confidence
-  - [ ] `EntityIdentifiers` - ticker, website, country, exchange
-  - [ ] `Entity` - name, type, identifiers, brief_description, category, sector
-  - [ ] `InitialContext` - session_id, query_analysis, entities, context_summary, suggested_topics, sources_used
+  - [x] `QueryAnalysis` - original_query, detected_language, detected_intent, confidence
+  - [x] `EntityIdentifiers` - ticker, website, country, exchange
+  - [x] `Entity` - name, type, identifiers, brief_description, category, sector
+  - [x] `InitialContext` - session_id, query_analysis, entities, context_summary, suggested_topics, sources_used
 
   **Brief Models**:
-  - [ ] `ScopeItem` - id, topic, type, details
-  - [ ] `UserContext` - intent, horizon, risk_profile, additional
-  - [ ] `BriefConstraints` - focus_areas, exclude, time_period, geographic_focus, max_sources
-  - [ ] `Brief` - brief_id, version, status, goal, user_context, scope, output_formats, constraints
+  - [x] `ScopeItem` - id, topic, type, details
+  - [x] `UserContext` - intent, horizon, risk_profile, additional
+  - [x] `BriefConstraints` - focus_areas, exclude, time_period, geographic_focus, max_sources
+  - [x] `Brief` - brief_id, version, status, goal, user_context, scope, output_formats, constraints
 
   **Plan & Task Models**:
-  - [ ] `DataTask` - id, scope_item_id, description, source, priority, expected_output, status
-  - [ ] `ResearchTask` - id, scope_item_id, description, focus, source_types, priority, status, search_queries
-  - [ ] `Plan` - round, brief_id, data_tasks, research_tasks, total_tasks, estimated_duration
+  - [x] `DataTask` - id, scope_item_id, description, source, priority, expected_output, status
+  - [x] `ResearchTask` - id, scope_item_id, description, focus, source_types, priority, status, search_queries
+  - [x] `Plan` - round, brief_id, data_tasks, research_tasks, total_tasks, estimated_duration
 
   **Result Models**:
-  - [ ] `MetricValue` - value, unit, period, as_of_date
-  - [ ] `DataTable` - name, headers, rows
-  - [ ] `DataError` - field, error, fallback
-  - [ ] `DataMetadata` - source, api_used, timestamp, data_freshness
-  - [ ] `DataResult` - task_id, status, metrics, tables, raw_data, metadata, questions, errors
+  - [x] `MetricValue` - value, unit, period, as_of_date
+  - [x] `DataTable` - name, headers, rows
+  - [x] `DataError` - field, error, fallback
+  - [x] `DataMetadata` - source, api_used, timestamp, data_freshness
+  - [x] `DataResult` - task_id, status, metrics, tables, raw_data, metadata, questions, errors
 
-  - [ ] `Finding` - finding, type, confidence, source
-  - [ ] `Theme` - theme, points, sentiment
-  - [ ] `ContradictionView` - position, source
-  - [ ] `Contradiction` - topic, view_1, view_2
-  - [ ] `Source` - type, title, url, date, credibility
-  - [ ] `ResearchResult` - task_id, status, summary, key_findings, detailed_analysis, themes, contradictions, sources, questions
+  - [x] `Finding` - finding, type, confidence, source
+  - [x] `Theme` - theme, points, sentiment
+  - [x] `ContradictionView` - position, source
+  - [x] `Contradiction` - topic, view_1, view_2
+  - [x] `Source` - type, title, url, date, credibility
+  - [x] `ResearchResult` - task_id, status, summary, key_findings, detailed_analysis, themes, contradictions, sources, questions
 
   **Question Models**:
-  - [ ] `Question` - type, question, context, priority, source_task_id
-  - [ ] `FilteredQuestion` - question, source_task_id, relevance, action, reasoning
+  - [x] `Question` - type, question, context, priority, source_task_id
+  - [x] `FilteredQuestion` - question, source_task_id, relevance, action, reasoning
 
   **Planner Decision Models**:
-  - [ ] `CoverageItem` - topic, coverage_percent, covered_aspects, missing_aspects
-  - [ ] `PlannerDecision` - round, status, coverage, overall_coverage, reason, new_data_tasks, new_research_tasks, filtered_questions
+  - [x] `CoverageItem` - topic, coverage_percent, covered_aspects, missing_aspects
+  - [x] `PlannerDecision` - round, status, coverage, overall_coverage, reason, new_data_tasks, new_research_tasks, filtered_questions
 
   **Aggregation Models**:
-  - [ ] `KeyInsight` - insight, supporting_data, importance
-  - [ ] `DataHighlights` - dict of metric_name to value_with_context
-  - [ ] `Section` - title, brief_scope_id, summary, data_highlights, analysis, key_points, sentiment, charts_suggested, data_tables
-  - [ ] `ContradictionFound` - topic, sources, resolution
-  - [ ] `ActionItem` - action, priority, rationale
-  - [ ] `Recommendation` - verdict, confidence, confidence_reasoning, reasoning, pros, cons, action_items, risks_to_monitor
-  - [ ] `CoverageSummary` - topic, coverage_percent, gaps (per scope item)
-  - [ ] `AggregationMetadata` - total_rounds, total_data_tasks, total_research_tasks, sources_count, processing_time_seconds
-  - [ ] `AggregatedResearch` - session_id, brief_id, created_at, executive_summary, key_insights, sections, contradictions_found, recommendation, coverage_summary, metadata
+  - [x] `KeyInsight` - insight, supporting_data, importance
+  - [x] `DataHighlights` - dict of metric_name to value_with_context
+  - [x] `Section` - title, brief_scope_id, summary, data_highlights, analysis, key_points, sentiment, charts_suggested, data_tables
+  - [x] `ContradictionFound` - topic, sources, resolution
+  - [x] `ActionItem` - action, priority, rationale
+  - [x] `Recommendation` - verdict, confidence, confidence_reasoning, reasoning, pros, cons, action_items, risks_to_monitor
+  - [x] `CoverageSummary` - topic, coverage_percent, gaps (per scope item)
+  - [x] `AggregationMetadata` - total_rounds, total_data_tasks, total_research_tasks, sources_count, processing_time_seconds
+  - [x] `AggregatedResearch` - session_id, brief_id, created_at, executive_summary, key_insights, sections, contradictions_found, recommendation, coverage_summary, metadata
 
   **Report Models**:
-  - [ ] `PDFConfig` - template, include_toc, include_charts, branding
-  - [ ] `ExcelConfig` - sheets, include_raw_data, include_charts
-  - [ ] `PPTXConfig` - template, slides_per_section, include_speaker_notes, aspect_ratio
-  - [ ] `CSVConfig` - delimiter, encoding, include_headers
-  - [ ] `ReportConfig` - formats, language, style, detail_level, pdf, excel, pptx, csv
-  - [ ] `GeneratedReport` - format, filename, file_path, structure, size_bytes
+  - [x] `PDFConfig` - template, include_toc, include_charts, branding
+  - [x] `ExcelConfig` - sheets, include_raw_data, include_charts
+  - [x] `PPTXConfig` - template, slides_per_section, include_speaker_notes, aspect_ratio
+  - [x] `CSVConfig` - delimiter, encoding, include_headers
+  - [x] `ReportConfig` - formats, language, style, detail_level, pdf, excel, pptx, csv
+  - [x] `GeneratedReport` - format, filename, file_path, structure, size_bytes
 
 ### 1.3 API Request/Response Models
-- [ ] Add to `src/api/schemas.py`:
+- [x] Add to `src/api/schemas.py`:
 
   **Requests**:
-  - [ ] `CreateSessionRequest` - user_id (optional), initial_query
-  - [ ] `SendMessageRequest` - content
-  - [ ] `ApproveBriefRequest` - modifications (optional dict)
+  - [x] `CreateSessionRequest` - user_id (optional), initial_query
+  - [x] `SendMessageRequest` - content
+  - [x] `ApproveBriefRequest` - modifications (optional dict)
 
   **Responses**:
-  - [ ] `BriefBuilderAction` enum - ASK_QUESTION, PRESENT_BRIEF, BRIEF_APPROVED
-  - [ ] `SessionResponse` - session_id, status, action, message, brief (optional)
-  - [ ] `ProgressInfo` - data_tasks_completed, data_tasks_total, research_tasks_completed, research_tasks_total
-  - [ ] `StatusResponse` - session_id, status, current_round, progress, coverage
-  - [ ] `ReportInfo` - format, url, filename
-  - [ ] `ResultsResponse` - session_id, status, aggregated, reports
-  - [ ] `ErrorResponse` - error, message, details, session_id (optional)
-  - [ ] `HealthResponse` - status, version, timestamp
+  - [x] `BriefBuilderAction` enum - ASK_QUESTION, PRESENT_BRIEF, BRIEF_APPROVED
+  - [x] `SessionResponse` - session_id, status, action, message, brief (optional)
+  - [x] `ProgressInfo` - data_tasks_completed, data_tasks_total, research_tasks_completed, research_tasks_total
+  - [x] `StatusResponse` - session_id, status, current_round, progress, coverage
+  - [x] `ReportInfo` - format, url, filename
+  - [x] `ResultsResponse` - session_id, status, aggregated, reports
+  - [x] `ErrorResponse` - error, message, details, session_id (optional)
+  - [x] `HealthResponse` - status, version, timestamp
 
 ---
 
