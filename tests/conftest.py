@@ -18,12 +18,16 @@ from typing import AsyncGenerator, Generator
 import pytest
 import pytest_asyncio
 
+# Configure pytest-asyncio mode
+pytest_plugins = ("pytest_asyncio",)
 
-# Configure pytest-asyncio to use session scope for event loop
-@pytest.fixture(scope="session")
+
+# Configure pytest-asyncio to use function scope event loop by default
+@pytest.fixture(scope="function")
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Create an instance of the default event loop for each test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    """Create an instance of the default event loop for each test."""
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
     yield loop
     loop.close()
 
