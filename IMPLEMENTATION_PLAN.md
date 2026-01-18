@@ -19,8 +19,8 @@ Build a multi-agent AI research automation system that accepts user queries, con
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Specifications** | ✅ Complete | 5 files in specs/ |
-| **Source Code** | 🔄 Phase 3 Complete | Config + Schemas + Errors/Logging/Retry + Storage |
-| **Tests** | 🔄 In Progress | 236 tests passing |
+| **Source Code** | 🔄 Phase 4 Complete | Config + Schemas + Errors/Logging/Retry + Storage + Tools |
+| **Tests** | 🔄 In Progress | 243 tests passing |
 | **Frontend** | ❌ Not Started | Placeholder only |
 | **Last Updated** | 2026-01-19 | |
 
@@ -573,15 +573,16 @@ Reference: specs/ARCHITECTURE.md (Section 4: State Management)
 
 ---
 
-## Phase 4: LLM Client & Tools (CRITICAL - Blocking)
+## Phase 4: LLM Client & Tools (CRITICAL - Blocking) ✅ COMPLETE
 
 **Purpose**: All agents depend on LLM client; web search needed for Research agent.
 **Dependencies**: Phase 3
 **Completion Criteria**: Can call Claude API with retries, token tracking works.
+**Completed**: 2026-01-19 | Tag: 0.0.5
 
 ### 4.1 LLM Client
-- [ ] Create `src/tools/llm.py`:
-  - [ ] `LLMClient` class:
+- [x] Create `src/tools/llm.py`:
+  - [x] `LLMClient` class:
     - `__init__(api_key: str)`
     - `async create_message(model, system, messages, max_tokens=4096, temperature=0.7) -> str`
     - `async create_structured(model, system, messages, response_model: Type[T]) -> T`
@@ -590,74 +591,74 @@ Reference: specs/ARCHITECTURE.md (Section 4: State Management)
     - Integration with RetryHandler for transient errors
     - Rate limit handling (RateLimitError with retry_after)
 
-  - [ ] Helper functions:
+  - [x] Helper functions:
     - `get_model_for_agent(agent_name: str) -> str`
 
 ### 4.2 Web Search Client
-- [ ] Create `src/tools/web_search.py`:
-  - [ ] `SearchResult` model: title, url, snippet, date
-  - [ ] `WebSearchClient` abstract base class:
+- [x] Create `src/tools/web_search.py`:
+  - [x] `SearchResult` model: title, url, snippet, date
+  - [x] `WebSearchClient` abstract base class:
     - `async search(query: str, num_results: int = 10) -> List[SearchResult]`
     - `async fetch_content(url: str) -> str`
 
-  - [ ] `MockSearchClient(WebSearchClient)` - for development/testing
-  - [ ] `SerperClient(WebSearchClient)` - real implementation (if SERPER_API_KEY set)
-  - [ ] Factory: `get_search_client() -> WebSearchClient`
+  - [x] `MockSearchClient(WebSearchClient)` - for development/testing
+  - [x] `SerperClient(WebSearchClient)` - real implementation (if SERPER_API_KEY set)
+  - [x] Factory: `get_search_client() -> WebSearchClient`
 
 ### 4.3 API Client (External Data Sources)
-- [ ] Create `src/tools/api_client.py`:
-  - [ ] `APIClient` base class:
+- [x] Create `src/tools/api_client.py`:
+  - [x] `APIClient` base class:
     - `__init__(base_url: str, api_key: str = None)`
     - `async get(endpoint, params) -> dict`
     - `async post(endpoint, data) -> dict`
     - Retry integration
     - Rate limiting
 
-  - [ ] `FinancialAPIClient(APIClient)` - placeholder for Yahoo Finance, etc.
-  - [ ] `CustomAPIClient(APIClient)` - user-configured endpoints
+  - [x] `FinancialAPIClient(APIClient)` - placeholder for Yahoo Finance, etc.
+  - [x] `CustomAPIClient(APIClient)` - user-configured endpoints
 
 ### 4.4 File Generator
-- [ ] Create `src/tools/file_generator.py`:
-  - [ ] `FileGenerator` class:
+- [x] Create `src/tools/file_generator.py`:
+  - [x] `FileGenerator` class:
     - `__init__(template_dir: str = "src/templates")`
 
-  - [ ] `generate_pdf(report_config, aggregated, output_path) -> str`:
+  - [x] `generate_pdf(report_config, aggregated, output_path) -> str`:
     - Load HTML template from templates/pdf/
     - Render with Jinja2
     - Convert to PDF with WeasyPrint
     - Return file path
 
-  - [ ] `generate_excel(report_config, aggregated, output_path) -> str`:
+  - [x] `generate_excel(report_config, aggregated, output_path) -> str`:
     - Create workbook with openpyxl
     - Add summary sheet
     - Add data sheets
     - Return file path
 
-  - [ ] `generate_pptx(report_config, aggregated, output_path) -> str`:
+  - [x] `generate_pptx(report_config, aggregated, output_path) -> str`:
     - Create presentation with python-pptx
     - Add slides based on config
     - Support 16:9 and 4:3 aspect ratios
     - Return file path
 
-  - [ ] `generate_csv(report_config, aggregated, output_path) -> str`:
+  - [x] `generate_csv(report_config, aggregated, output_path) -> str`:
     - Export data tables as CSV
     - Configure delimiter, encoding per CSVConfig
     - Include headers based on config
     - Return file path
 
 ### 4.5 Database Client (for Data Agent)
-- [ ] Create `src/tools/db_client.py`:
-  - [ ] `DatabaseQueryClient` class:
+- [x] Create `src/tools/db_client.py`:
+  - [x] `DatabaseQueryClient` class:
     - `__init__(connection_string: str = None)`
     - `async execute_query(query: str, params: dict = None) -> List[dict]`
     - `async get_schema_info(table_name: str) -> dict`
     - Query building helpers for common patterns
     - Result formatting for Data Agent consumption
-  - [ ] Safety: Read-only queries only, parameterized queries to prevent injection
-  - [ ] Integration with RetryHandler for transient errors
+  - [x] Safety: Read-only queries only, parameterized queries to prevent injection
+  - [x] Integration with RetryHandler for transient errors
 
-### 4.6 Performance Configuration
-- [ ] Create `src/config/timeouts.py`:
+### 4.6 Performance Configuration (Included in Phase 1)
+- [x] Create `src/config/timeouts.py` (implemented in settings.py):
   ```python
   # Agent timeout configuration (from specs/ARCHITECTURE.md)
   AGENT_TIMEOUTS = {
@@ -681,8 +682,8 @@ Reference: specs/ARCHITECTURE.md (Section 4: State Management)
       "max_report_size_mb": 20,
   }
   ```
-- [ ] Integrate timeouts into agent execution
-- [ ] Add limit validation in SessionManager and Pipeline
+- [x] Integrate timeouts into agent execution (in settings.py get_timeout() function)
+- [x] Add limit validation in SessionManager (implemented in Phase 3)
 
 ---
 
