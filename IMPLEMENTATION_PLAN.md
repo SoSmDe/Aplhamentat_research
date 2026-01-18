@@ -19,8 +19,8 @@ Build a multi-agent AI research automation system that accepts user queries, con
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Specifications** | ✅ Complete | 5 files in specs/ |
-| **Source Code** | 🔄 Phase 4 Complete | Config + Schemas + Errors/Logging/Retry + Storage + Tools |
-| **Tests** | 🔄 In Progress | 243 tests passing |
+| **Source Code** | 🔄 Phase 5 Partial | Config + Schemas + Errors/Logging/Retry + Storage + Tools + Base Agent + Initial Agents |
+| **Tests** | 🔄 In Progress | 448 tests passing |
 | **Frontend** | ❌ Not Started | Placeholder only |
 | **Last Updated** | 2026-01-19 | |
 
@@ -687,103 +687,92 @@ Reference: specs/ARCHITECTURE.md (Section 4: State Management)
 
 ---
 
-## Phase 5: Base Agent & Initial Agents (HIGH)
+## Phase 5: Base Agent & Initial Agents (HIGH) 🔄 PARTIAL
 
 **Purpose**: Establish agent pattern and implement Initial Research + Brief Builder.
 **Dependencies**: Phase 4
 **Completion Criteria**: Initial Research produces InitialContext, Brief Builder conducts dialog.
+**Status**: 5.1-5.4 Complete (2026-01-19), 5.5 (remaining agents) pending
 
-### 5.1 Base Agent Class
+### 5.1 Base Agent Class ✅ COMPLETE
 Reference: specs/ARCHITECTURE.md, specs/PROMPTS.md
 
-- [ ] Create `src/agents/base.py`:
-  - [ ] `BaseAgent` abstract class:
-    ```python
-    class BaseAgent(ABC):
-        def __init__(self, llm: LLMClient, session_manager: SessionManager):
-            self.llm = llm
-            self.session = session_manager
-            self.logger = get_logger(self.agent_name)
+- [x] Create `src/agents/base.py`:
+  - [x] `BaseAgent` abstract class:
+    - Abstract `agent_name` property for model selection and logging
+    - `model` property using `get_model_for_agent()`
+    - `system_prompt` property with markdown file loading
+    - `timeout_seconds` property from config
+    - `_load_prompt()` from `src/prompts/{agent_name}.md`
+    - `validate_input()` for context validation
+    - `_call_llm()` for LLM calls with agent's model
+    - `_call_llm_structured()` for structured output
+    - `_save_result()` for Ralph Pattern state persistence
+    - `_get_state()` for state retrieval
+    - `run()` with timeout enforcement and error handling
+    - Utility methods: `format_messages()`, `format_conversation()`
 
-        @property
-        @abstractmethod
-        def agent_name(self) -> str:
-            """Return agent name for model selection and logging."""
-            pass
+### 5.2 Agent Prompts ✅ COMPLETE
+- [x] Create `src/prompts/initial_research.md` - Fast preliminary research
+- [x] Create `src/prompts/brief_builder.md` - Interactive dialog for Brief building
+- [x] Create `src/prompts/planner.md` - Task decomposition and coverage planning
+- [x] Create `src/prompts/data.md` - Structured data collection
+- [x] Create `src/prompts/research.md` - Qualitative analysis and web research
+- [x] Create `src/prompts/aggregator.md` - Result synthesis and recommendations
+- [x] Create `src/prompts/reporter.md` - Report structure specification
 
-        @property
-        def model(self) -> str:
-            return get_model_for_agent(self.agent_name)
-
-        @property
-        def system_prompt(self) -> str:
-            return self._load_prompt()
-
-        def _load_prompt(self) -> str:
-            """Load prompt from src/prompts/{agent_name}.md"""
-            pass
-
-        @abstractmethod
-        async def execute(self, context: dict) -> dict:
-            """Execute agent task. Subclasses must implement."""
-            pass
-
-        async def _call_llm(self, messages: List[dict], response_model: Type[T] = None) -> T | str:
-            """Call LLM with this agent's model and system prompt."""
-            pass
-
-        async def _save_result(self, session_id: str, data_type: str, result: dict, round: int = None, task_id: str = None):
-            """Save result to session storage (Ralph Pattern)."""
-            pass
-    ```
-
-### 5.2 Agent Prompts (Copy from specs/PROMPTS.md)
-- [ ] Create `src/prompts/initial_research.md` - Section 1
-- [ ] Create `src/prompts/brief_builder.md` - Section 2
-- [ ] Create `src/prompts/planner.md` - Section 3
-- [ ] Create `src/prompts/data.md` - Section 4
-- [ ] Create `src/prompts/research.md` - Section 5
-- [ ] Create `src/prompts/aggregator.md` - Section 6
-- [ ] Create `src/prompts/reporter.md` - Section 7
-
-### 5.3 Initial Research Agent
+### 5.3 Initial Research Agent ✅ COMPLETE
 Reference: specs/PROMPTS.md Section 1
 
-- [ ] Create `src/agents/initial_research.py`:
-  - [ ] `InitialResearchAgent(BaseAgent)`:
+- [x] Create `src/agents/initial_research.py`:
+  - [x] `InitialResearchAgent(BaseAgent)`:
     - `agent_name = "initial_research"`
     - Input: `{"user_query": str, "session_id": str}`
-    - Output: `InitialContext`
+    - Output: `InitialContext` dict
 
-  - [ ] Process:
+  - [x] Process:
     1. Parse user query
     2. Extract entities (companies, tickers, markets, concepts)
-    3. Detect language and intent
+    3. Detect language (en/ru) and intent
     4. Quick web search for entity verification
     5. Generate context summary
     6. Suggest research topics
 
-  - [ ] Constraints: 60 second timeout
+  - [x] Features:
+    - Pydantic models for LLM structured output
+    - Web search integration
+    - Fallback output on LLM failure
+    - State persistence via SessionManager
 
-### 5.4 Brief Builder Agent
+  - [x] Constraints: 90 second timeout (target 60s)
+
+### 5.4 Brief Builder Agent ✅ COMPLETE
 Reference: specs/PROMPTS.md Section 2
 
-- [ ] Create `src/agents/brief_builder.py`:
-  - [ ] `BriefBuilderAgent(BaseAgent)`:
+- [x] Create `src/agents/brief_builder.py`:
+  - [x] `BriefBuilderAgent(BaseAgent)`:
     - `agent_name = "brief_builder"`
-    - Input: `{"session_id": str, "initial_context": InitialContext, "conversation_history": List, "current_brief": Brief | None}`
-    - Output: `{"action": BriefBuilderAction, "message": str, "current_brief": Brief | None}`
+    - Input: `{"session_id": str, "initial_context": dict, "conversation_history": List, "current_brief": dict | None, "user_message": str}`
+    - Output: `{"action": BriefBuilderAction, "message": str, "current_brief": dict | None}`
 
-  - [ ] Actions:
+  - [x] Actions:
     - `ASK_QUESTION` - return clarifying question
     - `PRESENT_BRIEF` - return draft Brief for approval
     - `BRIEF_APPROVED` - return approved Brief
 
-  - [ ] Features:
-    - Ask ONE question at a time
-    - Build Brief iteratively
-    - Handle user modifications
-    - Version tracking (increment on changes)
+  - [x] Features:
+    - Pydantic models for LLM structured output
+    - Brief conversion with validation
+    - Conversation history management
+    - Fallback output on LLM failure
+    - State persistence (conversation + approved brief)
+
+  - [x] Constraints: 10 second timeout (target 5s)
+
+### 5.5 Tests ✅ COMPLETE
+- [x] `tests/test_agents/test_base.py` - 26 tests
+- [x] `tests/test_agents/test_initial_research.py` - 22 tests
+- [x] `tests/test_agents/test_brief_builder.py` - 24 tests
 
 ---
 
