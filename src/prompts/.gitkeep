@@ -1,0 +1,12 @@
+# Agent system prompts directory (Markdown files only)
+#
+# Prompt files to be created in Phase 5.2:
+# - initial_research.md - Initial Research agent prompt
+# - brief_builder.md    - Brief Builder agent prompt
+# - planner.md          - Planner agent prompt
+# - data.md             - Data agent prompt
+# - research.md         - Research agent prompt
+# - aggregator.md       - Aggregator agent prompt
+# - reporter.md         - Reporter agent prompt
+#
+# All prompts are defined in specs/PROMPTS.md and will be copied here during implementation.

@@ -1,0 +1,23 @@
+# Placeholder for React frontend application
+# To be implemented in Phase 12
+#
+# Planned structure:
+# frontend/
+# ├── src/
+# │   ├── components/
+# │   │   ├── Chat.tsx         - Chat interface for Brief Builder
+# │   │   ├── BriefDisplay.tsx - Display Brief with edit/approve buttons
+# │   │   ├── ProgressTracker.tsx - Research progress visualization
+# │   │   └── ReportViewer.tsx - Download and preview reports
+# │   ├── pages/
+# │   │   ├── Home.tsx         - Landing page, start new research
+# │   │   └── Research.tsx     - Active research session
+# │   ├── hooks/
+# │   │   ├── useResearch.ts   - Research session state management
+# │   │   ├── usePolling.ts    - Status polling during execution
+# │   │   └── useWebSocket.ts  - Real-time updates (optional)
+# │   └── api/
+# │       └── client.ts        - API client for backend communication
+# ├── package.json
+# ├── vite.config.ts
+# └── tailwind.config.js
