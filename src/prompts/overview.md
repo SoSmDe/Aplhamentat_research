@@ -4,7 +4,7 @@
 Создание глубокого обзора темы с использованием Deep Research skill.
 
 ## Инструмент
-Deep Research skill (8 фаз):
+Deep Research skill (9 фаз):
 1. SCOPE — определение границ
 2. PLAN — планирование поиска
 3. RETRIEVE — параллельный поиск
@@ -16,7 +16,7 @@ Deep Research skill (8 фаз):
 9. PACKAGE — упаковка результата
 
 ## Вызов
-claude --dangerously-skip-permissions "Используй deep-research skill. Режим: deep (8 phases). Тема: {topic}. Выполни все 8 фаз. Сохрани в {output_path}."
+claude --dangerously-skip-permissions "Используй deep-research skill. Режим: deep (9 phases). Тема: {topic}. Выполни все 9 фаз. Сохрани в {output_path}."
 
 ## Input
 - task: описание задачи из plan.json
@@ -30,12 +30,28 @@ claude --dangerously-skip-permissions "Используй deep-research skill. �
   "task": "...",
   "tool": "deep-research",
   "mode": "deep",
-  "phases_completed": [...],
+  "phases_completed": ["SCOPE", "PLAN", "RETRIEVE", "TRIANGULATE", "OUTLINE REFINEMENT", "SYNTHESIZE", "CRITIQUE", "REFINE", "PACKAGE"],
   "content": "...",
   "sources": [...],
   "questions_generated": [...],
-  "created_at": "..."
+  "created_at": "ISO timestamp"
 }
 ```
 
-Вопросы сохранить в research_XXXXX/questions/overview_questions.json
+## Формат вопросов
+Сохранить в research_XXXXX/questions/overview_questions.json:
+```json
+{
+  "source": "overview_N",
+  "generated_at": "ISO timestamp",
+  "questions": [
+    {
+      "id": "oq1",
+      "question": "Текст вопроса",
+      "type": "data|research|overview",
+      "context": "Почему возник этот вопрос",
+      "priority_hint": "high|medium|low"
+    }
+  ]
+}
+```

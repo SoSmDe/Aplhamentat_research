@@ -98,6 +98,29 @@ research_YYYYMMDD_HHMMSS_slug/    # Per-research folder
 
 **Output**: Save to `{research_folder}/state/initial_context.json`
 
+**JSON Structure**:
+```json
+{
+  "query": "original user query",
+  "language": "ru|en",
+  "intent": "investment|market_research|competitive|learning|other",
+  "entities": [
+    {
+      "name": "Entity Name",
+      "type": "company|market|concept|product|person",
+      "identifiers": {
+        "ticker": "SYMBOL|null",
+        "website": "url|null"
+      }
+    }
+  ],
+  "context_summary": "3-5 sentences of context",
+  "suggested_topics": ["topic1", "topic2", "topic3"],
+  "sources_used": ["url1", "url2"],
+  "created_at": "ISO timestamp"
+}
+```
+
 ---
 
 ## Phase 2: Brief Builder (Interactive)
@@ -114,6 +137,30 @@ research_YYYYMMDD_HHMMSS_slug/    # Per-research folder
 - Save conversation to `{research_folder}/state/conversation.json`
 - When approved, save to `{research_folder}/state/brief.json`
 
+**JSON Structure** (brief.json):
+```json
+{
+  "brief_id": "uuid",
+  "status": "approved",
+  "goal": "Main research goal in one sentence",
+  "scope_items": [
+    {
+      "id": 1,
+      "topic": "Topic description",
+      "type": "data|research|both",
+      "priority": "high|medium|low"
+    }
+  ],
+  "output_formats": ["pdf", "excel", "pptx"],
+  "constraints": {
+    "time_period": "last 5 years|null",
+    "geographic_focus": "USA|global|null",
+    "max_sources": 50
+  },
+  "approved_at": "ISO timestamp"
+}
+```
+
 ---
 
 ## Phase 3: Planning
@@ -129,6 +176,42 @@ research_YYYYMMDD_HHMMSS_slug/    # Per-research folder
 
 **Output**: Save to `{research_folder}/state/plan.json`
 
+**JSON Structure**:
+```json
+{
+  "round": 1,
+  "brief_id": "uuid",
+  "overview_tasks": [
+    {
+      "id": "o1",
+      "scope_item_id": 1,
+      "topic": "Deep research topic",
+      "priority": "high"
+    }
+  ],
+  "data_tasks": [
+    {
+      "id": "d1",
+      "scope_item_id": 1,
+      "description": "What data to collect",
+      "source": "web_search|api",
+      "priority": "high"
+    }
+  ],
+  "research_tasks": [
+    {
+      "id": "r1",
+      "scope_item_id": 2,
+      "description": "What to research",
+      "search_queries": ["query1", "query2"],
+      "priority": "medium"
+    }
+  ],
+  "total_tasks": 10,
+  "created_at": "ISO timestamp"
+}
+```
+
 ---
 
 ## Phase 4: Execution Round
@@ -138,14 +221,14 @@ research_YYYYMMDD_HHMMSS_slug/    # Per-research folder
 **Prompt**: Load from `../src/prompts/overview.md`
 
 For each overview task:
-1. Call Deep Research skill with 8 phases:
+1. Call Deep Research skill with 9 phases:
    - SCOPE → PLAN → RETRIEVE → TRIANGULATE → OUTLINE REFINEMENT → SYNTHESIZE → CRITIQUE → REFINE → PACKAGE
 2. Save comprehensive analysis
 3. Extract questions for follow-up
 
 **Execution**:
 ```bash
-claude --dangerously-skip-permissions "Используй deep-research skill. Режим: deep (8 phases). Тема: {topic}. Выполни все 8 фаз."
+claude --dangerously-skip-permissions "Используй deep-research skill. Режим: deep (9 phases). Тема: {topic}. Выполни все 9 фаз."
 ```
 
 **Output**:
@@ -201,6 +284,32 @@ claude --dangerously-skip-permissions "Используй deep-research skill. �
 
 **Output**: Save to `{research_folder}/state/questions_plan.json`
 
+**JSON Structure**:
+```json
+{
+  "iteration": 1,
+  "total_questions": 15,
+  "filtered": [
+    {
+      "id": "oq1",
+      "priority": "high",
+      "action": "execute",
+      "task_type": "data"
+    }
+  ],
+  "tasks_created": [
+    {"id": "data_5", "from_question": "oq1"}
+  ],
+  "summary": {
+    "high_count": 3,
+    "medium_count": 5,
+    "low_count": 7,
+    "executed": 6,
+    "skipped": 9
+  }
+}
+```
+
 ---
 
 ## Phase 6: Coverage Check
@@ -217,6 +326,25 @@ claude --dangerously-skip-permissions "Используй deep-research skill. �
 
 **Output**: Save to `{research_folder}/state/coverage.json`
 
+**JSON Structure**:
+```json
+{
+  "iteration": 1,
+  "overall_coverage": 75,
+  "items": [
+    {
+      "scope_item_id": 1,
+      "topic": "Topic name",
+      "coverage_percent": 85,
+      "covered_aspects": ["aspect1", "aspect2"],
+      "missing_aspects": ["aspect3"]
+    }
+  ],
+  "decision": "continue|done",
+  "reason": "Coverage below 80%, iteration 1 of 5"
+}
+```
+
 ---
 
 ## Phase 7: Aggregation
@@ -232,6 +360,38 @@ claude --dangerously-skip-permissions "Используй deep-research skill. �
 3. Generate recommendations
 
 **Output**: Save to `{research_folder}/state/aggregation.json`
+
+**JSON Structure**:
+```json
+{
+  "executive_summary": "3-5 sentences",
+  "key_insights": [
+    {
+      "insight": "Key finding",
+      "supporting_data": ["source1", "source2"],
+      "importance": "high|medium"
+    }
+  ],
+  "sections": [
+    {
+      "title": "Section title",
+      "scope_item_id": 1,
+      "summary": "Section summary",
+      "data_highlights": {},
+      "analysis": "Detailed analysis",
+      "sentiment": "positive|negative|neutral"
+    }
+  ],
+  "recommendation": {
+    "verdict": "Buy/Sell/Hold or similar",
+    "confidence": "high|medium|low",
+    "reasoning": "Why this verdict",
+    "pros": ["pro1", "pro2"],
+    "cons": ["con1", "con2"]
+  },
+  "sources_bibliography": ["source1", "source2"]
+}
+```
 
 ---
 
@@ -297,6 +457,6 @@ while iteration < 5:
 ## Integration Notes
 
 - **web_search**: Claude's built-in tool for all research
-- **Deep Research skill**: For comprehensive overview tasks (8 phases)
+- **Deep Research skill**: For comprehensive overview tasks (9 phases)
 - **File generation**: Use Write tool for JSON, create reports directly
 - **Research folders**: Created in `ralph/research_YYYYMMDD_HHMMSS_slug/`

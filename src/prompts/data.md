@@ -30,9 +30,11 @@
 - Максимум 30 секунд на задачу
 - При ошибке API — попробуй альтернативный источник
 
-## Output Format:
+## Output Format
+Сохранить в research_XXXXX/results/data_N.json:
+```json
 {
-  "task_id": "string",
+  "task_id": "data_N",
   "round": number,
   "status": "done|failed|partial",
   "output": {
@@ -59,15 +61,6 @@
     "timestamp": "ISO datetime",
     "data_freshness": "real-time|daily|weekly|monthly|quarterly|annual"
   },
-  "questions": [
-    {
-      "type": "research",
-      "question": "string",
-      "context": "string — почему возник вопрос",
-      "priority": "high|medium|low",
-      "source_task_id": "string"
-    }
-  ],
   "errors": [
     {
       "field": "string",
@@ -76,3 +69,25 @@
     }
   ]
 }
+```
+
+## Генерация вопросов
+
+Если в процессе работы возникли вопросы (пробелы в данных, противоречия, неясности):
+
+Добавить в research_XXXXX/questions/data_questions.json:
+```json
+{
+  "source": "data_N",
+  "generated_at": "ISO timestamp",
+  "questions": [
+    {
+      "id": "dq1",
+      "question": "Текст вопроса",
+      "type": "data|research|overview",
+      "context": "Почему возник этот вопрос (аномалия, пробел, противоречие)",
+      "priority_hint": "high|medium|low"
+    }
+  ]
+}
+```

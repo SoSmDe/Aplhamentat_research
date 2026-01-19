@@ -37,9 +37,11 @@
 - Не выходи за рамки scope Brief
 - Максимум 60 секунд на задачу
 
-## Output Format:
+## Output Format
+Сохранить в research_XXXXX/results/research_N.json:
+```json
 {
-  "task_id": "string",
+  "task_id": "research_N",
   "round": number,
   "status": "done|failed|partial",
   "output": {
@@ -76,14 +78,27 @@
       "date": "ISO date",
       "credibility": "high|medium|low"
     }
-  ],
+  ]
+}
+```
+
+## Генерация вопросов
+
+Если в процессе работы возникли вопросы (пробелы в данных, противоречия, неясности):
+
+Добавить в research_XXXXX/questions/research_questions.json:
+```json
+{
+  "source": "research_N",
+  "generated_at": "ISO timestamp",
   "questions": [
     {
-      "type": "data|research",
-      "question": "string",
-      "priority": "high|medium|low",
-      "context": "string",
-      "source_task_id": "string"
+      "id": "rq1",
+      "question": "Текст вопроса",
+      "type": "data|research|overview",
+      "context": "Почему возник этот вопрос (неясность, противоречие, смежная тема)",
+      "priority_hint": "high|medium|low"
     }
   ]
 }
+```
