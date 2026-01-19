@@ -24,8 +24,51 @@ log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1" >&2; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
 log_phase() { echo -e "${CYAN}[PHASE]${NC} $1" >&2; }
 
+generate_slug_fallback() {
+    # Fallback: simple truncation if Claude unavailable
+    echo "$1" | \
+        tr '\n\r' ' ' | \
+        tr '[:upper:]' '[:lower:]' | \
+        sed 's/[^a-z0-9 ]//g' | \
+        sed 's/  */ /g' | \
+        cut -c1-35 | \
+        sed 's/ /_/g' | \
+        sed 's/__*/_/g' | \
+        sed 's/^_//; s/_$//' | \
+        cut -c1-30
+}
+
 generate_slug() {
-    echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g' | cut -c1-30
+    # Generate meaningful folder name using Claude
+    local query="$1"
+    local prompt_file="$PROMPTS_DIR/folder_name.md"
+
+    if [ -f "$prompt_file" ]; then
+        log_info "Generating folder name..." >&2
+
+        # Call Claude to generate folder name
+        local slug=$(claude --print -p "$(cat "$prompt_file")
+
+Query: $query
+
+Output ONLY the folder name:" 2>/dev/null | \
+            tr -d '\n\r' | \
+            tr '[:upper:]' '[:lower:]' | \
+            sed 's/[^a-z0-9_]//g' | \
+            sed 's/__*/_/g' | \
+            sed 's/^_//; s/_$//' | \
+            cut -c1-30)
+
+        # Use result if valid, otherwise fallback
+        if [ -n "$slug" ] && [ ${#slug} -ge 5 ]; then
+            echo "$slug"
+            return 0
+        fi
+    fi
+
+    # Fallback to simple truncation
+    log_warning "Using fallback slug generation" >&2
+    generate_slug_fallback "$query"
 }
 
 generate_research_folder() {
