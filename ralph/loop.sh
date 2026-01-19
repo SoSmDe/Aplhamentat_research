@@ -3,6 +3,10 @@
 
 set -e
 
+# Ensure UTF-8 encoding
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
 MAX_ITERATIONS=20
 PROMPTS_DIR="prompts"
 
@@ -13,11 +17,12 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
-log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
-log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_phase() { echo -e "${CYAN}[PHASE]${NC} $1"; }
+# Log functions write to stderr so they don't interfere with function return values
+log_info() { echo -e "${BLUE}[INFO]${NC} $1" >&2; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1" >&2; }
+log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1" >&2; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
+log_phase() { echo -e "${CYAN}[PHASE]${NC} $1" >&2; }
 
 generate_slug() {
     echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g' | cut -c1-30
@@ -31,6 +36,25 @@ generate_research_folder() {
 
 find_latest_research() {
     ls -d research_* 2>/dev/null | sort -r | head -n1
+}
+
+# Find research folder by partial name (fuzzy match)
+find_research_folder() {
+    local pattern="$1"
+
+    # If exact match exists, use it
+    [ -d "$pattern" ] && { echo "$pattern"; return 0; }
+
+    # Try glob pattern match
+    local matches=$(ls -d research_*"$pattern"* 2>/dev/null | head -n1)
+    [ -n "$matches" ] && { echo "$matches"; return 0; }
+
+    # Try case-insensitive match
+    matches=$(ls -d research_* 2>/dev/null | grep -i "$pattern" | head -n1)
+    [ -n "$matches" ] && { echo "$matches"; return 0; }
+
+    # Not found
+    return 1
 }
 
 show_help() {
@@ -314,62 +338,82 @@ set_phase() {
 }
 
 continue_research() {
-    local source_folder="$1"
+    local input_folder="$1"
     local additional_context="$2"
 
-    # Validate source folder
-    [ -z "$source_folder" ] && { log_error "Usage: --continue <folder> [additional_context]"; exit 1; }
-    [ ! -d "$source_folder" ] && { log_error "Folder not found: $source_folder"; exit 1; }
-    [ ! -f "$source_folder/state/session.json" ] && { log_error "No session.json in $source_folder"; exit 1; }
+    # Validate input
+    [ -z "$input_folder" ] && { log_error "Usage: --continue <folder> [additional_context]"; return 1; }
 
-    # Determine new folder name with version suffix
-    local base_name=$(echo "$source_folder" | sed 's/_v[0-9]*$//')
-    local version=2
-    while [ -d "${base_name}_v${version}" ]; do
-        version=$((version + 1))
+    # Find folder with fuzzy match
+    local source_folder
+    source_folder=$(find_research_folder "$input_folder") || {
+        log_error "Folder not found: $input_folder"
+        log_info "Available folders:"
+        ls -d research_* 2>/dev/null | head -5 >&2 || echo "  (none)" >&2
+        return 1
+    }
+
+    # Validate session.json exists
+    [ ! -f "$source_folder/state/session.json" ] && {
+        log_error "No session.json in $source_folder"
+        return 1
+    }
+
+    log_info "Found source folder: $source_folder"
+
+    # Generate new folder name with timestamp and version
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local original_slug=$(echo "$source_folder" | sed 's/^research_[0-9_]*//; s/_v[0-9]*$//')
+    local new_folder="research_${timestamp}${original_slug}_continued"
+
+    # Ensure unique name
+    local counter=2
+    local base_new="$new_folder"
+    while [ -d "$new_folder" ]; do
+        new_folder="${base_new}_${counter}"
+        counter=$((counter + 1))
     done
-    local new_folder="${base_name}_v${version}"
 
-    log_info "Continuing research: $source_folder → $new_folder"
+    log_info "Creating: $new_folder"
 
-    # Copy entire folder
-    cp -r "$source_folder" "$new_folder"
+    # Create new folder structure
+    mkdir -p "$new_folder/state" "$new_folder/results" "$new_folder/questions" "$new_folder/output"
 
-    # Update session.json with new context and reset phase
+    # Copy state files
+    cp -r "$source_folder/state/"* "$new_folder/state/" 2>/dev/null || true
+    cp -r "$source_folder/results/"* "$new_folder/results/" 2>/dev/null || true
+    cp -r "$source_folder/questions/"* "$new_folder/questions/" 2>/dev/null || true
+
+    # Update session.json
     local session="$new_folder/state/session.json"
-    local original_query=$(jq -r '.query' "$session")
+    local tmp_file="$new_folder/state/session_tmp.json"
 
-    # Add additional_context field and reset to brief_builder phase
     if [ -n "$additional_context" ]; then
+        log_info "Additional context: $additional_context"
         jq --arg ctx "$additional_context" \
            --arg id "$new_folder" \
+           --arg from "$source_folder" \
            --arg ts "$(date -Iseconds)" \
            '.id = $id |
             .additional_context = $ctx |
             .phase = "brief_builder" |
-            .continued_from = .id |
-            .updated_at = $ts' "$session" > tmp.json
-        mv tmp.json "$session"
-        log_info "Additional context: $additional_context"
+            .continued_from = $from |
+            .updated_at = $ts' "$session" > "$tmp_file" && mv "$tmp_file" "$session"
     else
         jq --arg id "$new_folder" \
+           --arg from "$source_folder" \
            --arg ts "$(date -Iseconds)" \
            '.id = $id |
             .phase = "brief_builder" |
-            .continued_from = .id |
-            .updated_at = $ts' "$session" > tmp.json
-        mv tmp.json "$session"
+            .continued_from = $from |
+            .updated_at = $ts' "$session" > "$tmp_file" && mv "$tmp_file" "$session"
     fi
-
-    # Clear output folder for fresh generation
-    rm -rf "$new_folder/output/"*
-    mkdir -p "$new_folder/output"
 
     log_success "Created: $new_folder"
     log_info "Phase reset to: brief_builder"
-    log_info "Previous results preserved in: state/, results/, questions/"
+    log_info "Preserved: state/, results/, questions/"
 
-    # Return the new folder name for run_loop
+    # Return ONLY the folder name (stdout)
     echo "$new_folder"
 }
 
@@ -494,7 +538,9 @@ main() {
             ;;
         --continue)
             [ -z "$2" ] && { log_error "Usage: --continue <folder> [additional_context]"; exit 1; }
-            folder=$(continue_research "$2" "$3")
+            folder=$(continue_research "$2" "$3") || exit 1
+            [ -z "$folder" ] && { log_error "Failed to create continuation folder"; exit 1; }
+            [ ! -f "$folder/state/session.json" ] && { log_error "session.json not created in $folder"; exit 1; }
             query=$(jq -r '.query' "$folder/state/session.json")
             run_loop "$folder" "$query"
             ;;
