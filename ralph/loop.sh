@@ -390,6 +390,8 @@ continue_research() {
 
     if [ -n "$additional_context" ]; then
         log_info "Additional context: $additional_context"
+        # Reset coverage to 0 to force new research for continuation
+        # Keep tasks_completed but clear tasks_pending for new planning
         jq --arg ctx "$additional_context" \
            --arg id "$new_folder" \
            --arg from "$source_folder" \
@@ -398,6 +400,10 @@ continue_research() {
             .additional_context = $ctx |
             .phase = "brief_builder" |
             .continued_from = $from |
+            .is_continuation = true |
+            .coverage.current = 0 |
+            .coverage.by_scope = {} |
+            .execution.tasks_pending = [] |
             .updated_at = $ts' "$session" > "$tmp_file" && mv "$tmp_file" "$session"
     else
         jq --arg id "$new_folder" \
@@ -406,6 +412,10 @@ continue_research() {
            '.id = $id |
             .phase = "brief_builder" |
             .continued_from = $from |
+            .is_continuation = true |
+            .coverage.current = 0 |
+            .coverage.by_scope = {} |
+            .execution.tasks_pending = [] |
             .updated_at = $ts' "$session" > "$tmp_file" && mv "$tmp_file" "$session"
     fi
 

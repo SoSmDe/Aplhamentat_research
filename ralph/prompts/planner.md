@@ -10,6 +10,51 @@ Adjust task count and coverage targets based on report depth preference.
 
 ## Process
 
+### 0. Check for Continuation Mode (CRITICAL)
+
+**FIRST, check if `brief.json` has `is_continuation: true`**
+
+If YES — this is a continuation research:
+1. Read `session.json` for `additional_context`
+2. Find scope items with `updated_in_continuation: true` or `added_in_continuation: true`
+3. **Create NEW tasks ONLY for these updated/added scope items**
+4. Use task IDs with `c_` prefix: `c_r1`, `c_d1`, `c_o1`
+5. **DO NOT skip planning** — new research is required!
+6. Reset coverage for updated scope items to 0
+
+```yaml
+continuation_mode:
+  detect: brief.json has "is_continuation": true
+  action:
+    - Find scope_items with "updated_in_continuation" or "added_in_continuation"
+    - Create new tasks for EACH updated scope item
+    - Prefix task IDs with "c_" (c_r1, c_d1, etc.)
+    - Add tasks to tasks_pending
+    - Keep old tasks in tasks_completed
+
+  NEVER:
+    - Skip to aggregation because "coverage is already high"
+    - Reuse old results without new research
+    - Ignore additional_context
+```
+
+**Example continuation plan.json:**
+```json
+{
+  "is_continuation_plan": true,
+  "continuation_tasks": [
+    {
+      "id": "c_r1",
+      "scope_item_id": "s1",
+      "description": "NEW: Analyze Konstantin Molodykh X/Twitter account",
+      "continuation_reason": "additional_context requested founder's personal brand analysis"
+    }
+  ]
+}
+```
+
+---
+
 ### 1. Read Depth Setting
 Get `preferences.depth` from brief.json and apply multipliers:
 
@@ -141,3 +186,5 @@ Note: `max_iterations` and `coverage.target` come from depth_multipliers.
 - Avoid duplicating tasks between rounds
 - For executive depth: focus on high-priority items only
 - For deep_dive depth: create comprehensive task coverage
+- **CONTINUATION MODE**: If `is_continuation: true`, MUST create new tasks for updated scope items
+- **NEVER skip planning** in continuation mode even if coverage looks high
