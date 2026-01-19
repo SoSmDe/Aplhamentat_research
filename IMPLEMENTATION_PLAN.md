@@ -19,8 +19,8 @@ Build a multi-agent AI research automation system that accepts user queries, con
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Specifications** | ✅ Complete | 5 files in specs/ |
-| **Source Code** | 🔄 Phase 5 Partial | Config + Schemas + Errors/Logging/Retry + Storage + Tools + Base Agent + Initial Agents |
-| **Tests** | 🔄 In Progress | 448 tests passing |
+| **Source Code** | 🔄 Phase 6 Complete | Config + Schemas + Errors/Logging/Retry + Storage + Tools + Base Agent + All Execution Agents |
+| **Tests** | 🔄 In Progress | 530 tests passing |
 | **Frontend** | ❌ Not Started | Placeholder only |
 | **Last Updated** | 2026-01-19 | |
 
@@ -776,26 +776,27 @@ Reference: specs/PROMPTS.md Section 2
 
 ---
 
-## Phase 6: Core Execution Agents (HIGH)
+## Phase 6: Core Execution Agents (HIGH) ✅ COMPLETE
 
 **Purpose**: Implement Planner, Data, and Research agents.
 **Dependencies**: Phase 5
 **Completion Criteria**: Planner creates tasks, Data/Research produce results with follow-up questions.
+**Status**: Complete (2026-01-19) - All 3 agents implemented with 82 tests
 
-### 6.1 Planner Agent
+### 6.1 Planner Agent ✅ COMPLETE
 Reference: specs/PROMPTS.md Section 3
 
-- [ ] Create `src/agents/planner.py`:
-  - [ ] `PlannerAgent(BaseAgent)`:
+- [x] Create `src/agents/planner.py`:
+  - [x] `PlannerAgent(BaseAgent)`:
     - `agent_name = "planner"`
 
-  - [ ] **Initial Planning Mode**:
+  - [x] **Initial Planning Mode**:
     - Input: `{"mode": "initial", "session_id": str, "brief": Brief}`
     - Output: `Plan` with data_tasks and research_tasks
     - Task ID format: d1, d2... (data), r1, r2... (research)
     - Max 10 tasks per round
 
-  - [ ] **Review Mode**:
+  - [x] **Review Mode**:
     - Input: `{"mode": "review", "session_id": str, "brief": Brief, "round": int, "data_results": List, "research_results": List, "new_questions": List}`
     - Output: `PlannerDecision`
     - Coverage calculation per scope item
@@ -803,16 +804,23 @@ Reference: specs/PROMPTS.md Section 3
     - Decision: "continue" if any scope < 80%, else "done"
     - Max 10 rounds total
 
-### 6.2 Data Agent
+  - [x] Features implemented:
+    - Pydantic models for structured LLM output (LLMPlanOutput, LLMPlannerDecisionOutput)
+    - Task ID generation and deduplication
+    - Coverage tracking with threshold enforcement (80%)
+    - Fallback plan/decision creation on LLM failure
+    - State persistence via SessionManager
+
+### 6.2 Data Agent ✅ COMPLETE
 Reference: specs/PROMPTS.md Section 4
 
-- [ ] Create `src/agents/data.py`:
-  - [ ] `DataAgent(BaseAgent)`:
+- [x] Create `src/agents/data.py`:
+  - [x] `DataAgent(BaseAgent)`:
     - `agent_name = "data"`
     - Input: `{"task": DataTask, "entity_context": dict, "available_apis": List[str]}`
     - Output: `DataResult`
 
-  - [ ] Process:
+  - [x] Process:
     1. Parse task for specific metrics
     2. Select appropriate API source
     3. Execute API call
@@ -820,18 +828,25 @@ Reference: specs/PROMPTS.md Section 4
     5. Structure with metadata (source, timestamp, freshness)
     6. Generate follow-up questions if anomalies found
 
-  - [ ] Constraints: 30 second timeout per task
+  - [x] Constraints: 45 second timeout per task (data_task timeout key)
 
-### 6.3 Research Agent
+  - [x] Features implemented:
+    - Pydantic models for structured LLM output (LLMDataOutput)
+    - API data fetching with FinancialAPIClient integration
+    - Ticker extraction from task identifiers
+    - Fallback result generation on LLM/API failure
+    - State persistence via SessionManager
+
+### 6.3 Research Agent ✅ COMPLETE
 Reference: specs/PROMPTS.md Section 5
 
-- [ ] Create `src/agents/research.py`:
-  - [ ] `ResearchAgent(BaseAgent)`:
+- [x] Create `src/agents/research.py`:
+  - [x] `ResearchAgent(BaseAgent)`:
     - `agent_name = "research"`
     - Input: `{"task": ResearchTask, "entity_context": dict, "brief_context": dict, "previous_findings": List[str]}`
     - Output: `ResearchResult`
 
-  - [ ] Process:
+  - [x] Process:
     1. Generate 3-5 search queries
     2. Execute web search
     3. Read and analyze sources
@@ -841,7 +856,21 @@ Reference: specs/PROMPTS.md Section 5
     7. Evaluate source credibility
     8. Generate follow-up questions
 
-  - [ ] Constraints: 60 second timeout per task
+  - [x] Constraints: 90 second timeout per task (research_task timeout key)
+
+  - [x] Features implemented:
+    - Pydantic models for structured LLM output (LLMResearchOutput)
+    - Search query generation with source type awareness
+    - Web search integration with result deduplication
+    - Finding, theme, contradiction extraction
+    - Source credibility evaluation
+    - Fallback result generation on LLM failure
+    - State persistence via SessionManager
+
+### 6.4 Tests ✅ COMPLETE
+- [x] `tests/test_agents/test_planner.py` - 27 tests
+- [x] `tests/test_agents/test_data.py` - 26 tests
+- [x] `tests/test_agents/test_research.py` - 29 tests
 
 ---
 
