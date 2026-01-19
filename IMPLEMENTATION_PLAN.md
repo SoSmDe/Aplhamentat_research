@@ -19,8 +19,8 @@ Build a multi-agent AI research automation system that accepts user queries, con
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Specifications** | ✅ Complete | 5 files in specs/ |
-| **Source Code** | 🔄 Phase 9 Complete | Config + Schemas + Errors/Logging/Retry + Storage + Tools + All Agents + Orchestrator (ParallelExecutor, ResearchPipeline) |
-| **Tests** | 🔄 In Progress | 648 tests passing |
+| **Source Code** | 🔄 Phase 10 Complete | Config + Schemas + Errors/Logging/Retry + Storage + Tools + All Agents + Orchestrator + API Layer |
+| **Tests** | 🔄 In Progress | 689 tests passing |
 | **Frontend** | ❌ Not Started | Placeholder only |
 | **Last Updated** | 2026-01-19 | |
 
@@ -1065,60 +1065,65 @@ Reference: specs/ARCHITECTURE.md Section 2
 
 ---
 
-## Phase 10: API Layer (HIGH)
+## Phase 10: API Layer (HIGH) ✅ COMPLETE
 
 **Purpose**: Expose pipeline via REST API.
 **Dependencies**: Phase 9
 **Completion Criteria**: All endpoints work, can complete full research flow via API.
+**Status**: Complete (2026-01-19) - 5 endpoints + dependencies + background tasks with 41 new tests
 
-### 10.1 FastAPI Application Setup
-- [ ] Update `main.py`:
-  - [ ] FastAPI app with lifespan (startup/shutdown)
-  - [ ] Database initialization on startup
-  - [ ] CORS middleware configuration
-  - [ ] Exception handlers (RalphError → HTTP responses)
-  - [ ] Request ID middleware for tracing
-  - [ ] Include API router
+### 10.1 FastAPI Application Setup ✅ COMPLETE
+- [x] Update `main.py`:
+  - [x] FastAPI app with lifespan (startup/shutdown)
+  - [x] Database initialization on startup
+  - [x] CORS middleware configuration
+  - [x] Exception handlers (RalphError → HTTP responses)
+  - [x] Request ID middleware for tracing
+  - [x] Include API router
 
-### 10.2 API Routes
+### 10.2 API Routes ✅ COMPLETE
 Reference: specs/ralph_prd.md Section 8
 
-- [ ] Create `src/api/routes.py`:
-  - [ ] `POST /api/sessions` - Start new research session
+- [x] Create `src/api/routes.py`:
+  - [x] `POST /api/sessions` - Start new research session
     - Input: CreateSessionRequest
     - Runs Initial Research
     - Returns SessionResponse with first Brief Builder message
 
-  - [ ] `POST /api/sessions/{session_id}/messages` - Send message during brief building
+  - [x] `POST /api/sessions/{session_id}/messages` - Send message during brief building
     - Input: SendMessageRequest
     - Returns SessionResponse with Brief Builder response
 
-  - [ ] `POST /api/sessions/{session_id}/approve` - Approve Brief
+  - [x] `POST /api/sessions/{session_id}/approve` - Approve Brief
     - Input: ApproveBriefRequest (optional modifications)
     - Triggers background research execution
     - Returns SessionResponse with status "executing"
 
-  - [ ] `GET /api/sessions/{session_id}` - Get session status
+  - [x] `GET /api/sessions/{session_id}` - Get session status
     - Returns StatusResponse with progress and coverage
 
-  - [ ] `GET /api/sessions/{session_id}/results` - Get results
+  - [x] `GET /api/sessions/{session_id}/results` - Get results
     - Returns ResultsResponse with aggregated research and report URLs
 
-  - [ ] `GET /api/health` - Health check
+  - [x] `GET /api/health` - Health check
     - Returns HealthResponse
 
-### 10.3 Dependencies
-- [ ] Create `src/api/dependencies.py`:
-  - [ ] `get_database() -> Database` - database dependency
-  - [ ] `get_session_manager() -> SessionManager`
-  - [ ] `get_pipeline() -> ResearchPipeline`
-  - [ ] `verify_session(session_id) -> Session` - validate session exists
+### 10.3 Dependencies ✅ COMPLETE
+- [x] Create `src/api/dependencies.py`:
+  - [x] `get_database() -> Database` - database dependency
+  - [x] `get_session_manager() -> SessionManager`
+  - [x] `get_pipeline() -> ResearchPipeline`
+  - [x] `verify_session(session_id) -> Session` - validate session exists
 
-### 10.4 Background Tasks
-- [ ] Implement background execution for research:
-  - [ ] Use FastAPI BackgroundTasks or asyncio.create_task
-  - [ ] Pipeline runs after Brief approval
-  - [ ] Status polling via GET /sessions/{id}
+### 10.4 Background Tasks ✅ COMPLETE
+- [x] Implement background execution for research:
+  - [x] Use FastAPI BackgroundTasks or asyncio.create_task
+  - [x] Pipeline runs after Brief approval
+  - [x] Status polling via GET /sessions/{id}
+
+### 10.5 Tests ✅ COMPLETE
+- [x] `tests/test_api/test_routes.py` - 28 tests
+- [x] `tests/test_api/test_dependencies.py` - 13 tests
 
 ---
 

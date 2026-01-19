@@ -13,10 +13,17 @@ Provides:
 """
 
 import asyncio
+import os
 from typing import AsyncGenerator, Generator
 
 import pytest
 import pytest_asyncio
+
+# Set test environment variables BEFORE any imports that need them
+os.environ.setdefault("ANTHROPIC_API_KEY", "sk-ant-test-key-for-testing-12345")
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+os.environ.setdefault("DEBUG", "true")
+os.environ.setdefault("LOG_LEVEL", "WARNING")
 
 # Configure pytest-asyncio mode
 pytest_plugins = ("pytest_asyncio",)
