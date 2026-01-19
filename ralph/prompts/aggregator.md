@@ -76,19 +76,27 @@ confidence_levels:
 ```
 
 ### 6. Prepare Chart Data
-Identify data suitable for visualization:
+Compile charts from all results:
+
 ```yaml
-chart_data_extraction:
-  identify:
-    - Time series data (trends over time)
-    - Composition data (breakdowns, distributions)
-    - Comparison data (vs peers, vs benchmarks)
-    - Any numeric data with clear categories
+chart_data_compilation:
+  sources:
+    - results/data_*.json → read "time_series" field with "chart_hint"
+    - results/overview_*.json → extract key metrics
+    - results/research_*.json → extract comparison data
+
+  process:
+    1. Collect all time_series from data results
+    2. Use chart_hint (type, x_axis, y_axis) from Data agent
+    3. Add comparison charts if multiple data sources
+    4. Apply chart styling rules from reporter.md
 
   output_format:
     chart_id: "unique_id"
     chart_type: "line|bar|pie|doughnut"
     title: "Chart title"
+    x_axis: "date|category"
+    y_axis: "value description"
     data:
       labels: ["Label1", "Label2"]
       datasets:
@@ -97,6 +105,8 @@ chart_data_extraction:
 ```
 
 Save to `state/chart_data.json`
+
+**Note:** Chart library selection and styling rules are in `reporter.md`
 
 ### 7. Synthesize by Sections
 For each scope item from Brief:

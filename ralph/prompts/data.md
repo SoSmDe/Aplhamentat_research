@@ -30,31 +30,6 @@ data_requirements:
   api: "yfinance"
 ```
 
-### 3. Prepare Chart Data for Reporter
-**Data Agent prepares raw data and chart_data.json, Reporter renders charts.**
-
-Save chart data to `state/chart_data.json`:
-```json
-{
-  "charts": [
-    {
-      "chart_id": "drawdown_timeseries",
-      "chart_type": "line",
-      "title": "Drawdowns Over Time",
-      "x_axis": "date",
-      "y_axis": "drawdown_pct",
-      "labels": ["2020-01-01", "2020-01-02", ...],
-      "datasets": [
-        {"label": "BTC", "data": [-5.2, -3.1, ...]},
-        {"label": "ETH", "data": [-8.1, -6.2, ...]}
-      ]
-    }
-  ]
-}
-```
-
-**Note**: Chart library selection and styling rules are in `reporter.md`
-
 ---
 
 ## Input
@@ -138,7 +113,8 @@ balances = etherscan.get_multi_chain_balance("0x...", ["ethereum", "arbitrum", "
 ## Process
 
 ### 1. Parse Task and data_spec
-Read `data_spec` from plan.json task:
+
+**If task has `data_spec`** — use structured specification:
 ```yaml
 # From plan.json:
 data_spec:
@@ -153,6 +129,27 @@ chart_spec:
   x_axis: "date"
   y_axis: "drawdown_pct"
 ```
+
+**If task has NO `data_spec`** (fallback) — parse description:
+```yaml
+# Task without data_spec:
+task:
+  id: "d1"
+  description: "Get BTC and ETH prices for last 30 days"
+  priority: "high"
+
+# Agent determines:
+# - data type: prices
+# - assets: BTC, ETH
+# - timeframe: 30 days
+# - api: coingecko (default for crypto prices)
+```
+
+**Fallback logic:**
+1. Parse `description` for keywords (prices, TVL, market cap, etc.)
+2. Extract asset names/tickers
+3. Determine timeframe from context or use default (30 days)
+4. Select API from Selection Matrix based on data type
 
 ### 2. Select API and Download Data
 Based on `api_source` in data_spec:
@@ -202,39 +199,14 @@ def calculate_sharpe(returns, rf=0.05):
     return np.sqrt(252) * excess.mean() / excess.std()
 ```
 
-### 4. Prepare Chart Data (if chart_spec exists)
-Following chart_spec from task:
+### 4. Structure Output
+- Save raw data + calculated series to `results/data_N.json`
+- Include `time_series` field for chart-ready data
+- Add metadata (source, timestamp, freshness)
 
-```python
-# For drawdown LINE chart (X=date, Y=drawdown%)
-chart_data = {
-    "chart_id": "drawdown_over_time",
-    "chart_type": "line",  # NOT bar!
-    "title": "Portfolio Drawdowns Over Time",
-    "labels": dates,  # X-axis: dates
-    "datasets": [
-        {"label": "BTC", "data": btc_drawdown, "borderColor": "#F7931A"},
-        {"label": "ETH", "data": eth_drawdown, "borderColor": "#627EEA"},
-        {"label": "SPY", "data": spy_drawdown, "borderColor": "#00D632"},
-    ],
-    "options": {
-        "scales": {
-            "y": {"title": "Drawdown %"}
-        },
-        "elements": {
-            "line": {"tension": 0, "borderWidth": 2},  # No curves, solid lines
-            "point": {"radius": 0}  # NO points
-        }
-    }
-}
-```
+**Note:** Aggregator will compile `state/chart_data.json` from all results. Data Agent only saves raw/calculated data.
 
-### 5. Structure Output
-- Save raw data + calculations
-- Save chart_data for Reporter
-- Add metadata
-
-### 6. Generate Questions (optional)
+### 5. Generate Questions (optional)
 - If anomaly found → create question for Research
 
 ## Output
@@ -253,6 +225,20 @@ Save to `results/data_{N}.json`:
         "period": "string|null",
         "as_of_date": "ISO date",
         "citation_id": "c1"
+      }
+    },
+    "time_series": {
+      "drawdown": {
+        "labels": ["2020-01-01", "2020-01-02", "..."],
+        "datasets": {
+          "BTC": [-5.2, -3.1, "..."],
+          "ETH": [-8.1, -6.2, "..."]
+        },
+        "chart_hint": {
+          "type": "line",
+          "x_axis": "date",
+          "y_axis": "drawdown_pct"
+        }
       }
     },
     "tables": [
