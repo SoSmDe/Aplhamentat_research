@@ -30,50 +30,30 @@ data_requirements:
   api: "yfinance"
 ```
 
-### 3. Chart Library Selection
-**Before creating ANY chart, select library based on task:**
+### 3. Prepare Chart Data for Reporter
+**Data Agent prepares raw data and chart_data.json, Reporter renders charts.**
 
-| Output Format | Library | When to Use |
-|---------------|---------|-------------|
-| HTML report | **Chart.js** | Interactive, web-based, default choice |
-| PDF report | **Matplotlib** | Static PNG images for PDF embedding |
-| Complex analysis | **Plotly** | Multi-axis, 3D, advanced interactivity |
-
-**Default: Chart.js for HTML, Matplotlib for PDF**
-
-### 4. Chart Styling Rules
-
-```yaml
-chart_rules:
-  log_scale:
-    - "If ALL values are positive → use logarithmic Y-axis"
-    - "Especially for: prices, TVL, market cap, cumulative returns"
-    - "Exception: percentages, ratios, already normalized data"
-
-  line_style:
-    - "NO dotted lines → use solid lines only"
-    - "NO markers/points → clean lines"
-    - "Line width: 1.5-2px"
-    - "Different colors per asset, NOT different line styles"
-
-  axes:
-    - "Time series: X = date, Y = value"
-    - "Comparison: X = category, Y = value (use bar chart)"
-    - "Drawdown chart: LINE over time, NOT bars per asset"
-
-  examples:
-    drawdown_correct:
-      type: "line"
-      x: "date"
-      y: "drawdown_pct"
-      note: "One line per asset over time"
-
-    drawdown_wrong:
-      type: "bar"
-      x: "asset_name"
-      y: "max_drawdown"
-      note: "Shows only single value, loses time dimension"
+Save chart data to `state/chart_data.json`:
+```json
+{
+  "charts": [
+    {
+      "chart_id": "drawdown_timeseries",
+      "chart_type": "line",
+      "title": "Drawdowns Over Time",
+      "x_axis": "date",
+      "y_axis": "drawdown_pct",
+      "labels": ["2020-01-01", "2020-01-02", ...],
+      "datasets": [
+        {"label": "BTC", "data": [-5.2, -3.1, ...]},
+        {"label": "ETH", "data": [-8.1, -6.2, ...]}
+      ]
+    }
+  ]
+}
 ```
+
+**Note**: Chart library selection and styling rules are in `reporter.md`
 
 ---
 

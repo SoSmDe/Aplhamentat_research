@@ -36,6 +36,43 @@ Use inline clickable citations throughout the report.
 
 ## Chart Generation Strategy
 
+### ⚠️ Chart Library Selection
+**Select library based on output format:**
+
+| Output Format | Library | When to Use |
+|---------------|---------|-------------|
+| HTML report | **Chart.js** | Interactive, web-based, default |
+| PDF report | **Matplotlib** | Static PNG images for PDF |
+| Complex analysis | **Plotly** | Multi-axis, 3D, advanced |
+
+### ⚠️ Chart Styling Rules (CRITICAL)
+
+```yaml
+chart_rules:
+  log_scale:
+    - "If ALL values are POSITIVE → use logarithmic Y-axis"
+    - "Especially for: prices, TVL, market cap, cumulative returns"
+    - "Exception: percentages, ratios, drawdowns (can be negative)"
+
+  line_style:
+    - "NO dotted/dashed lines → SOLID lines only"
+    - "NO markers/points → clean lines"
+    - "Line width: 1.5-2px"
+    - "Different COLORS per asset, NOT different line styles"
+
+  chart_type_selection:
+    time_series: "LINE chart (X=date, Y=value)"
+    comparison: "BAR chart (X=category, Y=value)"
+    distribution: "HISTOGRAM or BOX plot"
+    correlation: "HEATMAP"
+
+  common_mistakes:
+    - "❌ Drawdown as BAR per asset → loses time dimension"
+    - "✅ Drawdown as LINE over time → shows when drawdowns occurred"
+    - "❌ Dotted lines for different assets → hard to read"
+    - "✅ Solid lines with different colors → clear distinction"
+```
+
 ### For HTML Reports
 Use Chart.js embedded directly in HTML:
 ```html
@@ -52,6 +89,20 @@ new Chart(document.getElementById('{chart_id}'), {
     responsive: true,
     plugins: {
       title: { display: true, text: '{title}' }
+    },
+    elements: {
+      line: {
+        tension: 0,           // No curve smoothing
+        borderWidth: 2        // Line width
+      },
+      point: {
+        radius: 0             // NO points/markers
+      }
+    },
+    scales: {
+      y: {
+        type: 'logarithmic'   // Use if ALL values positive
+      }
     }
   }
 });
@@ -69,8 +120,25 @@ with open('state/chart_data.json') as f:
     charts = json.load(f)['charts']
 
 for chart in charts:
-    plt.figure(figsize=(10, 6))
-    # ... create chart based on type ...
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    for dataset in chart['datasets']:
+        ax.plot(
+            chart['labels'],
+            dataset['data'],
+            label=dataset['label'],
+            linewidth=2,           # Solid line width
+            linestyle='-',         # SOLID line only
+            marker=''              # NO markers
+        )
+
+    ax.set_title(chart['title'])
+    ax.legend()
+
+    # Log scale if all values positive
+    if all(v > 0 for d in chart['datasets'] for v in d['data']):
+        ax.set_yscale('log')
+
     plt.savefig(f"output/charts/{chart['chart_id']}.png", dpi=150, bbox_inches='tight')
     plt.close()
 ```
