@@ -165,7 +165,9 @@ show_status() {
         local scopes=$(jq -r '.coverage.by_scope // {} | keys[]' "$session" 2>/dev/null)
         if [ -n "$scopes" ]; then
             for scope in $scopes; do
-                local scope_cov=$(jq -r ".coverage.by_scope[\"$scope\"]" "$session")
+                local scope_cov=$(jq -r ".coverage.by_scope[\"$scope\"] // 0" "$session")
+                # Handle null/empty values
+                [ "$scope_cov" = "null" ] || [ -z "$scope_cov" ] && scope_cov=0
                 local bar_width=20
                 local filled=$((scope_cov * bar_width / 100))
                 local bar=$(printf "%${filled}s" | tr ' ' '█')
