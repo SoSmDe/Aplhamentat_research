@@ -9,8 +9,8 @@ Agents (all follow Ralph Pattern: Execute → Save → Clear → Next):
 - PlannerAgent: Task decomposition and coverage management
 - DataAgent: Structured data collection from APIs (Sonnet model)
 - ResearchAgent: Qualitative analysis from web sources (Opus model)
-- AggregatorAgent: Synthesize findings and create recommendations (TODO)
-- ReporterAgent: Generate PDF, Excel, PowerPoint reports (TODO)
+- AggregatorAgent: Synthesize findings and create recommendations (Opus model)
+- ReporterAgent: Generate PDF, Excel, PowerPoint, CSV reports (Opus model)
 """
 
 from src.agents.base import BaseAgent
@@ -19,6 +19,8 @@ from src.agents.brief_builder import BriefBuilderAgent
 from src.agents.planner import PlannerAgent
 from src.agents.data import DataAgent
 from src.agents.research import ResearchAgent
+from src.agents.aggregator import AggregatorAgent
+from src.agents.reporter import ReporterAgent
 
 __all__ = [
     "BaseAgent",
@@ -27,4 +29,6 @@ __all__ = [
     "PlannerAgent",
     "DataAgent",
     "ResearchAgent",
+    "AggregatorAgent",
+    "ReporterAgent",
 ]

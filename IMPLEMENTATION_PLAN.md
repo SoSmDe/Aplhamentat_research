@@ -19,8 +19,8 @@ Build a multi-agent AI research automation system that accepts user queries, con
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Specifications** | ✅ Complete | 5 files in specs/ |
-| **Source Code** | 🔄 Phase 6 Complete | Config + Schemas + Errors/Logging/Retry + Storage + Tools + Base Agent + All Execution Agents |
-| **Tests** | 🔄 In Progress | 530 tests passing |
+| **Source Code** | 🔄 Phase 7 Complete | Config + Schemas + Errors/Logging/Retry + Storage + Tools + Base Agent + All Execution Agents + Aggregator + Reporter |
+| **Tests** | 🔄 In Progress | 592 tests passing |
 | **Frontend** | ❌ Not Started | Placeholder only |
 | **Last Updated** | 2026-01-19 | |
 
@@ -874,22 +874,23 @@ Reference: specs/PROMPTS.md Section 5
 
 ---
 
-## Phase 7: Aggregation & Reporting Agents (HIGH)
+## Phase 7: Aggregation & Reporting Agents (HIGH) ✅ COMPLETE
 
 **Purpose**: Synthesize all results and generate output specifications.
 **Dependencies**: Phase 6
 **Completion Criteria**: Aggregator produces coherent summary, Reporter generates file specs.
+**Status**: Complete (2026-01-19) - 2 agents implemented with 65 tests
 
-### 7.1 Aggregator Agent
+### 7.1 Aggregator Agent ✅ COMPLETE
 Reference: specs/PROMPTS.md Section 6
 
-- [ ] Create `src/agents/aggregator.py`:
-  - [ ] `AggregatorAgent(BaseAgent)`:
+- [x] Create `src/agents/aggregator.py`:
+  - [x] `AggregatorAgent(BaseAgent)`:
     - `agent_name = "aggregator"`
-    - Input: `{"session_id": str, "brief": Brief, "all_data_results": List[DataResult], "all_research_results": List[ResearchResult], "rounds_completed": int}`
+    - Input: `{"session_id": str, "brief": Brief, "data_results": List[DataResult], "research_results": List[ResearchResult], "rounds_completed": int}`
     - Output: `AggregatedResearch`
 
-  - [ ] Process:
+  - [x] Process:
     1. Inventory all results
     2. Map results to Brief scope items
     3. Check for contradictions
@@ -899,20 +900,39 @@ Reference: specs/PROMPTS.md Section 6
     7. Generate recommendation with verdict, confidence, reasoning
     8. Create action items
 
-### 7.2 Reporter Agent
+  - [x] Features implemented:
+    - Pydantic models for structured LLM output (LLMAggregatorOutput, LLMKeyInsight, LLMSection, LLMRecommendation)
+    - Context formatting for brief, data results, and research results
+    - Fallback result generation on LLM failure
+    - Enum conversion with fallback for invalid values
+    - State persistence via SessionManager (DataType.AGGREGATION)
+
+### 7.2 Reporter Agent ✅ COMPLETE
 Reference: specs/PROMPTS.md Section 7
 
-- [ ] Create `src/agents/reporter.py`:
-  - [ ] `ReporterAgent(BaseAgent)`:
+- [x] Create `src/agents/reporter.py`:
+  - [x] `ReporterAgent(BaseAgent)`:
     - `agent_name = "reporter"`
-    - Input: `{"session_id": str, "aggregated_research": AggregatedResearch, "output_formats": List[OutputFormat], "templates": dict, "user_preferences": dict}`
+    - Input: `{"session_id": str, "aggregated": AggregatedResearch, "formats": List[OutputFormat], "brief": Brief (optional)}`
     - Output: `ReportConfig`
 
-  - [ ] Process:
+  - [x] Process:
     1. Analyze aggregated content
-    2. Generate PDF content spec (sections, charts, tables)
-    3. Generate Excel content spec (sheets, columns)
-    4. Generate PPTX content spec (slides, layouts)
+    2. Normalize output formats (string/enum handling)
+    3. Generate content specs for each format via LLM
+    4. Build ReportConfig with format-specific configurations
+    5. Optionally generate actual files via FileGenerator
+
+  - [x] Features implemented:
+    - Pydantic models for structured LLM output (LLMContentSpec, LLMPDFSpec, LLMExcelSpec, LLMPPTXSpec)
+    - Format normalization (strings/enums → OutputFormat)
+    - Fallback content spec generation on LLM failure
+    - FileGenerator integration for actual file creation
+    - State persistence via SessionManager (DataType.REPORT_CONFIG)
+
+### 7.3 Tests ✅ COMPLETE
+- [x] `tests/test_agents/test_aggregator.py` - 28 tests
+- [x] `tests/test_agents/test_reporter.py` - 37 tests
 
 ---
 
