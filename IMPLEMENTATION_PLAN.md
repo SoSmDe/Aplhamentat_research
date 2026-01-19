@@ -19,8 +19,8 @@ Build a multi-agent AI research automation system that accepts user queries, con
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Specifications** | ✅ Complete | 5 files in specs/ |
-| **Source Code** | 🔄 Phase 7 Complete | Config + Schemas + Errors/Logging/Retry + Storage + Tools + Base Agent + All Execution Agents + Aggregator + Reporter |
-| **Tests** | 🔄 In Progress | 592 tests passing |
+| **Source Code** | 🔄 Phase 9 Complete | Config + Schemas + Errors/Logging/Retry + Storage + Tools + All Agents + Orchestrator (ParallelExecutor, ResearchPipeline) |
+| **Tests** | 🔄 In Progress | 648 tests passing |
 | **Frontend** | ❌ Not Started | Placeholder only |
 | **Last Updated** | 2026-01-19 | |
 
@@ -977,21 +977,22 @@ Reference: specs/PROMPTS.md Section 7
 
 ---
 
-## Phase 9: Orchestrator & Pipeline (HIGH)
+## Phase 9: Orchestrator & Pipeline (HIGH) ✅ COMPLETE
 
 **Purpose**: Coordinate all agents and manage the research workflow.
 **Dependencies**: Phase 7
 **Completion Criteria**: Full research pipeline runs from query to reports.
+**Status**: Complete (2026-01-19) - ParallelExecutor + ResearchPipeline with 56 tests
 
-### 9.1 Parallel Executor
+### 9.1 Parallel Executor ✅ COMPLETE
 Reference: specs/ARCHITECTURE.md Section 5
 
-- [ ] Create `src/orchestrator/parallel.py`:
-  - [ ] `ParallelExecutor` class:
+- [x] Create `src/orchestrator/parallel.py`:
+  - [x] `ParallelExecutor` class:
     - `__init__(data_agent: DataAgent, research_agent: ResearchAgent)`
     - `async execute_round(data_tasks: List[DataTask], research_tasks: List[ResearchTask], context: dict, timeout: int = 300) -> Tuple[List[DataResult], List[ResearchResult]]`
 
-  - [ ] Implementation:
+  - [x] Implementation:
     - Use `asyncio.gather()` with `return_exceptions=True`
     - Execute all data tasks concurrently
     - Execute all research tasks concurrently
@@ -999,44 +1000,68 @@ Reference: specs/ARCHITECTURE.md Section 5
     - Collect all questions from results
     - Timeout handling (raise RoundTimeoutError)
 
-### 9.2 Research Pipeline
+  - [x] Custom errors:
+    - `RoundTimeoutError(TransientError)` - Round execution timed out
+    - `TaskExecutionError(RalphError)` - Individual task execution error
+
+  - [x] Features implemented:
+    - Statistics tracking (rounds, tasks, success/failure counts, timeouts)
+    - Failed result creation for error tracking
+    - Question collection from all results
+    - Configurable timeout via config or parameter
+
+### 9.2 Research Pipeline ✅ COMPLETE
 Reference: specs/ARCHITECTURE.md Section 2
 
-- [ ] Create `src/orchestrator/pipeline.py`:
-  - [ ] `ResearchPipeline` class:
+- [x] Create `src/orchestrator/pipeline.py`:
+  - [x] `ResearchPipeline` class:
     - Inject all agents and services
     - State machine implementation
 
-  - [ ] State transitions:
+  - [x] State transitions:
     ```
     CREATED → INITIAL_RESEARCH → BRIEF ↔ (revisions) → PLANNING →
     EXECUTING ↔ REVIEW (loop) → AGGREGATING → REPORTING → DONE
     (Any state → FAILED on error)
     ```
 
-  - [ ] Public methods:
+  - [x] Public methods:
     - `async start_session(user_id: str, initial_query: str) -> Session`
     - `async process_message(session_id: str, content: str) -> SessionResponse`
     - `async approve_brief(session_id: str, modifications: dict = None) -> SessionResponse`
     - `async get_status(session_id: str) -> StatusResponse`
     - `async get_results(session_id: str) -> ResultsResponse`
+    - `async resume_session(session_id: str) -> SessionResponse`
 
-  - [ ] Internal methods:
+  - [x] Internal methods:
     - `async _run_initial_research(session_id: str)`
     - `async _run_brief_building(session_id: str, message: str) -> SessionResponse`
     - `async _run_planning(session_id: str)`
     - `async _run_execution_loop(session_id: str)` - Planner → Execute → Review loop
     - `async _run_aggregation(session_id: str)`
     - `async _run_reporting(session_id: str)`
+    - `async _transition_state(session_id: str, new_status: SessionStatus)`
+    - `async _handle_error(session_id: str, error: Exception)`
 
-  - [ ] Features:
+  - [x] Features:
     - Save state after each operation (Ralph Pattern)
-    - Max 10 rounds enforcement
-    - Max 10 tasks per round enforcement
+    - Max 10 rounds enforcement (MaxRoundsExceededError)
+    - Max 10 tasks per round enforcement (via Planner)
     - Max 100 tasks per session enforcement
     - Error handling and status transitions
     - Session recovery from any state
     - Timeout enforcement per agent (from AGENT_TIMEOUTS config)
+    - VALID_TRANSITIONS constant for state machine validation
+    - InvalidStateTransitionError for invalid transitions
+
+  - [x] Custom errors:
+    - `PipelineError(RalphError)` - Base pipeline error
+    - `InvalidStateTransitionError(PipelineError)` - Invalid state transition
+    - `MaxRoundsExceededError(PipelineError)` - Max rounds exceeded
+
+### 9.3 Tests ✅ COMPLETE
+- [x] `tests/test_orchestrator/test_parallel.py` - 22 tests
+- [x] `tests/test_orchestrator/test_pipeline.py` - 34 tests
 
 ---
 
