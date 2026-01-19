@@ -33,9 +33,9 @@ Determine user preferences by analyzing query and self-answering clarifying ques
 - `html+excel` — Full report + data pack (recommended)
 
 **Auto-answer logic**:
-- If query mentions "print", "archive", "send", "document" → `pdf`
-- If query mentions "data", "spreadsheet", "analyze myself", "raw" → `excel`
-- If query mentions "interactive", "web", "online" → `html`
+- If query mentions "pdf", "PDF", "формат pdf", "format pdf", "print", "archive", "send", "document" → `pdf`
+- If query mentions "data", "spreadsheet", "analyze myself", "raw", "excel", "xlsx" → `excel`
+- If query mentions "interactive", "web", "online", "html" → `html`
 - Default: `html+excel`
 
 ### 3. Report Style

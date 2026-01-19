@@ -60,6 +60,77 @@ Then embed in HTML-to-PDF: `<img src="charts/{chart_id}.png">`
 
 ---
 
+## PDF Generation Workflow (CRITICAL)
+
+**When `output_format: "pdf"` is requested, you MUST generate a PDF file.**
+
+### Step 1: Generate Charts as PNG
+Create Python script `output/generate_charts.py` and run it:
+```python
+import matplotlib.pyplot as plt
+# ... generate all charts as PNG files in output/charts/
+```
+Run: `python output/generate_charts.py`
+
+### Step 2: Generate HTML with embedded images
+Create HTML that uses `<img src="charts/chart_name.png">` instead of Chart.js.
+Save as `output/report.html`
+
+### Step 3: Convert HTML to PDF
+Create and run `output/html_to_pdf.py`:
+```python
+from weasyprint import HTML, CSS
+
+# Custom CSS for PDF (A4 format, print-friendly)
+pdf_css = CSS(string='''
+    @page {
+        size: A4;
+        margin: 20mm 15mm;
+        @bottom-center {
+            content: counter(page) " / " counter(pages);
+            font-size: 10px;
+            color: #666;
+        }
+    }
+    body { font-family: Arial, sans-serif; }
+    .page-break { page-break-before: always; }
+    img { max-width: 100%; height: auto; }
+''')
+
+HTML('output/report.html').write_pdf(
+    'output/report.pdf',
+    stylesheets=[pdf_css]
+)
+print("PDF generated: output/report.pdf")
+```
+
+Run: `python output/html_to_pdf.py`
+
+### Step 4: Verify PDF exists
+```bash
+ls -la output/report.pdf
+```
+
+**If weasyprint is not installed:**
+```bash
+pip install weasyprint
+```
+
+**Alternative: wkhtmltopdf (if weasyprint fails)**
+```bash
+wkhtmltopdf --enable-local-file-access output/report.html output/report.pdf
+```
+
+### PDF Generation Checklist
+- [ ] Charts generated as PNG (not Chart.js)
+- [ ] HTML created with `<img>` tags for charts
+- [ ] html_to_pdf.py script created
+- [ ] Script executed successfully
+- [ ] `output/report.pdf` file exists
+- [ ] PDF opens correctly and shows all content
+
+---
+
 ## Inline Citations Format (CRITICAL)
 
 **EVERY factual claim MUST have a clickable source link inline.**
