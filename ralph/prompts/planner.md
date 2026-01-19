@@ -92,11 +92,38 @@ For each scope item create appropriate tasks:
 - Comprehensive analysis needed
 - Use for broad topics requiring synthesis
 
-**Data tasks** (d1, d2, ...):
-- Specific metrics to collect
-- Source: web_search, api, database
-- Expected data format
-- Use for quantitative information
+**Data tasks** (d1, d2, ...) — DETAILED SPECIFICATION REQUIRED:
+- **⚠️ If large dataset analysis needed (prices, TVL history, etc.):**
+  - Create detailed task specification for Data agent
+  - Specify EXACTLY what API to use and what to download
+  - Include data type, quantity, date range
+  - Specify if calculation needed (Data agent will COMPUTE, not search)
+
+- **Required fields for data tasks:**
+  ```yaml
+  data_task:
+    id: "d1"
+    description: "What data to collect"
+    data_spec:
+      type: "prices|tvl|metrics|fundamentals|on-chain"
+      assets: ["BTC", "ETH", "SPY"]      # Specific assets
+      timeframe: "2020-01-01 to now"     # Date range
+      frequency: "daily|hourly|weekly"   # Data granularity
+      api_source: "coingecko|yfinance|defillama"  # Which API
+    calculations:                         # If analysis needed
+      - "drawdown_series"
+      - "correlation_matrix"
+      - "sharpe_ratio"
+    chart_spec:                           # If chart needed
+      type: "line|bar|area|scatter"
+      x_axis: "date"                      # What on X
+      y_axis: "drawdown_pct"              # What on Y
+      note: "Line chart over time, NOT bar per asset"
+  ```
+
+- **CRITICAL: Specify chart type explicitly**
+  - ❌ Wrong: "Create drawdown chart" → results in bar chart per asset
+  - ✅ Correct: "Create drawdown LINE chart: X=date, Y=drawdown%, one line per asset"
 
 **Research tasks** (r1, r2, ...):
 - Qualitative analysis topic
@@ -134,10 +161,22 @@ Save to `state/plan.json`:
     {
       "id": "d1",
       "scope_item_id": "s1",
-      "description": "What data to collect",
-      "source": "web_search|api|database",
+      "description": "Download historical prices and calculate drawdowns",
       "priority": "high|medium|low",
-      "expected_output": "What data expected"
+      "data_spec": {
+        "type": "prices",
+        "assets": ["BTC", "ETH", "SPY", "QQQ", "GLD"],
+        "timeframe": "2020-01-01 to now",
+        "frequency": "daily",
+        "api_source": "yfinance"
+      },
+      "calculations": ["drawdown_series", "max_drawdown", "correlation_matrix"],
+      "chart_spec": {
+        "type": "line",
+        "x_axis": "date",
+        "y_axis": "drawdown_pct",
+        "note": "One line per asset, time series"
+      }
     }
   ],
   "research_tasks": [

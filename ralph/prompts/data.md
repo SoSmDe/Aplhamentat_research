@@ -2,11 +2,84 @@
 
 ## Role
 Collect structured quantitative data: metrics, numbers, facts.
-**Primary method**: Use `ralph/integrations/` Python APIs for crypto data.
+**Primary method**: Use `ralph/integrations/` Python APIs for data.
+
+---
+
+## ⚠️ CRITICAL RULES
+
+### 1. CALCULATE, Don't Search
+**If analysis requires calculations → CALCULATE from raw data, don't search for pre-calculated values.**
+
+| Need | ❌ Wrong | ✅ Correct |
+|------|----------|-----------|
+| Drawdown | Search "BTC max drawdown 2024" | Download prices → calculate drawdown series |
+| Sharpe ratio | Find "ETH sharpe ratio" | Download returns → calculate Sharpe |
+| Correlation | Search "BTC ETH correlation" | Download prices → compute correlation matrix |
+| CAGR | Find "SPY annual return" | Download prices → calculate CAGR |
+
+### 2. Specify Data Requirements BEFORE Collection
+**Before downloading data, explicitly state:**
+```yaml
+data_requirements:
+  type: "prices|tvl|fundamentals"
+  assets: ["BTC", "ETH", "SPY"]
+  timeframe: "2020-01-01 to 2024-12-31"
+  frequency: "daily"
+  total_datapoints: "~1825 per asset"
+  api: "yfinance"
+```
+
+### 3. Chart Library Selection
+**Before creating ANY chart, select library based on task:**
+
+| Output Format | Library | When to Use |
+|---------------|---------|-------------|
+| HTML report | **Chart.js** | Interactive, web-based, default choice |
+| PDF report | **Matplotlib** | Static PNG images for PDF embedding |
+| Complex analysis | **Plotly** | Multi-axis, 3D, advanced interactivity |
+
+**Default: Chart.js for HTML, Matplotlib for PDF**
+
+### 4. Chart Styling Rules
+
+```yaml
+chart_rules:
+  log_scale:
+    - "If ALL values are positive → use logarithmic Y-axis"
+    - "Especially for: prices, TVL, market cap, cumulative returns"
+    - "Exception: percentages, ratios, already normalized data"
+
+  line_style:
+    - "NO dotted lines → use solid lines only"
+    - "NO markers/points → clean lines"
+    - "Line width: 1.5-2px"
+    - "Different colors per asset, NOT different line styles"
+
+  axes:
+    - "Time series: X = date, Y = value"
+    - "Comparison: X = category, Y = value (use bar chart)"
+    - "Drawdown chart: LINE over time, NOT bars per asset"
+
+  examples:
+    drawdown_correct:
+      type: "line"
+      x: "date"
+      y: "drawdown_pct"
+      note: "One line per asset over time"
+
+    drawdown_wrong:
+      type: "bar"
+      x: "asset_name"
+      y: "max_drawdown"
+      note: "Shows only single value, loses time dimension"
+```
+
+---
 
 ## Input
 - `state/session.json`
-- `state/plan.json` (data_tasks)
+- `state/plan.json` (data_tasks with data_spec)
 - Task from execution.tasks_pending
 
 ## Crypto Data APIs
@@ -84,30 +157,105 @@ balances = etherscan.get_multi_chain_balance("0x...", ["ethereum", "arbitrum", "
 
 ## Process
 
-1. **Parse task**
-   - Determine specific metrics to collect
-   - **Select API from matrix above**
-   - If crypto data → use integrations
-   - If non-crypto → use web search
+### 1. Parse Task and data_spec
+Read `data_spec` from plan.json task:
+```yaml
+# From plan.json:
+data_spec:
+  type: "prices"
+  assets: ["BTC", "ETH", "SPY", "QQQ", "GLD"]
+  timeframe: "2020-01-01 to now"
+  frequency: "daily"
+  api_source: "yfinance"
+calculations: ["drawdown_series", "correlation_matrix"]
+chart_spec:
+  type: "line"
+  x_axis: "date"
+  y_axis: "drawdown_pct"
+```
 
-2. **Collect data**
-   ```python
-   # Run Python to call API
-   from integrations import coingecko
-   data = coingecko.get_price(["bitcoin", "ethereum"])
-   print(data)
-   ```
-   - Extract needed fields
-   - Validate data (not null, reasonable ranges)
+### 2. Select API and Download Data
+Based on `api_source` in data_spec:
 
-3. **Structure output**
-   - Standardize data format
-   - Add metadata (source=API name, timestamp)
-   - Specify units of measurement
+| api_source | Module | Function |
+|------------|--------|----------|
+| `coingecko` | `integrations.crypto.coingecko` | `get_price_history()` |
+| `yfinance` | `integrations.stocks.yfinance_client` | `get_price_history()` |
+| `defillama` | `integrations.crypto.defillama` | `get_historical_tvl()` |
+| `fred` | `integrations.stocks.fred` | `get_series()` |
 
-4. **Generate questions** (optional)
-   - If anomaly found → create question for Research
-   - If data points to interesting fact → note it
+```python
+# Example: Download prices per data_spec
+from integrations.stocks import yfinance_client
+
+assets = ["BTC-USD", "ETH-USD", "SPY", "QQQ", "GLD"]
+prices = {}
+for asset in assets:
+    prices[asset] = yfinance_client.get_price_history(
+        asset,
+        start="2020-01-01",
+        interval="1d"
+    )
+```
+
+### 3. Perform Calculations (if specified)
+**⚠️ CALCULATE from downloaded data, don't search!**
+
+```python
+import pandas as pd
+import numpy as np
+
+# Drawdown calculation
+def calculate_drawdown(prices):
+    cummax = prices.cummax()
+    drawdown = (prices - cummax) / cummax * 100
+    return drawdown
+
+# Correlation matrix
+def calculate_correlation(price_dict):
+    df = pd.DataFrame(price_dict)
+    return df.pct_change().corr()
+
+# Sharpe ratio (annualized)
+def calculate_sharpe(returns, rf=0.05):
+    excess = returns - rf/252
+    return np.sqrt(252) * excess.mean() / excess.std()
+```
+
+### 4. Prepare Chart Data (if chart_spec exists)
+Following chart_spec from task:
+
+```python
+# For drawdown LINE chart (X=date, Y=drawdown%)
+chart_data = {
+    "chart_id": "drawdown_over_time",
+    "chart_type": "line",  # NOT bar!
+    "title": "Portfolio Drawdowns Over Time",
+    "labels": dates,  # X-axis: dates
+    "datasets": [
+        {"label": "BTC", "data": btc_drawdown, "borderColor": "#F7931A"},
+        {"label": "ETH", "data": eth_drawdown, "borderColor": "#627EEA"},
+        {"label": "SPY", "data": spy_drawdown, "borderColor": "#00D632"},
+    ],
+    "options": {
+        "scales": {
+            "y": {"title": "Drawdown %"}
+        },
+        "elements": {
+            "line": {"tension": 0, "borderWidth": 2},  # No curves, solid lines
+            "point": {"radius": 0}  # NO points
+        }
+    }
+}
+```
+
+### 5. Structure Output
+- Save raw data + calculations
+- Save chart_data for Reporter
+- Add metadata
+
+### 6. Generate Questions (optional)
+- If anomaly found → create question for Research
 
 ## Output
 
