@@ -1,21 +1,27 @@
-# PROJECT_MAP.md (Post-Refactoring)
+# PROJECT_MAP.md
 
 ## Claude Code Native Workflow
 
-После рефакторинга проект работает напрямую через Claude Code:
+Проект Ralph работает напрямую через Claude Code:
 - Встроенный `web_search` tool для исследований
-- State сохраняется в JSON файлах
-- Отчеты генерируются через Claude Code
+- State сохраняется в JSON файлах (state/)
+- Отчеты генерируются через Claude Code (output/)
+- Пайплайн описан в PROMPT.md
+
+---
 
 ## Дерево файлов проекта
 
 ```
 ralph/
-├── main.py                          # FastAPI (legacy, опционально)
-├── PROMPT.md                        # Главный промпт пайплайна
-├── loop.sh                          # Скрипт запуска
-├── requirements.txt                 # Python зависимости
-├── CLAUDE.md                        # Инструкции для Claude Code
+├── PROMPT.md                        # 265 строк — Главный промпт пайплайна
+├── PROMPT_build.md                  # 19 строк — Промпт для сборки
+├── PROMPT_plan.md                   # 19 строк — Промпт для планирования
+├── loop.sh                          # 178 строк — Скрипт запуска
+├── main.py                          # 360 строк — FastAPI (legacy)
+├── requirements.txt                 # 37 строк — Python зависимости
+├── CLAUDE.md                        # 128 строк — Инструкции для Claude Code
+├── AGENTS.md                        # 32 строки — Build & Run инструкции
 ├── PROJECT_MAP.md                   # Этот файл
 │
 ├── state/                           # Состояние исследования (JSON)
@@ -36,191 +42,134 @@ ralph/
 │   ├── report.xlsx
 │   └── report.pptx
 │
-├── src/
-│   ├── __init__.py
+├── src/                             # 1,583 строки
+│   ├── __init__.py                  # 16 строк
 │   │
-│   ├── agents/                      # AI Агенты (prompt-driven)
-│   │   ├── __init__.py              # 57 строк
-│   │   ├── base.py                  # 386 строк - StateManager, BaseAgent
-│   │   ├── initial_research.py      # 144 строки
-│   │   ├── brief_builder.py         # 169 строк
-│   │   ├── planner.py               # 202 строки
-│   │   ├── data.py                  # 164 строки
-│   │   ├── research.py              # 183 строки
-│   │   ├── aggregator.py            # 201 строка
-│   │   └── reporter.py              # 192 строки
+│   ├── prompts/                     # 667 строк — Системные промпты агентов
+│   │   ├── initial_research.md      # 54 строки
+│   │   ├── brief_builder.md         # 91 строка
+│   │   ├── planner.md               # 107 строк
+│   │   ├── data.md                  # 78 строк
+│   │   ├── research.md              # 89 строк
+│   │   ├── aggregator.md            # 119 строк
+│   │   └── reporter.md              # 129 строк
 │   │
-│   ├── api/                         # FastAPI (опционально)
-│   │   ├── __init__.py
-│   │   ├── routes.py                # 585 строк
-│   │   ├── schemas.py               # 788 строк - Pydantic модели
-│   │   └── dependencies.py          # 140 строк
-│   │
-│   ├── tools/                       # Инструменты (минимальный набор)
-│   │   ├── __init__.py              # 107 строк
-│   │   ├── errors.py                # 570 строк - Иерархия ошибок
-│   │   ├── logging.py               # 253 строки
-│   │   └── db_client.py             # 573 строки
-│   │
-│   ├── storage/                     # Хранение данных
-│   │   ├── __init__.py
-│   │   ├── database.py              # 443 строки
-│   │   ├── session.py               # 813 строк
-│   │   └── files.py                 # 418 строк
-│   │
-│   ├── config/                      # Конфигурация
-│   │   ├── __init__.py
-│   │   ├── settings.py              # 158 строк
-│   │   ├── models.py                # 56 строк
-│   │   └── timeouts.py              # 104 строки
-│   │
-│   ├── prompts/                     # Системные промпты агентов
-│   │   ├── aggregator.md
-│   │   ├── brief_builder.md
-│   │   ├── data.md
-│   │   ├── initial_research.md
-│   │   ├── planner.md
-│   │   ├── reporter.md
-│   │   └── research.md
-│   │
-│   └── templates/                   # Шаблоны отчетов
-│       └── pdf/
-│           └── report.html          # Jinja2 шаблон PDF
+│   └── templates/                   # 883 строки — Шаблоны отчетов
+│       ├── pdf/
+│       │   └── report.html          # 748 строк — Jinja2 шаблон PDF
+│       ├── excel/
+│       │   └── README.md            # 61 строка
+│       └── pptx/
+│           └── README.md            # 74 строки
 │
-├── specs/                           # Документация
-│   ├── README.md
-│   ├── ralph_prd.md
-│   ├── ARCHITECTURE.md
-│   ├── DATA_SCHEMAS.md
-│   └── PROMPTS.md
+├── specs/                           # 5,924 строки — Документация
+│   ├── README.md                    # 290 строк
+│   ├── ralph_prd.md                 # 1,254 строки — PRD
+│   ├── ARCHITECTURE.md              # 1,353 строки
+│   ├── DATA_SCHEMAS.md              # 1,482 строки
+│   └── PROMPTS.md                   # 1,545 строк
 │
-└── tests/                           # Тесты
-    ├── test_agents/
-    ├── test_api/
-    ├── test_storage/
-    └── test_tools/                  # Только errors, logging, db_client
+└── tests/                           # Тесты (требуют обновления)
+    ├── conftest.py
+    ├── test_agents/                 # Тесты удаленных агентов
+    ├── test_api/                    # Тесты удаленного API
+    ├── test_orchestrator/           # Тесты удаленного оркестратора
+    ├── test_storage/                # Тесты удаленного storage
+    └── test_tools/                  # Частично актуальны
 ```
 
 ---
 
-## Удаленные файлы (Claude Code делает это нативно)
+## Описание файлов
 
-| Файл | Строк | Причина удаления |
-|------|-------|------------------|
-| `src/tools/llm.py` | 620 | Claude Code = Claude API |
-| `src/tools/web_search.py` | 589 | Встроенный web_search tool |
-| `src/tools/api_client.py` | 635 | Claude делает HTTP напрямую |
-| `src/tools/retry.py` | 653 | Claude обрабатывает retry |
-| `src/tools/file_generator.py` | 885 | Claude генерирует файлы |
-| `src/orchestrator/pipeline.py` | 1131 | Логика в PROMPT.md |
-| `src/orchestrator/parallel.py` | 568 | Не нужен для Claude Code |
-| **Итого удалено** | **~5,081** | |
-
----
-
-## Описание файлов по модулям
-
-### Корневые файлы
+### Корневые файлы (1,038 строк)
 
 | Файл | Строк | Описание |
 |------|-------|----------|
-| `PROMPT.md` | ~250 | Главный промпт пайплайна Ralph для Claude Code |
-| `loop.sh` | ~180 | Скрипт запуска и управления итерациями |
-| `main.py` | 360 | FastAPI приложение (опционально, для веб-интерфейса) |
+| `PROMPT.md` | 265 | Главный промпт пайплайна Ralph для Claude Code |
+| `PROMPT_build.md` | 19 | Промпт для сборки проекта |
+| `PROMPT_plan.md` | 19 | Промпт для планирования |
+| `loop.sh` | 178 | Скрипт запуска и управления итерациями |
+| `main.py` | 360 | FastAPI приложение (legacy, для веб-интерфейса) |
+| `requirements.txt` | 37 | Python зависимости |
+| `CLAUDE.md` | 128 | Инструкции для Claude Code |
+| `AGENTS.md` | 32 | Build & Run инструкции |
 
 ---
 
-### src/agents/ — AI Агенты (Claude Code Native)
-
-**Всего: ~1,698 строк** (было 5,155)
-
-| Файл | Строк | Описание | Ключевые классы |
-|------|-------|----------|-----------------|
-| `base.py` | 386 | StateManager для JSON state, BaseAgent с промптами | `StateManager`, `BaseAgent`, `StateFiles` |
-| `initial_research.py` | 144 | Быстрый сбор контекста через web_search | `InitialResearchAgent`, `InitialResearchOutput` |
-| `brief_builder.py` | 169 | Интерактивный диалог для спецификации | `BriefBuilderAgent`, `BriefOutput` |
-| `planner.py` | 202 | Декомпозиция на задачи, проверка покрытия | `PlannerAgent`, `PlanOutput`, `CoverageCheckOutput` |
-| `data.py` | 164 | Сбор структурированных данных | `DataAgent`, `DataResultsOutput` |
-| `research.py` | 183 | Качественный анализ через web_search | `ResearchAgent`, `ResearchResultsOutput` |
-| `aggregator.py` | 201 | Синтез и рекомендации | `AggregatorAgent`, `AggregationOutput` |
-| `reporter.py` | 192 | Генерация PDF/Excel/PPTX | `ReporterAgent`, `ReporterOutput` |
-
----
-
-### src/tools/ — Инструменты (минимальный набор)
-
-**Всего: ~1,503 строки** (было 5,778)
+### src/prompts/ — Системные промпты агентов (667 строк)
 
 | Файл | Строк | Описание |
 |------|-------|----------|
-| `errors.py` | 570 | Иерархия ошибок (TransientError, PermanentError, SystemError) |
-| `logging.py` | 253 | Structured logging через structlog |
-| `db_client.py` | 573 | Read-only клиент БД для внешних данных |
-| `__init__.py` | 107 | Экспорты |
+| `initial_research.md` | 54 | Быстрый сбор контекста, парсинг запроса |
+| `brief_builder.md` | 91 | Интерактивный диалог для формирования ТЗ |
+| `planner.md` | 107 | Декомпозиция на задачи, проверка покрытия |
+| `data.md` | 78 | Сбор структурированных данных через API |
+| `research.md` | 89 | Качественный анализ через web_search |
+| `aggregator.md` | 119 | Синтез находок и формирование рекомендаций |
+| `reporter.md` | 129 | Генерация PDF/Excel/PPTX отчетов |
 
 ---
 
-### src/api/ — API Layer (опционально)
-
-**Всего: 1,524 строки**
+### src/templates/ — Шаблоны отчетов (883 строки)
 
 | Файл | Строк | Описание |
 |------|-------|----------|
-| `routes.py` | 585 | FastAPI endpoints (если нужен веб-интерфейс) |
-| `schemas.py` | 788 | 50+ Pydantic моделей — структуры данных |
-| `dependencies.py` | 140 | Dependency Injection |
+| `pdf/report.html` | 748 | Jinja2 шаблон для PDF (WeasyPrint) |
+| `excel/README.md` | 61 | Документация Excel шаблонов |
+| `pptx/README.md` | 74 | Документация PowerPoint шаблонов |
 
 ---
 
-### src/storage/ — Хранение данных
-
-**Всего: 1,688 строк**
+### specs/ — Документация (5,924 строки)
 
 | Файл | Строк | Описание |
 |------|-------|----------|
-| `database.py` | 443 | Async SQLite (для веб-интерфейса) |
-| `session.py` | 813 | SessionManager для SQLite state |
-| `files.py` | 418 | Управление файлами отчетов |
-
----
-
-### templates/ — Шаблоны
-
-| Файл | Описание |
-|------|----------|
-| `templates/pdf/report.html` | Jinja2 шаблон для PDF отчетов (WeasyPrint) |
+| `README.md` | 290 | Обзор проекта |
+| `ralph_prd.md` | 1,254 | Product Requirements Document |
+| `ARCHITECTURE.md` | 1,353 | Техническая архитектура |
+| `DATA_SCHEMAS.md` | 1,482 | JSON Schema и TypeScript типы |
+| `PROMPTS.md` | 1,545 | Системные промпты (справка) |
 
 ---
 
 ## Сводная статистика
 
-### До рефакторинга
 | Метрика | Значение |
 |---------|----------|
-| Всего строк (src/) | ~16,254 |
-| Файлов .py | ~35 |
+| Всего строк (активный код) | ~2,621 |
+| src/ | 1,583 строки |
+| Корневые файлы | 1,038 строк |
+| specs/ (документация) | 5,924 строки |
+| **Экономия vs оригинал** | **~84%** |
 
-### После рефакторинга
-| Метрика | Значение |
-|---------|----------|
-| Всего строк (src/) | ~8,300 |
-| Файлов .py | ~25 |
-| **Экономия** | **~49%** |
-
-### Распределение по модулям (после)
+### Распределение по модулям
 
 | Модуль | Строк | % |
 |--------|-------|---|
-| `agents/` | 1,698 | 20% |
-| `tools/` | 1,503 | 18% |
-| `storage/` | 1,688 | 20% |
-| `api/` | 1,524 | 18% |
-| `config/` | 369 | 5% |
-| Прочее | ~1,500 | 19% |
+| `PROMPT*.md` | 303 | 12% |
+| `src/prompts/` | 667 | 25% |
+| `src/templates/` | 883 | 34% |
+| `loop.sh + main.py` | 538 | 20% |
+| Прочее | 230 | 9% |
 
 ---
 
-## Архитектура Claude Code Workflow
+## Удаленные модули (Claude Code делает это нативно)
+
+| Модуль | Строк | Причина |
+|--------|-------|---------|
+| `src/agents/` | ~1,700 | Логика в PROMPT.md + src/prompts/ |
+| `src/api/` | ~1,500 | FastAPI не нужен для Claude Code |
+| `src/tools/` | ~1,500 | Claude Code имеет web_search, file ops |
+| `src/storage/` | ~1,700 | State через JSON файлы |
+| `src/config/` | ~370 | Конфигурация не нужна |
+| `src/orchestrator/` | ~1,700 | Логика в PROMPT.md |
+| **Итого** | **~8,470** | |
+
+---
+
+## Архитектура
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -231,7 +180,7 @@ ralph/
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Claude Code                              │
-│   Читает PROMPT.md, выполняет пайплайн                     │
+│   Читает PROMPT.md + src/prompts/*.md                      │
 └─────────────────────────┬───────────────────────────────────┘
                           │
           ┌───────────────┼───────────────┐
@@ -297,4 +246,4 @@ Reporter (→ output/report.*)
 
 ---
 
-*Документ обновлен: 2026-01-19 (после рефакторинга для Claude Code)*
+*Документ обновлен: 2026-01-19*
