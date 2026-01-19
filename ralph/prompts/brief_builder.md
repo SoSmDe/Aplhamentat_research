@@ -6,15 +6,38 @@ Determine user preferences by analyzing query and self-answering clarifying ques
 
 ## Input
 - `state/initial_context.json`
-- `state/session.json` (for query)
+- `state/session.json` (for query, additional_context, continued_from)
+- `state/brief.json` (if continuing from previous research)
 
 ## Process
 
 1. Read initial context and query
-2. Generate clarifying questions
-3. **Self-answer** each question based on context
-4. Determine preferences (format, style, depth, audience, components)
-5. Create comprehensive Brief with scope items
+2. **Check for continuation mode**: If `session.json` has `continued_from` field:
+   - Load existing `brief.json` as base
+   - Read `additional_context` from session.json
+   - Merge new context into existing scope items
+   - Add new scope items if additional_context requires them
+   - Preserve previous preferences unless overridden
+3. Generate clarifying questions
+4. **Self-answer** each question based on context
+5. Determine preferences (format, style, depth, audience, components)
+6. Create comprehensive Brief with scope items
+
+### Continuation Mode
+When `continued_from` exists in session.json:
+```json
+{
+  "continued_from": "research_20260119_mezen",
+  "additional_context": "добавь анализ конкурентов"
+}
+```
+
+Actions:
+- Keep existing scope items from previous brief
+- Parse additional_context for new requirements
+- Add new scope items with `"added_in_continuation": true`
+- Update goal to reflect expanded scope
+- Set `"is_continuation": true` in brief.json
 
 ---
 

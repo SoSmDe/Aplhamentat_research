@@ -40,6 +40,7 @@ Ralph Deep Research - State Machine Runner
 Usage:
     ./loop.sh "Your research query"     Start new research
     ./loop.sh --resume [folder]         Resume (latest if no folder)
+    ./loop.sh --continue <folder> "ctx" Continue research with new context
     ./loop.sh --status [folder]         Show detailed status with progress
     ./loop.sh --list                    List all research folders
     ./loop.sh --search <query>          Search by tags, entities, query text
@@ -48,8 +49,8 @@ Usage:
 
 Examples:
     ./loop.sh "Analyze Tesla stock"
+    ./loop.sh --continue research_20260119_mezen "добавь анализ конкурентов"
     ./loop.sh --search "investment"
-    ./loop.sh --search "reit"
     ./loop.sh --status
 
 Phases:
@@ -312,6 +313,66 @@ set_phase() {
     log_success "Phase set to: $phase"
 }
 
+continue_research() {
+    local source_folder="$1"
+    local additional_context="$2"
+
+    # Validate source folder
+    [ -z "$source_folder" ] && { log_error "Usage: --continue <folder> [additional_context]"; exit 1; }
+    [ ! -d "$source_folder" ] && { log_error "Folder not found: $source_folder"; exit 1; }
+    [ ! -f "$source_folder/state/session.json" ] && { log_error "No session.json in $source_folder"; exit 1; }
+
+    # Determine new folder name with version suffix
+    local base_name=$(echo "$source_folder" | sed 's/_v[0-9]*$//')
+    local version=2
+    while [ -d "${base_name}_v${version}" ]; do
+        version=$((version + 1))
+    done
+    local new_folder="${base_name}_v${version}"
+
+    log_info "Continuing research: $source_folder → $new_folder"
+
+    # Copy entire folder
+    cp -r "$source_folder" "$new_folder"
+
+    # Update session.json with new context and reset phase
+    local session="$new_folder/state/session.json"
+    local original_query=$(jq -r '.query' "$session")
+
+    # Add additional_context field and reset to brief_builder phase
+    if [ -n "$additional_context" ]; then
+        jq --arg ctx "$additional_context" \
+           --arg id "$new_folder" \
+           --arg ts "$(date -Iseconds)" \
+           '.id = $id |
+            .additional_context = $ctx |
+            .phase = "brief_builder" |
+            .continued_from = .id |
+            .updated_at = $ts' "$session" > tmp.json
+        mv tmp.json "$session"
+        log_info "Additional context: $additional_context"
+    else
+        jq --arg id "$new_folder" \
+           --arg ts "$(date -Iseconds)" \
+           '.id = $id |
+            .phase = "brief_builder" |
+            .continued_from = .id |
+            .updated_at = $ts' "$session" > tmp.json
+        mv tmp.json "$session"
+    fi
+
+    # Clear output folder for fresh generation
+    rm -rf "$new_folder/output/"*
+    mkdir -p "$new_folder/output"
+
+    log_success "Created: $new_folder"
+    log_info "Phase reset to: brief_builder"
+    log_info "Previous results preserved in: state/, results/, questions/"
+
+    # Return the new folder name for run_loop
+    echo "$new_folder"
+}
+
 initialize() {
     local folder="$1"
     local query="$2"
@@ -428,6 +489,12 @@ main() {
         --resume)
             folder="${2:-$(find_latest_research)}"
             [ -z "$folder" ] || [ ! -d "$folder" ] && { log_error "No research to resume"; exit 1; }
+            query=$(jq -r '.query' "$folder/state/session.json")
+            run_loop "$folder" "$query"
+            ;;
+        --continue)
+            [ -z "$2" ] && { log_error "Usage: --continue <folder> [additional_context]"; exit 1; }
+            folder=$(continue_research "$2" "$3")
             query=$(jq -r '.query' "$folder/state/session.json")
             run_loop "$folder" "$query"
             ;;
