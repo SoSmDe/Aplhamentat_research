@@ -45,6 +45,58 @@ Use inline clickable citations throughout the report.
 | PDF report | **Matplotlib** | Static PNG images for PDF |
 | Complex analysis | **Plotly** | Multi-axis, 3D, advanced |
 
+### ⚠️ Metric Cards Structure (CRITICAL)
+
+**Правильная структура карточки метрики:**
+
+```
+┌─────────────────┐
+│     155%¹       │  ← Значение + источник (superscript)
+│  BTC Ann. Return│  ← Название метрики внизу
+└─────────────────┘
+```
+
+**HTML структура:**
+```html
+<div class="metric-card">
+    <div class="metric-value">
+        155%<sup><a href="#source-1" class="citation">[1]</a></sup>
+    </div>
+    <div class="metric-label">BTC Ann. Return</div>
+</div>
+```
+
+**CSS:**
+```css
+.metric-card {
+    text-align: center;
+    padding: 20px;
+}
+.metric-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a365d;
+}
+.metric-value sup {
+    font-size: 12px;
+    font-weight: 400;
+}
+.metric-label {
+    font-size: 14px;
+    color: #666;
+    margin-top: 8px;
+}
+```
+
+**❌ Неправильно:**
+```html
+<div class="metric-label">BTC Ann. Return</div>  <!-- название сверху -->
+<div class="metric-value">155%</div>
+<div class="metric-citation">[1]</div>           <!-- источник отдельно внизу -->
+```
+
+---
+
 ### ⚠️ Typography Rules (CRITICAL)
 
 **4 основных размера шрифта:**
