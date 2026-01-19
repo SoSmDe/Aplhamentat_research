@@ -425,3 +425,190 @@ from integrations.stocks.fred import get_macro_dashboard
 | Insider trading | - | finnhub, sec_edgar |
 | Macro/rates | - | fred |
 | On-chain SQL | dune | - |
+
+---
+
+# Part 3: Research & Consulting APIs
+
+Location: `ralph/integrations/research/`
+
+## Decision Matrix
+
+| Data Need | Primary API | Fallback | Notes |
+|-----------|-------------|----------|-------|
+| GDP data | World Bank | IMF | World Bank has historical |
+| GDP forecasts | IMF | - | WEO forecasts |
+| Inflation data | World Bank | FRED | Historical |
+| Inflation forecast | IMF | - | WEO forecasts |
+| Country comparison | World Bank | - | 200+ countries |
+| Industry research | Deloitte RSS | McKinsey | Deloitte has RSS |
+| Tech trends | Deloitte | McKinsey | Annual reports |
+| Market outlook | Goldman | McKinsey | Top of Mind series |
+| Strategy research | McKinsey | BCG | MGI reports |
+
+## API Selection by Research Topic
+
+### Macro Economic Research
+```
+Primary: World Bank (historical data)
+         IMF (forecasts)
+
+Use World Bank for:
+- GDP, population, inflation history
+- Country comparisons
+- Development indicators
+- Trade statistics
+
+Use IMF for:
+- Economic outlook forecasts
+- GDP growth projections
+- Inflation forecasts
+- Government debt analysis
+```
+
+### Industry Research
+```
+Primary: Deloitte (RSS feeds - easy access)
+         McKinsey (MGI, industry insights)
+         Goldman (market analysis)
+
+Use Deloitte for:
+- Tech Trends reports
+- CFO Signals survey
+- Industry outlooks
+- Quick category browsing via RSS
+
+Use McKinsey for:
+- Deep industry analysis
+- Strategy frameworks
+- MGI macro research
+
+Use Goldman for:
+- Market outlook
+- Top of Mind series (flagship)
+- Economic analysis
+```
+
+## Rate Limits & Costs
+
+| API | Rate Limit | API Key | Cost |
+|-----|------------|---------|------|
+| World Bank | Fair use | No | Free |
+| IMF | Fair use | No | Free |
+| Deloitte RSS | Fair use | No | Free |
+| McKinsey | Web scraping | No | Free (public) |
+| Goldman | Web scraping | No | Free (public) |
+
+## Quick Examples
+
+### "Get macro data"
+```python
+from integrations.research import worldbank, imf
+
+# World Bank historical data
+gdp = worldbank.get_indicator("gdp", country="USA")
+profile = worldbank.get_country_profile("USA")
+
+# IMF forecasts
+outlook = imf.get_economic_outlook("USA")
+growth = imf.get_global_growth_forecast()
+```
+
+### "Get industry research"
+```python
+from integrations.research import deloitte, aggregator
+
+# Deloitte latest via RSS
+tech_articles = deloitte.get_latest("tech", limit=10)
+finance_articles = deloitte.get_latest("finance", limit=10)
+
+# Multi-source search
+results = aggregator.get_industry_research("technology")
+```
+
+### "Search consulting research"
+```python
+from integrations.research import aggregator
+
+# Get web search queries for all sources
+queries = aggregator.get_web_search_queries("AI productivity")
+# Returns: [
+#   {"source": "mckinsey", "query": "site:mckinsey.com AI productivity"},
+#   {"source": "deloitte", "query": "site:deloitte.com/insights AI productivity"},
+#   {"source": "goldman", "query": "site:goldmansachs.com/insights AI productivity"},
+# ]
+
+# Build research brief
+brief = aggregator.build_research_brief("artificial intelligence", country="USA")
+```
+
+### "Compare countries"
+```python
+from integrations.research import worldbank
+
+# Compare GDP across countries
+comparison = worldbank.compare_countries(
+    countries=["USA", "CHN", "JPN", "DEU"],
+    indicator="gdp_growth"
+)
+
+# Get GDP ranking
+top_20 = worldbank.get_gdp_ranking(limit=20)
+```
+
+## Common Mistakes to Avoid
+
+1. **Don't scrape McKinsey for data** - Use for research guidance, WebSearch for content
+2. **Don't use IMF for historical** - Use World Bank (more complete history)
+3. **Don't skip Deloitte RSS** - Easiest access to consulting insights
+4. **Don't expect full reports** - Most consulting content is summaries/teasers
+
+## API Availability
+
+| API | Requires API Key | Works Without Key |
+|-----|------------------|-------------------|
+| World Bank | No | Yes (full API) |
+| IMF | No | Yes (full API) |
+| Deloitte | No | Yes (RSS feeds) |
+| McKinsey | No | Web search only |
+| Goldman | No | Web search only |
+
+## Import Pattern
+```python
+# Import research modules
+from integrations.research import worldbank, imf, deloitte, mckinsey, goldman, aggregator
+
+# Or import specific function
+from integrations.research.worldbank import get_country_profile
+from integrations.research.aggregator import build_research_brief
+```
+
+---
+
+# Complete API Selection Guide
+
+## By Data Type
+
+| Data Type | Best Source | Module |
+|-----------|-------------|--------|
+| Crypto prices | CoinGecko | `integrations.coingecko` |
+| Stock prices | yfinance | `integrations.stocks.yfinance_client` |
+| DeFi TVL | DefiLlama | `integrations.defillama` |
+| L2 security | L2Beat | `integrations.l2beat` |
+| Macro rates | FRED | `integrations.stocks.fred` |
+| GDP/country data | World Bank | `integrations.research.worldbank` |
+| Economic forecasts | IMF | `integrations.research.imf` |
+| Industry research | Deloitte | `integrations.research.deloitte` |
+| Strategy research | McKinsey | `integrations.research.mckinsey` |
+| Market outlook | Goldman | `integrations.research.goldman` |
+
+## By Research Topic
+
+| Topic | Primary Sources |
+|-------|-----------------|
+| Crypto/DeFi analysis | coingecko, defillama, l2beat, dune |
+| Stock analysis | yfinance, finnhub, sec_edgar, fmp |
+| Macro economics | fred, worldbank, imf |
+| Industry trends | deloitte, mckinsey, goldman |
+| Company fundamentals | yfinance, sec_edgar |
+| Market sentiment | finnhub (news), goldman (outlook) |
