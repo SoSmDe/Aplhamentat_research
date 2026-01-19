@@ -1,6 +1,12 @@
-# Crypto Data Sources Guide for Ralph Agents
+# Data Sources Guide for Ralph Agents
 
 Quick reference for selecting the right API for each data type.
+
+---
+
+# Part 1: Crypto Data APIs
+
+Location: `ralph/integrations/`
 
 ## Decision Matrix
 
@@ -187,3 +193,235 @@ from integrations import defillama, l2beat, coingecko, etherscan, thegraph, dune
 # Or import specific module
 from integrations.defillama import get_l2_comparison
 ```
+
+---
+
+# Part 2: Stock Market APIs
+
+Location: `ralph/integrations/stocks/`
+
+## Decision Matrix
+
+| Data Need | Primary API | Fallback | Notes |
+|-----------|-------------|----------|-------|
+| Stock prices | yfinance | FMP | yfinance is free, no key |
+| Price history | yfinance | Alpha Vantage | yfinance has 20+ years |
+| Fundamentals | yfinance | FMP | P/E, Market Cap, ratios |
+| Financial statements | yfinance | SEC EDGAR | Income, Balance, Cashflow |
+| Real-time quotes | Finnhub | FMP | Finnhub is faster |
+| Company news | Finnhub | - | With dates and source |
+| Insider trading | Finnhub | SEC EDGAR | Form 4 filings |
+| Analyst ratings | Finnhub | yfinance | Price targets, recommendations |
+| SEC filings | SEC EDGAR | FMP | Official 10-K, 10-Q, 8-K |
+| Macro data | FRED | - | Rates, inflation, GDP |
+| DCF valuation | FMP | - | Ready-made model |
+| Stock screener | FMP | - | Filter by criteria |
+
+## API Selection by Research Topic
+
+### Company Analysis
+```
+Primary: yfinance (fundamentals, financials)
+         Finnhub (news, insider trading)
+         SEC EDGAR (official filings)
+
+Use yfinance for:
+- Price history (daily, weekly, monthly)
+- Fundamentals (P/E, Market Cap, ratios)
+- Financial statements (Income, Balance, Cashflow)
+- Dividends and yields
+- Analyst recommendations
+
+Use Finnhub for:
+- Real-time quotes
+- Company news with dates
+- Insider trading activity
+- Analyst price targets
+```
+
+### Valuation Analysis
+```
+Primary: yfinance (financials for your own model)
+         FMP (ready DCF valuation)
+
+Use yfinance for:
+- Raw financial data for custom models
+- Historical price data
+- Comparable company data
+
+Use FMP for:
+- Pre-calculated DCF value
+- All financial ratios at once
+- Quick valuation check
+```
+
+### Macro/Economic Analysis
+```
+Primary: FRED (all macro data)
+
+Use FRED for:
+- Federal Funds Rate
+- Treasury yields (2Y, 10Y, 30Y)
+- Yield curve (recession indicator!)
+- Inflation (CPI, PCE)
+- Unemployment rate
+- GDP growth
+- VIX (volatility)
+```
+
+### Stock Discovery
+```
+Primary: FMP (stock screener)
+
+Use FMP screener for:
+- Filter by market cap
+- Filter by P/E ratio
+- Filter by dividend yield
+- Filter by sector/industry
+- Find value stocks
+- Find growth stocks
+```
+
+## Rate Limits & Costs
+
+| API | Rate Limit | API Key | Cost |
+|-----|------------|---------|------|
+| yfinance | ~2000/hour | No | Free |
+| Finnhub | 60/min | Required | Free tier |
+| FRED | 120/min | Required | Free |
+| SEC EDGAR | 10/sec | No | Free |
+| FMP | 250/day | Required | Free tier |
+
+## Quick Examples
+
+### "Get stock fundamentals"
+```python
+from integrations.stocks import yfinance_client
+
+# Company overview
+info = yfinance_client.get_stock_info("AAPL")
+# Returns: name, sector, P/E, market_cap, dividend_yield, etc.
+
+# Financial statements
+financials = yfinance_client.get_financials("AAPL")
+# Returns: income_statement, balance_sheet, cash_flow
+```
+
+### "Get stock news and sentiment"
+```python
+from integrations.stocks import finnhub
+
+# Company news
+news = finnhub.get_company_news("AAPL")
+
+# Insider trading
+insiders = finnhub.get_insider_transactions("AAPL")
+
+# Analyst price targets
+targets = finnhub.get_price_target("AAPL")
+```
+
+### "Get macro data"
+```python
+from integrations.stocks import fred
+
+# Macro dashboard
+macro = fred.get_macro_dashboard()
+# Returns: fed_funds_rate, treasury_10y, unemployment, vix
+
+# Yield curve status (recession indicator!)
+yc = fred.get_yield_curve_status()
+# Returns: spread, is_inverted, status
+
+# Interest rates
+rates = fred.get_interest_rates()
+```
+
+### "Get SEC filings"
+```python
+from integrations.stocks import sec_edgar
+
+# Get 10-K annual reports
+filings_10k = sec_edgar.get_10k_filings("AAPL")
+
+# Get company facts (structured financial data)
+facts = sec_edgar.get_company_facts("AAPL")
+
+# Get revenue history from filings
+revenue = sec_edgar.get_revenue_history("AAPL")
+```
+
+### "Valuation and screening"
+```python
+from integrations.stocks import fmp
+
+# DCF valuation
+dcf = fmp.get_dcf("AAPL")
+# Returns: intrinsic value per share
+
+# All financial ratios
+ratios = fmp.get_ratios_ttm("AAPL")
+
+# Screen for value stocks
+stocks = fmp.screen_stocks(
+    sector="Technology",
+    pe_max=15,
+    dividend_min=0.02,
+    market_cap_min=1e9
+)
+```
+
+### "Compare multiple stocks"
+```python
+from integrations.stocks import yfinance_client
+
+# Compare FAANG stocks
+faang = ["META", "AAPL", "AMZN", "NFLX", "GOOGL"]
+comparison = yfinance_client.compare_stocks(faang, period="1y")
+# Returns: prices, normalized (to 100), returns
+```
+
+## Common Mistakes to Avoid
+
+1. **Don't use FMP for price history** - Use yfinance (free, more data)
+2. **Don't use yfinance for real-time** - Use Finnhub (faster)
+3. **Don't use Finnhub for financials** - Use yfinance (more complete)
+4. **Don't use FMP for macro** - Use FRED (official source)
+5. **Don't guess SEC data** - Use SEC EDGAR (official source)
+
+## API Availability
+
+| API | Requires API Key | Works Without Key |
+|-----|------------------|-------------------|
+| yfinance | No | Yes (full access) |
+| Finnhub | Yes | No |
+| FRED | Yes | No |
+| SEC EDGAR | No | Yes (full access) |
+| FMP | Yes | No |
+
+## Import Pattern
+```python
+# Import stock modules
+from integrations.stocks import yfinance_client, finnhub, fred, sec_edgar, fmp
+
+# Or import specific function
+from integrations.stocks.yfinance_client import get_stock_info
+from integrations.stocks.fred import get_macro_dashboard
+```
+
+---
+
+# Choosing Between Crypto and Stock APIs
+
+| Research Topic | Use Crypto APIs | Use Stock APIs |
+|----------------|-----------------|----------------|
+| Bitcoin/Ethereum price | coingecko | - |
+| AAPL/MSFT price | - | yfinance |
+| DeFi protocols | defillama, thegraph | - |
+| Public companies | - | yfinance, sec_edgar |
+| L2 rollups | l2beat, defillama | - |
+| REITs | - | yfinance, fmp |
+| Wallet analysis | etherscan | - |
+| Insider trading | - | finnhub, sec_edgar |
+| Macro/rates | - | fred |
+| On-chain SQL | dune | - |
