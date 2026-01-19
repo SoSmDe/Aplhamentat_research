@@ -45,6 +45,33 @@ Use inline clickable citations throughout the report.
 | PDF report | **Matplotlib** | Static PNG images for PDF |
 | Complex analysis | **Plotly** | Multi-axis, 3D, advanced |
 
+### ⚠️ Typography Rules (CRITICAL)
+
+**4 основных размера шрифта:**
+
+| Level | Size | Usage |
+|-------|------|-------|
+| **H1** | 28-32px | Заголовок отчёта, название исследования |
+| **H2** | 20-24px | Структурные блоки, крупные выводы, секции |
+| **Body** | 16px | Основной текст, анализ, параграфы |
+| **Small** | 14px | Подписи таблиц, легенда графиков, метаданные |
+| **Min** | 12px | Источники на графиках, footnotes, timestamps |
+
+**⚠️ Минимальный размер: 12px** — меньше нельзя (нечитаемо)
+
+```css
+/* Typography CSS */
+h1 { font-size: 30px; font-weight: 700; }
+h2 { font-size: 22px; font-weight: 600; }
+h3 { font-size: 18px; font-weight: 600; }
+body, p { font-size: 16px; line-height: 1.6; }
+.caption, .legend { font-size: 14px; color: #666; }
+.source, .footnote { font-size: 12px; color: #888; }
+/* NEVER use font-size below 12px */
+```
+
+---
+
 ### ⚠️ Chart Styling Rules (CRITICAL)
 
 ```yaml
