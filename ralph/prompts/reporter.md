@@ -206,7 +206,14 @@ For each section from aggregation.json:
 
 ### Based on output_format preference:
 
-**html+excel** (default):
+**IMPORTANT: Data Pack is Optional**
+- `data_pack.xlsx` is created **ONLY if explicitly requested** by user
+- Check `preferences.components` in brief.json for `"data_pack"`
+- If NOT in components list — **skip Excel generation entirely**
+- Data pack generation is resource-intensive and often unnecessary
+- Default: generate report only, skip data_pack unless requested
+
+**html+excel** (only if data_pack explicitly requested):
 - `output/report.html` — Full interactive report with Chart.js
 - `output/data_pack.xlsx` — All data in one Excel file
 

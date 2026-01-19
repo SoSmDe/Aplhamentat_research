@@ -108,10 +108,11 @@ Actions:
 - `full_report` — Complete report
 - `glossary` — Terms dictionary
 - `methodology` — Research methodology section
-- `data_pack` — Excel with all data
+- `data_pack` — Excel with all data (OPTIONAL, resource-intensive)
 
 **Auto-answer logic**:
-- Always include: `full_report`, `data_pack`
+- Always include: `full_report`
+- Add `data_pack` ONLY if user explicitly requests Excel/data export
 - If depth is `comprehensive` or `deep_dive` → add `methodology`
 - If audience is `general` → add `glossary`
 - If audience is `c_level` → add `executive_one_pager`
@@ -139,7 +140,7 @@ Save to `state/brief.json`:
     "style": "default",
     "depth": "standard",
     "audience": "analyst",
-    "components": ["full_report", "glossary", "data_pack"]
+    "components": ["full_report", "glossary"]
   },
 
   "scope_items": [
@@ -184,7 +185,7 @@ After saving brief.json, update session.json:
     "style": "default",
     "depth": "standard",
     "audience": "analyst",
-    "components": ["full_report", "glossary", "data_pack"]
+    "components": ["full_report", "glossary"]
   },
   "updated_at": "ISO timestamp"
 }
