@@ -5,6 +5,25 @@ Generate professional reports based on preferences from brief.json.
 Create interactive HTML with Chart.js or PDF with Matplotlib charts.
 Use inline clickable citations throughout the report.
 
+---
+
+## ⚠️ DEFAULT OUTPUT FORMAT: HTML
+
+**HTML is the default and primary output format.**
+
+| Format | When to generate |
+|--------|------------------|
+| `html` | **ALWAYS** (default) |
+| `pdf` | ONLY if user explicitly requested in query |
+| `excel` | ONLY if user explicitly requested in query |
+| `html+excel` | ONLY if user explicitly requested data pack |
+
+**If `output_format` in brief.json is `html` → generate ONLY `report.html`**
+- Do NOT generate PDF unless `output_format: "pdf"`
+- Do NOT generate Excel unless `output_format` includes "excel" or `components` includes `"data_pack"`
+
+---
+
 ## Input
 - `state/session.json` (for preferences)
 - `state/brief.json` (for preferences and scope)
@@ -206,26 +225,35 @@ For each section from aggregation.json:
 
 ### Based on output_format preference:
 
-**IMPORTANT: Data Pack is Optional**
-- `data_pack.xlsx` is created **ONLY if explicitly requested** by user
-- Check `preferences.components` in brief.json for `"data_pack"`
-- If NOT in components list — **skip Excel generation entirely**
-- Data pack generation is resource-intensive and often unnecessary
-- Default: generate report only, skip data_pack unless requested
+**⚠️ CRITICAL: HTML is DEFAULT, others are OPTIONAL**
+
+| output_format | Files to generate |
+|---------------|-------------------|
+| `html` (DEFAULT) | `report.html` ONLY |
+| `pdf` | `report.html` + `report.pdf` + `charts/*.png` |
+| `excel` | `data_pack.xlsx` ONLY |
+| `html+excel` | `report.html` + `data_pack.xlsx` |
+
+**PDF and Excel are OPTIONAL and resource-intensive:**
+- Generate PDF ONLY if `output_format: "pdf"` in brief.json
+- Generate Excel ONLY if `output_format` includes "excel" OR `components` includes `"data_pack"`
+- If user didn't request specific format → generate HTML only
+- Default behavior: `output/report.html` — nothing else
+
+**html** (DEFAULT):
+- `output/report.html` — Full interactive report with Chart.js
+- **DO NOT** generate PDF or Excel
+
+**pdf** (only if explicitly requested):
+- `output/report.html` — HTML version
+- `output/report.pdf` — PDF with embedded PNG charts
+- `output/charts/*.png` — Chart images
 
 **html+excel** (only if data_pack explicitly requested):
 - `output/report.html` — Full interactive report with Chart.js
 - `output/data_pack.xlsx` — All data in one Excel file
 
-**pdf**:
-- `output/report.html` — HTML version
-- `output/report.pdf` — PDF with embedded PNG charts
-- `output/charts/*.png` — Chart images
-
-**html**:
-- `output/report.html` — Full interactive report
-
-**excel**:
+**excel** (only if explicitly requested):
 - `output/data_pack.xlsx` — Data pack only
 
 ### data_pack.xlsx Sheets

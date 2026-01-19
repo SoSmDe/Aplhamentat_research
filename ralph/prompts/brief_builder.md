@@ -50,16 +50,22 @@ Actions:
 ### 2. Output Format
 **Question**: What report format is needed?
 **Options**:
-- `html` — Interactive, for browser viewing
-- `pdf` — For printing/archiving
-- `excel` — Data only for own analysis
-- `html+excel` — Full report + data pack (recommended)
+- `html` — Interactive, for browser viewing **(DEFAULT)**
+- `pdf` — For printing/archiving (only if user explicitly requests)
+- `excel` — Data only for own analysis (only if user explicitly requests)
+- `html+excel` — Full report + data pack (only if user explicitly requests)
+
+**⚠️ IMPORTANT: HTML is the DEFAULT output format.**
+- PDF and Excel are OPTIONAL and resource-intensive
+- Generate PDF/Excel ONLY if user explicitly requests them
+- If user doesn't specify format → use `html`
 
 **Auto-answer logic**:
 - If query mentions "pdf", "PDF", "формат pdf", "format pdf", "print", "archive", "send", "document" → `pdf`
 - If query mentions "data", "spreadsheet", "analyze myself", "raw", "excel", "xlsx" → `excel`
+- If query mentions "html+excel", "data pack", "full package" → `html+excel`
 - If query mentions "interactive", "web", "online", "html" → `html`
-- Default: `html+excel`
+- **Default (no format mentioned): `html`**
 
 ### 3. Report Style
 **Question**: What visual style?
@@ -136,11 +142,11 @@ Save to `state/brief.json`:
   "language": "en|ru",
 
   "preferences": {
-    "output_format": "html+excel",
+    "output_format": "html",
     "style": "default",
     "depth": "standard",
     "audience": "analyst",
-    "components": ["full_report", "glossary"]
+    "components": ["full_report"]
   },
 
   "scope_items": [
@@ -163,8 +169,8 @@ Save to `state/brief.json`:
   "reasoning": [
     {
       "question": "Output format?",
-      "answer": "html+excel",
-      "why": "Default choice, no specific format requested"
+      "answer": "html",
+      "why": "Default choice (HTML), no specific format requested by user"
     }
   ],
 
@@ -181,11 +187,11 @@ After saving brief.json, update session.json:
 {
   "phase": "planning",
   "preferences": {
-    "output_format": "html+excel",
+    "output_format": "html",
     "style": "default",
     "depth": "standard",
     "audience": "analyst",
-    "components": ["full_report", "glossary"]
+    "components": ["full_report"]
   },
   "updated_at": "ISO timestamp"
 }
