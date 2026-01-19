@@ -11,7 +11,7 @@ User Query
 Initial Research (web_search → state/initial_context.json)
     │
     ▼
-Brief Builder (dialog → state/brief.json)
+Brief Builder (auto → state/brief.json)
     │
     ▼
 Planning (→ state/plan.json)
@@ -55,7 +55,6 @@ research_YYYYMMDD_HHMMSS_slug/    # Per-research folder
 ├── state/                        # Research state (JSON)
 │   ├── session.json
 │   ├── initial_context.json
-│   ├── conversation.json
 │   ├── brief.json
 │   ├── plan.json
 │   ├── coverage.json
@@ -123,41 +122,44 @@ research_YYYYMMDD_HHMMSS_slug/    # Per-research folder
 
 ---
 
-## Phase 2: Brief Builder (Interactive)
+## Phase 2: Brief Builder (Auto-mode)
 
 **Trigger**: Initial context is ready
 **Prompt**: Load from `../src/prompts/brief_builder.md`
 
-1. Load initial_context.json
-2. Ask clarifying questions ONE at a time
-3. When requirements are clear, propose a Brief
-4. Wait for user approval
+1. Load state/initial_context.json
+2. Generate clarifying questions
+3. **Auto-answer** each question based on context and common sense
+4. Create comprehensive Brief
 
-**Output**:
-- Save conversation to `{research_folder}/state/conversation.json`
-- When approved, save to `{research_folder}/state/brief.json`
+**Note**: В текущей версии Brief генерируется автоматически.
+В будущем можно добавить интерактивный режим.
+
+**Output**: Save to `{research_folder}/state/brief.json`
 
 **JSON Structure** (brief.json):
 ```json
 {
-  "brief_id": "uuid",
-  "status": "approved",
   "goal": "Main research goal in one sentence",
   "scope_items": [
     {
-      "id": 1,
       "topic": "Topic description",
-      "type": "data|research|both",
-      "priority": "high|medium|low"
+      "type": "overview|data|research",
+      "priority": "high|medium|low",
+      "focus": "What to emphasize"
     }
   ],
-  "output_formats": ["pdf", "excel", "pptx"],
+  "output_formats": ["pdf", "excel"],
+  "depth": "comprehensive|summary|quick",
   "constraints": {
-    "time_period": "last 5 years|null",
-    "geographic_focus": "USA|global|null",
-    "max_sources": 50
+    "timeframe": "current|historical|forecast",
+    "geography": "global|specific regions"
   },
-  "approved_at": "ISO timestamp"
+  "auto_generated": true,
+  "questions_answered": [
+    {"question": "...", "answer": "...", "reasoning": "..."}
+  ],
+  "created_at": "ISO timestamp"
 }
 ```
 
