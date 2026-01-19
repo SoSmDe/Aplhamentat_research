@@ -72,9 +72,8 @@ Output ONLY the folder name:" 2>/dev/null | \
 }
 
 generate_research_folder() {
-    local date_stamp=$(date +%y%m%d)
     local slug=$(generate_slug "$1")
-    local folder="research_${date_stamp}_${slug}"
+    local folder="research_${slug}"
 
     # Add counter if folder exists
     if [ -d "$folder" ]; then
