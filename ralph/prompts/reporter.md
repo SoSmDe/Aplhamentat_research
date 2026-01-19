@@ -289,6 +289,49 @@ For each section from aggregation.json:
 
 ---
 
+## ⚠️ Visualization Placement Rules
+
+**AVOID multiple charts back-to-back without text between them.**
+
+### ❌ Wrong Structure:
+```
+Correlation Analysis
+├── Chart: Correlation changes over time
+├── Chart: Correlation matrix
+├── Chart: Correlation scatter plot
+└── Brief conclusion
+```
+Problem: 3 charts in a row without context — reader doesn't know what to look at.
+
+### ✅ Correct Structure:
+```
+Correlation Analysis
+├── Text: What we're measuring and why
+├── Chart: Correlation matrix (current snapshot)
+├── Text: Key observations from matrix (BTC-ETH: 0.85, etc.)
+├── Text: How correlations changed over time
+├── Chart: Correlation changes (time series)
+├── Text: Analysis of trends and anomalies
+└── Conclusion with actionable insights
+```
+
+### Visualization Placement Rules:
+1. **Context before chart** — explain what the chart shows and why it matters
+2. **Analysis after chart** — interpret key findings from the visualization
+3. **Max 2 related charts** in sequence — then must have analysis text
+4. **Group by insight, not by chart type** — don't put all correlation charts together
+5. **Each chart must be referenced in text** — if not referenced, remove it
+
+### Pattern: Text → Chart → Analysis → (repeat)
+```
+[Context: what and why]
+[CHART]
+[Analysis: key observations, numbers, implications]
+[Transition to next topic or conclusion]
+```
+
+---
+
 ## Output Structure
 
 ### Based on output_format preference:
