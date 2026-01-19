@@ -369,17 +369,37 @@ run_loop() {
             return 1
         fi
 
-        # Run Claude Code
-        claude --dangerously-skip-permissions \
-               --model opus \
-               "Read PROMPT.md. Execute phase '$phase'.
+        # Build prompt
+        local FULL_PROMPT="Read PROMPT.md. Execute phase '$phase'.
 
 Research folder: $folder
 Prompts: $PROMPTS_DIR/
 
-Read state/session.json, execute current phase, update phase, save session.json."
+Instructions:
+1. Read state/session.json to get current phase
+2. Execute that phase following PROMPT.md instructions
+3. Save results to appropriate files
+4. Update session.json with next phase
+5. End this iteration
 
-        sleep 1
+Signal <promise>COMPLETE</promise> when phase is 'complete'."
+
+        # Run Claude Code in PIPE MODE (non-interactive)
+        echo "$FULL_PROMPT" | claude -p \
+            --dangerously-skip-permissions \
+            --output-format stream-json \
+            --model opus \
+            --verbose
+
+        # Check if complete after each iteration
+        local new_phase=$(get_phase "$folder")
+        if [ "$new_phase" = "complete" ]; then
+            log_success "Research complete!"
+            show_status "$folder"
+            return 0
+        fi
+
+        sleep 2
     done
 
     log_warning "Max loop iterations reached"
