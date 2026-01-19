@@ -1,0 +1,14 @@
+# PDF report templates directory
+#
+# Templates to be created in Phase 8.1:
+# - report.html - Jinja2 template for PDF generation
+#
+# Template structure:
+# - Title page with branding
+# - Table of contents
+# - Executive summary section
+# - Key insights section
+# - Sections per scope item (data highlights, analysis, charts)
+# - Recommendation section (highlighted)
+# - Sources/citations section
+# - CSS styling for professional appearance

@@ -26,7 +26,7 @@ initial_research → brief_builder → planning → execution ⟷ questions_revi
 ### phase: "initial_research"
 
 **Action**: Gather context via web_search (2-3 queries)
-**Prompt**: Load `../src/prompts/initial_research.md`
+**Prompt**: Load `prompts/initial_research.md`
 **Save**: `state/initial_context.json`
 **Next phase**: `brief_builder`
 
@@ -35,7 +35,7 @@ initial_research → brief_builder → planning → execution ⟷ questions_revi
 ### phase: "brief_builder"
 
 **Action**: Generate Brief automatically (no user interaction)
-**Prompt**: Load `../src/prompts/brief_builder.md`
+**Prompt**: Load `prompts/brief_builder.md`
 **Save**: `state/brief.json`
 **Next phase**: `planning`
 
@@ -44,7 +44,7 @@ initial_research → brief_builder → planning → execution ⟷ questions_revi
 ### phase: "planning"
 
 **Action**: Decompose Brief into tasks (overview/data/research)
-**Prompt**: Load `../src/prompts/planner.md`
+**Prompt**: Load `prompts/planner.md`
 **Save**: `state/plan.json`
 **Update session.json**:
 ```json
@@ -65,9 +65,9 @@ initial_research → brief_builder → planning → execution ⟷ questions_revi
 
 **Action**: Execute pending tasks from plan.json
 **Prompts**:
-- Overview tasks → `../src/prompts/overview.md` (Deep Research skill)
-- Data tasks → `../src/prompts/data.md`
-- Research tasks → `../src/prompts/research.md`
+- Overview tasks → `prompts/overview.md` (Deep Research skill)
+- Data tasks → `prompts/data.md`
+- Research tasks → `prompts/research.md`
 
 **Save**:
 - Results → `results/{type}_{N}.json`
@@ -82,7 +82,7 @@ initial_research → brief_builder → planning → execution ⟷ questions_revi
 ### phase: "questions_review"
 
 **Action**: Evaluate questions, check coverage
-**Prompt**: Load `../src/prompts/questions_planner.md`
+**Prompt**: Load `prompts/questions_planner.md`
 
 **Logic**:
 ```
@@ -107,7 +107,7 @@ else:
 ### phase: "aggregation"
 
 **Action**: Synthesize all results into final analysis
-**Prompt**: Load `../src/prompts/aggregator.md`
+**Prompt**: Load `prompts/aggregator.md`
 **Input**: All files from `results/`
 **Save**: `state/aggregation.json`
 **Next phase**: `reporting`
@@ -117,8 +117,8 @@ else:
 ### phase: "reporting"
 
 **Action**: Generate final reports
-**Prompt**: Load `../src/prompts/reporter.md`
-**Templates**: `../src/templates/`
+**Prompt**: Load `prompts/reporter.md`
+**Templates**: `templates/`
 **Save**: `output/report.pdf`, `output/report.xlsx`
 **Next phase**: `complete`
 
@@ -194,5 +194,5 @@ research_XXXXX/
 
 ## Prompts Location
 
-All prompts: `../src/prompts/`
-Templates: `../src/templates/`
+All prompts: `prompts/`
+Templates: `templates/`

@@ -4,7 +4,7 @@
 set -e
 
 MAX_ITERATIONS=20
-PROMPTS_DIR="../src/prompts"
+PROMPTS_DIR="prompts"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
