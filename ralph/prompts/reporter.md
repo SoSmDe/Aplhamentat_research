@@ -111,6 +111,64 @@ Use inline clickable citations throughout the report.
 
 **⚠️ Минимальный размер: 12px** — меньше нельзя (нечитаемо)
 
+### Table Formatting Rules
+
+**1. Единицы измерения в заголовках столбцов:**
+Всегда указывать единицы измерения в шапке таблицы.
+
+| ❌ Неправильно | ✅ Правильно |
+|----------------|--------------|
+| Ann. Return | Ann. Return (%) |
+| Volatility | Volatility (%) |
+| Price | Price ($) |
+| Market Cap | Market Cap ($B) |
+| TVL | TVL ($M) |
+| Sharpe Ratio | Sharpe Ratio |
+
+**2. Компактные таблицы без больших разрывов:**
+```css
+table {
+    border-collapse: collapse;
+    width: auto;              /* НЕ 100% если мало колонок */
+}
+th, td {
+    padding: 8px 16px;        /* Умеренный padding */
+    text-align: left;
+    white-space: nowrap;      /* Не переносить числа */
+}
+/* Числовые колонки — выравнивание вправо */
+td.numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+```
+
+**Пример правильной таблицы:**
+```html
+<table>
+    <thead>
+        <tr>
+            <th>Asset</th>
+            <th>Ann. Return (%)</th>
+            <th>Volatility (%)</th>
+            <th>Sharpe Ratio</th>
+            <th>Max DD (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>BTC</td>
+            <td class="numeric">155.0</td>
+            <td class="numeric">65.2</td>
+            <td class="numeric">0.96</td>
+            <td class="numeric">-83.4</td>
+        </tr>
+    </tbody>
+</table>
+```
+
+---
+
 ### Bold Text Rules
 
 Выделять **жирным** ключевые факты и цифры, важные для контекста всей работы.
