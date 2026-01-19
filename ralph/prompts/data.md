@@ -2,27 +2,107 @@
 
 ## Role
 Collect structured quantitative data: metrics, numbers, facts.
+**Primary method**: Use `ralph/integrations/` Python APIs for crypto data.
 
 ## Input
 - `state/session.json`
 - `state/plan.json` (data_tasks)
 - Task from execution.tasks_pending
 
+## Crypto Data APIs
+
+**Location**: `ralph/integrations/`
+
+### API Selection Matrix
+
+| Data Need | API | Function | Example |
+|-----------|-----|----------|---------|
+| Token price | `coingecko` | `get_price(["bitcoin"])` | BTC current price |
+| Price history | `coingecko` | `get_price_history("ethereum", days=30)` | ETH 30d chart |
+| Market cap ranking | `coingecko` | `get_top_coins(100)` | Top 100 tokens |
+| DeFi TVL | `defillama` | `get_protocol_tvl("aave")` | Aave TVL |
+| L2 TVL comparison | `defillama` | `get_l2_comparison()` | All L2s TVL |
+| Protocol fees/revenue | `defillama` | `get_protocol_fees("uniswap")` | Uniswap fees |
+| L2 security/risks | `l2beat` | `get_l2_risks("arbitrum")` | Arbitrum risk score |
+| L2 activity (TPS) | `l2beat` | `get_l2_activity()` | All L2s TPS |
+| Wallet balance | `etherscan` | `get_balance("0x...", "ethereum")` | ETH balance |
+| Gas prices | `etherscan` | `get_gas_prices()` | Current gas |
+| DEX pool data | `thegraph` | `get_uniswap_top_pools("arbitrum")` | Uni pools |
+| Lending rates | `thegraph` | `get_aave_markets("ethereum")` | Aave APY |
+| Custom on-chain | `dune` | `run_query(query_id)` | SQL query |
+
+### Usage Pattern
+
+```python
+# Import what you need
+from integrations import coingecko, defillama, l2beat, etherscan, thegraph
+
+# Example: Get BTC price for analysis
+btc = coingecko.get_price(["bitcoin"])
+# Returns: {"bitcoin": {"usd": 93168, "usd_24h_change": -2.1, "usd_market_cap": 1.86e12}}
+
+# Example: Compare L2 TVL
+l2s = defillama.get_l2_comparison()
+# Returns: [{"name": "Arbitrum", "tvl": 15.2e9}, {"name": "Base", "tvl": 12.1e9}, ...]
+
+# Example: Get L2 security scores
+risks = l2beat.get_l2_risk_scores()
+# Returns: {"arbitrum": {"stage": "Stage 1", "risks": {...}}, ...}
+
+# Example: Multi-chain wallet check
+balances = etherscan.get_multi_chain_balance("0x...", ["ethereum", "arbitrum", "base"])
+```
+
+### API Priority (use in this order)
+
+1. **Structured APIs first** (fast, reliable):
+   - `coingecko` → prices, market data
+   - `defillama` → TVL, fees, yields
+   - `l2beat` → L2 security, activity
+   - `etherscan` → wallet, gas, transactions
+   - `thegraph` → protocol-specific (Uniswap, Aave)
+
+2. **Dune last** (slow, limited credits):
+   - Only when data not available elsewhere
+   - Custom on-chain queries
+   - Historical analysis
+
+3. **Web search fallback**:
+   - Only if APIs don't have needed data
+   - For non-crypto data (traditional finance, news)
+
+### API Availability
+
+| API | Requires Key | Notes |
+|-----|--------------|-------|
+| coingecko | No | Rate limited 10-50/min |
+| defillama | No | Free, unlimited |
+| l2beat | No | Free, unlimited |
+| etherscan | Recommended | Set `ETHERSCAN_API_KEY` |
+| thegraph | No | Hosted service |
+| dune | **Required** | Set `DUNE_API_KEY`, 2500 credits/mo |
+
 ## Process
 
 1. **Parse task**
    - Determine specific metrics to collect
-   - Select appropriate data source
-   - Form search query
+   - **Select API from matrix above**
+   - If crypto data → use integrations
+   - If non-crypto → use web search
 
 2. **Collect data**
-   - Execute web search or API call
+   ```python
+   # Run Python to call API
+   from integrations import coingecko
+   data = coingecko.get_price(["bitcoin", "ethereum"])
+   print(data)
+   ```
    - Extract needed fields
    - Validate data (not null, reasonable ranges)
 
 3. **Structure output**
    - Standardize data format
-   - Add metadata (source, timestamp)
+   - Add metadata (source=API name, timestamp)
    - Specify units of measurement
 
 4. **Generate questions** (optional)
@@ -122,3 +202,131 @@ When all tasks complete → set phase to "questions_review"
 - If data unavailable → explicitly set null with reason
 - Maximum 30 seconds per task
 - On API error → try alternative source
+
+## Data Collection Examples
+
+### Example 1: Token Price Task
+
+**Task**: "Get BTC and ETH prices with 24h change"
+
+```python
+# 1. Call API
+from integrations import coingecko
+prices = coingecko.get_price(["bitcoin", "ethereum"])
+
+# 2. Result:
+# {"bitcoin": {"usd": 93168, "usd_24h_change": -2.1, "usd_market_cap": 1.86e12},
+#  "ethereum": {"usd": 3217, "usd_24h_change": -3.7, "usd_market_cap": 3.88e11}}
+```
+
+**Save to** `results/data_1.json`:
+```json
+{
+  "id": "data_1",
+  "task_id": "d1",
+  "status": "done",
+  "output": {
+    "metrics": {
+      "btc_price": {"value": 93168, "unit": "USD", "as_of_date": "2025-01-19", "citation_id": "c1"},
+      "btc_24h_change": {"value": -2.1, "unit": "%", "as_of_date": "2025-01-19", "citation_id": "c1"},
+      "eth_price": {"value": 3217, "unit": "USD", "as_of_date": "2025-01-19", "citation_id": "c1"},
+      "eth_24h_change": {"value": -3.7, "unit": "%", "as_of_date": "2025-01-19", "citation_id": "c1"}
+    }
+  },
+  "citations": [
+    {"id": "c1", "source_title": "CoinGecko API", "source_url": "https://api.coingecko.com", "confidence": "high"}
+  ],
+  "metadata": {"source": "coingecko", "data_freshness": "real-time"}
+}
+```
+
+### Example 2: L2 Comparison Task
+
+**Task**: "Compare L2s by TVL and security"
+
+```python
+# 1. Get TVL from DefiLlama
+from integrations import defillama, l2beat
+tvl_data = defillama.get_l2_comparison()
+
+# 2. Get security from L2Beat
+risks = l2beat.get_l2_risk_scores()
+```
+
+**Save to** `results/data_2.json`:
+```json
+{
+  "id": "data_2",
+  "task_id": "d2",
+  "status": "done",
+  "output": {
+    "tables": [
+      {
+        "name": "L2 Comparison",
+        "headers": ["L2", "TVL (B)", "Stage", "DA Layer"],
+        "rows": [
+          ["Arbitrum", "15.2", "Stage 1", "Ethereum"],
+          ["Base", "12.1", "Stage 0", "Ethereum"],
+          ["Optimism", "7.8", "Stage 1", "Ethereum"]
+        ],
+        "citation_id": "c1"
+      }
+    ]
+  },
+  "citations": [
+    {"id": "c1", "source_title": "DefiLlama + L2Beat APIs", "source_url": "https://defillama.com", "confidence": "high"}
+  ],
+  "metadata": {"source": "defillama+l2beat", "data_freshness": "daily"}
+}
+```
+
+### Example 3: Protocol Deep Dive
+
+**Task**: "Get Uniswap V3 pool data on Arbitrum"
+
+```python
+from integrations import thegraph, defillama
+
+# Pool data from TheGraph
+pools = thegraph.get_uniswap_top_pools("arbitrum", limit=10)
+
+# Protocol fees from DefiLlama
+fees = defillama.get_protocol_fees("uniswap")
+```
+
+### Example 4: Wallet Analysis
+
+**Task**: "Check whale wallet 0x... across chains"
+
+```python
+from integrations import etherscan
+
+# Multi-chain balance
+balances = etherscan.get_multi_chain_balance(
+    "0x28C6c06298d514Db089934071355E5743bf21d60",  # Binance hot wallet
+    chains=["ethereum", "arbitrum", "optimism", "base"]
+)
+
+# Recent large transactions
+whales = etherscan.get_whale_transactions("0x...", min_value_eth=100)
+```
+
+## Error Handling
+
+```python
+try:
+    data = coingecko.get_price(["bitcoin"])
+except Exception as e:
+    # Log error, try fallback
+    data = {"error": str(e), "fallback": "web_search"}
+```
+
+Save errors in output:
+```json
+{
+  "status": "partial",
+  "errors": [
+    {"field": "btc_volume", "error": "API rate limit", "fallback": "Used cached data"}
+  ]
+}
+```
