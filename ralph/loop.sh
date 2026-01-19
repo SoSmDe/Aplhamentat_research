@@ -72,9 +72,20 @@ Output ONLY the folder name:" 2>/dev/null | \
 }
 
 generate_research_folder() {
-    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local date_stamp=$(date +%y%m%d)
     local slug=$(generate_slug "$1")
-    echo "research_${timestamp}_${slug}"
+    local folder="research_${date_stamp}_${slug}"
+
+    # Add counter if folder exists
+    if [ -d "$folder" ]; then
+        local counter=2
+        while [ -d "${folder}_v${counter}" ]; do
+            counter=$((counter + 1))
+        done
+        folder="${folder}_v${counter}"
+    fi
+
+    echo "$folder"
 }
 
 find_latest_research() {
