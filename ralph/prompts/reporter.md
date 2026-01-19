@@ -111,6 +111,36 @@ Use inline clickable citations throughout the report.
 
 **⚠️ Минимальный размер: 12px** — меньше нельзя (нечитаемо)
 
+### Bold Text Rules
+
+Выделять **жирным** ключевые факты и цифры, важные для контекста всей работы.
+
+**Ограничения:**
+- Не более **20%** от всего текста
+- Не более **8 слов подряд** (если нет острой необходимости)
+- Выделять: ключевые цифры, выводы, рекомендации
+- НЕ выделять: обычные факты, переходные фразы
+
+**✅ Правильно:**
+```html
+<p>This allocation delivers an estimated <strong>Sharpe ratio of 0.70-0.80</strong>,
+significantly outperforming the traditional 60/40 benchmark.</p>
+
+<p>The key trade-off is sacrificing approximately <strong>30-40% of potential upside</strong>
+in exchange for drawdown protection.</p>
+```
+
+**❌ Неправильно:**
+```html
+<!-- Слишком много bold -->
+<p><strong>This allocation delivers an estimated Sharpe ratio of 0.70-0.80,
+significantly outperforming the traditional 60/40 benchmark.</strong></p>
+
+<!-- Слишком длинная bold-фраза -->
+<p>The portfolio achieves <strong>optimal risk-adjusted returns while maintaining
+the maximum drawdown constraint of fifteen percent</strong>.</p>
+```
+
 ```css
 /* Typography CSS */
 h1 { font-size: 30px; font-weight: 700; }
