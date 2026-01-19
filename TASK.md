@@ -1,82 +1,73 @@
-# Task: Fix PDF Generation - Getting HTML Instead of PDF
+# Task: Implement --continue flag in loop.sh
 
-## Status: ✅ FIXED
+## Status: ✅ IMPLEMENTED
 
-## Problem Description
+## Problem
+`./loop.sh --continue research_folder "additional context"`
+was passing "--continue" as the query instead of continuing existing research.
 
-User requested a marketing research report with the following specification:
-```
-./loop.sh "Сделай маркетинговое исследование компании Mezen.io, подготовь отчёт в их корпоративном стиле, формат - pdf, Executive Summary + Отчёт примерно 7-12 страниц. Определи проблемы, потенциальные траты на маркетинг в месяц, точки роста, ближайшие точки роста."
-```
+## Solution Implemented (Commit: 9be9891)
 
-**Expected:** `report.pdf` file
-**Received:** `report.html` file
+### 1. loop.sh — Added `continue_research()` function
 
----
-
-## Root Cause Analysis
-
-1. **Brief Builder** ✅ — Correctly detected `output_format: "pdf"` from query
-2. **Session.json** ✅ — Preferences were properly passed
-3. **Reporter** ❌ — Generated HTML but didn't know HOW to convert to PDF
-
-The reporter.md had instructions about what files to create (`output/report.pdf`) but no explicit workflow for HTML→PDF conversion.
-
----
-
-## Fix Applied (Commit: 94e08d3)
-
-### 1. reporter.md — Added "PDF Generation Workflow" section
-
-New section with step-by-step instructions:
-- Step 1: Generate charts as PNG with Matplotlib
-- Step 2: Generate HTML with `<img>` tags (not Chart.js)
-- Step 3: Convert HTML to PDF using weasyprint
-- Step 4: Verify PDF exists
-
-Includes:
-- Complete weasyprint Python code with A4 format and page numbers
-- Alternative wkhtmltopdf command as fallback
-- Verification checklist
-
-### 2. brief_builder.md — Improved format detection
-
-Added explicit keywords to output format detection:
-- "pdf", "PDF", "формат pdf", "format pdf"
-- "excel", "xlsx"
-- "html"
-
----
-
-## Testing
-
-To verify the fix works, run:
 ```bash
-./loop.sh "Test report, format pdf, 2 pages"
+./loop.sh --continue research_20260119_mezen "добавь анализ конкурентов"
 ```
 
-Expected output:
+**Behavior:**
+1. Validates source folder exists
+2. Creates new folder with version suffix: `research_20260119_mezen_v2`
+3. Copies entire research (state/, results/, questions/)
+4. Updates session.json:
+   - Sets `additional_context` field
+   - Sets `continued_from` field (original folder)
+   - Resets `phase` to `brief_builder`
+5. Clears output/ folder for fresh generation
+6. Runs research loop from brief_builder phase
+
+### 2. brief_builder.md — Added Continuation Mode
+
+When `continued_from` exists in session.json:
+- Loads existing brief.json as base
+- Parses additional_context for new requirements
+- Adds new scope items marked with `added_in_continuation: true`
+- Preserves previous preferences unless overridden
+
+---
+
+## Usage Examples
+
+```bash
+# Continue with additional context
+./loop.sh --continue research_20260119_mezen "добавь детальный анализ конкурентов"
+
+# Continue without additional context (just re-run from brief_builder)
+./loop.sh --continue research_20260119_mezen
+
+# Multiple continuations create versioned folders
+# research_20260119_mezen
+# research_20260119_mezen_v2
+# research_20260119_mezen_v3
 ```
-output/
-├── report.pdf         # ← Must exist
-├── report.html        # HTML source
-├── charts/*.png       # Chart images
-└── html_to_pdf.py     # Conversion script
+
+---
+
+## session.json After Continue
+
+```json
+{
+  "id": "research_20260119_mezen_v2",
+  "query": "original query...",
+  "additional_context": "добавь анализ конкурентов",
+  "continued_from": "research_20260119_mezen",
+  "phase": "brief_builder",
+  ...
+}
 ```
 
 ---
 
 ## Files Modified
 
-1. `ralph/prompts/reporter.md` — Added PDF Generation Workflow section (+70 lines)
-2. `ralph/prompts/brief_builder.md` — Added explicit pdf/excel/html keywords
-
----
-
-## Acceptance Criteria
-
-- [x] Brief Builder correctly detects "pdf" in query
-- [x] Reporter has explicit PDF generation instructions
-- [x] weasyprint code example provided
-- [x] Alternative (wkhtmltopdf) documented
-- [ ] End-to-end test with PDF output (pending user test)
+1. `ralph/loop.sh` — Added `continue_research()` function and `--continue` case
+2. `ralph/prompts/brief_builder.md` — Added Continuation Mode handling
