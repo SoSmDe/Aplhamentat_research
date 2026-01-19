@@ -1,48 +1,115 @@
 # CLAUDE.md
 
 ## Project Overview
-Ralph Deep Research — multi-agent AI research system running entirely through Claude Code.
+Ralph Deep Research — State Machine based multi-agent AI research system running entirely through Claude Code.
 No Python backend — Claude Code handles web search, file generation, and state management natively.
 
 ## How It Works
 1. User provides research query via ./loop.sh
-2. Claude Code executes pipeline from PROMPT.md
-3. Each phase reads prompts from src/prompts/*.md
-4. State persists in state/*.json (Ralph Pattern)
-5. Reports generate to output/
+2. loop.sh creates session.json with initial phase
+3. Each iteration: Claude Code reads PROMPT.md, executes current phase, updates phase
+4. State persists in state/session.json (single source of truth)
+5. Loop continues until phase = "complete"
+
+## State Machine
+
+```
+initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → reporting → complete
+```
 
 ## Directory Structure
 ```
 ralph/
-├── PROMPT.md              # Main pipeline definition
+├── PROMPT.md              # State Machine definition
 ├── loop.sh                # Runner script
-├── src/
-│   ├── prompts/           # Agent prompts (7 files)
-│   └── templates/         # Report templates (PDF/Excel/PPTX)
-├── specs/                 # Documentation
-├── state/                 # JSON state (auto-created)
-└── output/                # Reports (auto-created)
+├── research_XXXXX/        # Per-research folder (auto-created)
+│   ├── state/
+│   │   ├── session.json   # <- Single source of truth
+│   │   ├── initial_context.json
+│   │   ├── brief.json
+│   │   ├── plan.json
+│   │   ├── coverage.json
+│   │   ├── questions_plan.json
+│   │   └── aggregation.json
+│   ├── results/           # Agent outputs
+│   ├── questions/         # Generated questions
+│   └── output/            # Final reports
+└── src/
+    ├── prompts/           # Agent prompts (9 files)
+    └── templates/         # Report templates
 ```
 
 ## Running Research
 ```bash
 ./loop.sh "Your research query"     # Start new
 ./loop.sh --resume                  # Continue
-./loop.sh --status                  # Check progress
-./loop.sh --clear                   # Reset state
+./loop.sh --status                  # Show detailed progress
+./loop.sh --list                    # List all research
+./loop.sh --search "keyword"        # Search by tags, entities, query
+./loop.sh --clear                   # Delete research
+./loop.sh --set-phase <folder> <phase>  # Debug: set phase manually
 ```
 
-## Ralph Pattern
-Execute task → Save result to state/ → Clear context → Next task
+## Features
+
+### Progress Tracker
+`--status` shows visual progress:
+- Progress bar with percentage
+- Phase list with current marker
+- Coverage bars per scope
+- Task completion status
+- Tags and entities
+- Output file status
+
+### Tagging & Search
+- Auto-extracts tags and entities during initial_research phase
+- Search across all research by: query text, tags, entity names
+- Tags: investment, reit, tech, dividend, etc.
+- Entities: companies, sectors, indices, concepts
+
+## State Pattern
+Each phase:
+1. Read state/session.json
+2. Execute phase logic
+3. Save outputs to appropriate files
+4. Update phase in session.json
+5. End iteration
 
 ## Pipeline Phases
-1. **Initial Research** — Quick context gathering via web_search
-2. **Brief Builder** — Interactive dialog to clarify requirements
-3. **Planner** — Decompose brief into data/research tasks
-4. **Data + Research** — Parallel execution with web_search
-5. **Coverage Check** — Loop until ≥80% coverage (max 10 rounds)
-6. **Aggregator** — Synthesize findings into recommendations
-7. **Reporter** — Generate PDF/Excel/PPTX reports
+1. **initial_research** — Quick context + extract tags/entities
+2. **brief_builder** — Auto-generate research Brief
+3. **planning** — Decompose brief into overview/data/research tasks
+4. **execution** — Execute pending tasks (loops with questions_review)
+5. **questions_review** — Evaluate questions, check coverage, decide next
+6. **aggregation** — Synthesize findings into recommendations
+7. **reporting** — Generate PDF/Excel reports
+8. **complete** — Signal completion
+
+## session.json Structure
+```json
+{
+  "id": "research_YYYYMMDD_HHMMSS_slug",
+  "query": "User query",
+  "phase": "execution",
+  "tags": ["investment", "reit"],
+  "entities": [
+    {"name": "Company", "type": "company", "ticker": "XYZ"}
+  ],
+  "execution": {
+    "iteration": 2,
+    "max_iterations": 5,
+    "tasks_pending": ["d3", "r2"],
+    "tasks_completed": ["o1", "d1", "d2", "r1"]
+  },
+  "coverage": {
+    "current": 65,
+    "target": 80,
+    "by_scope": {"financials": 80, "risks": 50}
+  },
+  "created_at": "ISO",
+  "updated_at": "ISO"
+}
+```
 
 ## Completion Signal
 Pipeline ends when Claude outputs: `<promise>COMPLETE</promise>`

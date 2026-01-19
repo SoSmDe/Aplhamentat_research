@@ -1,32 +1,78 @@
-## Build & Run
+# Ralph Deep Research - Quick Reference
+
+## Quick Start
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+cd ralph/
 
-# Start development server
-python -m uvicorn main:app --reload --port 8000
+# New research
+./loop.sh "Your research query"
 
-# Start without reload
-python main.py
+# Check status (with progress bar)
+./loop.sh --status
+
+# Resume
+./loop.sh --resume
+
+# Search
+./loop.sh --search "keyword"
 ```
 
-## Validation
+## Commands
 
-Run these after implementing to get immediate feedback:
+| Command | Description |
+|---------|-------------|
+| `./loop.sh "query"` | Start new research |
+| `./loop.sh --resume` | Continue latest research |
+| `./loop.sh --status` | Show progress with visual tracker |
+| `./loop.sh --list` | List all research folders |
+| `./loop.sh --search "term"` | Search by tags, entities, query |
+| `./loop.sh --clear` | Delete latest research |
+| `./loop.sh --set-phase <folder> <phase>` | Debug: set phase manually |
 
-- Tests: `python -m pytest tests/ -v --tb=short`
-- Typecheck: `python -m mypy src/ --ignore-missing-imports`
-- Lint: `python -m black src/ tests/ --check`
+## State Machine
 
-## Operational Notes
+```
+initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → reporting → complete
+```
 
-- Server runs at http://localhost:8000 (docs at /docs)
-- Health check: GET /health
-- Uvicorn binary may not be in PATH; use `python -m uvicorn` instead
+## Key Concepts
 
-### Codebase Patterns
+### Ralph Pattern
+Execute task → Save to state/ → Update phase → Next iteration
 
-- Ralph Pattern: Execute task → Save result → Clear context → Next task
-- Model selection: Opus for reasoning agents, Sonnet for data extraction
-- State flow: CREATED → INITIAL_RESEARCH → BRIEF → PLANNING → EXECUTING → AGGREGATING → REPORTING → DONE
+### session.json
+Single source of truth. Contains:
+- Current phase
+- Tags & entities
+- Execution state (iteration, tasks)
+- Coverage metrics
+
+### Progress Tracking
+- Visual progress bar (0-100%)
+- Phase completion markers (✓ ● ○)
+- Coverage bars per scope item
+- Task completion status
+
+## Agent Prompts
+
+All in `../src/prompts/`:
+
+| Agent | File | Purpose |
+|-------|------|---------|
+| Initial Research | `initial_research.md` | Context + tags/entities |
+| Brief Builder | `brief_builder.md` | Auto-generate Brief |
+| Planner | `planner.md` | Decompose into tasks |
+| Overview | `overview.md` | Deep Research (9 phases) |
+| Data | `data.md` | Structured data |
+| Research | `research.md` | Qualitative analysis |
+| Questions | `questions_planner.md` | Filter + coverage |
+| Aggregator | `aggregator.md` | Synthesize findings |
+| Reporter | `reporter.md` | Generate reports |
+
+## Completion
+
+Research completes when Claude outputs:
+```
+<promise>COMPLETE</promise>
+```

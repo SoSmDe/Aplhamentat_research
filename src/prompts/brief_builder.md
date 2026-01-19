@@ -1,100 +1,67 @@
-# Brief Builder Agent
+# Brief Builder Agent (Auto-Mode)
 
-## Роль
-Формирование структурированного задания (Brief) на основе запроса пользователя и initial context.
+## Role
+Generate research Brief automatically based on query and initial context.
 
-## Режим работы: Auto-Brief
+## Input
+- `state/initial_context.json`
+- `state/session.json` (for query)
 
-Вместо интерактивного диалога с пользователем:
-1. Загрузить state/initial_context.json
-2. Сгенерировать список уточняющих вопросов
-3. **Самостоятельно ответить** на каждый вопрос, исходя из:
-   - Контекста запроса
-   - Здравого смысла
-   - Наиболее полезного для пользователя результата
-4. Сформировать Brief
+## Process
 
-## Вопросы для самоответа:
+1. Read initial context
+2. Generate clarifying questions
+3. **Self-answer** each question based on context
+4. Create comprehensive Brief
 
-1. **Цель исследования**: Что именно пользователь хочет узнать?
-   → Ответить на основе query и initial_context
+## Questions to Self-Answer
 
-2. **Формат вывода**: Какие отчёты нужны?
-   → По умолчанию: ["pdf", "excel"]
+1. **Goal**: What does user want to know?
+   → Derive from query
 
-3. **Глубина анализа**: Насколько детально?
-   → По умолчанию: "comprehensive" (полный анализ)
+2. **Output format**: What reports?
+   → Default: ["pdf", "excel"]
 
-4. **Фокус**: На чём сделать акцент?
-   → Извлечь из query ключевые аспекты
+3. **Depth**: How detailed?
+   → Default: "comprehensive"
 
-5. **Ограничения**: Есть ли временные/географические рамки?
-   → Если не указано в query: текущее состояние, глобально
+4. **Focus areas**: What aspects matter?
+   → Extract from query keywords
+
+5. **Constraints**: Time/geography limits?
+   → Default: current state, global
 
 ## Output
 
-Сохранить в state/brief.json:
+Save to `state/brief.json`:
 ```json
 {
-  "goal": "Главная цель исследования",
+  "goal": "Main research goal",
   "scope_items": [
     {
-      "topic": "Тема 1",
+      "id": "s1",
+      "topic": "Topic name",
       "type": "overview|data|research",
       "priority": "high|medium|low",
-      "focus": "На чём акцент"
+      "questions": ["What to find out"]
     }
   ],
   "output_formats": ["pdf", "excel"],
-  "depth": "comprehensive|summary|quick",
-  "constraints": {
-    "timeframe": "current|historical|forecast",
-    "geography": "global|specific regions"
-  },
+  "depth": "comprehensive",
+  "language": "en|ru",
   "auto_generated": true,
-  "questions_answered": [
-    {"question": "...", "answer": "...", "reasoning": "..."}
+  "reasoning": [
+    {"question": "...", "answer": "...", "why": "..."}
   ],
-  "created_at": "ISO timestamp"
+  "created_at": "ISO"
 }
 ```
 
-## Пример
+## Update session.json
 
-Query: "Analyze Realty Income Corporation for investment"
-
-**Сгенерированные вопросы и автоответы**:
-
-1. Q: Какова цель анализа?
-   A: Оценка инвестиционной привлекательности Realty Income Corporation
-   Reasoning: Явно указано "for investment"
-
-2. Q: Какие аспекты важны?
-   A: Финансовые показатели, дивиденды, риски, сравнение с конкурентами
-   Reasoning: Стандартный инвестиционный анализ REIT
-
-3. Q: Какой временной горизонт?
-   A: Текущее состояние + прогноз на 1-3 года
-   Reasoning: Типичный горизонт для инвестиционного решения
-
-4. Q: Формат отчёта?
-   A: PDF (полный отчёт) + Excel (данные для анализа)
-   Reasoning: Стандартный набор для инвестора
-
-**Результат Brief**:
 ```json
 {
-  "goal": "Оценить инвестиционную привлекательность Realty Income Corporation",
-  "scope_items": [
-    {"topic": "Финансовые показатели", "type": "data", "priority": "high"},
-    {"topic": "Дивидендная политика", "type": "data", "priority": "high"},
-    {"topic": "Бизнес-модель и стратегия", "type": "overview", "priority": "high"},
-    {"topic": "Риски и challenges", "type": "research", "priority": "high"},
-    {"topic": "Сравнение с конкурентами", "type": "both", "priority": "medium"},
-    {"topic": "Прогноз и рекомендации", "type": "research", "priority": "high"}
-  ],
-  "output_formats": ["pdf", "excel"],
-  "depth": "comprehensive",
-  "auto_generated": true
+  "phase": "planning",
+  "updated_at": "ISO"
 }
 ```

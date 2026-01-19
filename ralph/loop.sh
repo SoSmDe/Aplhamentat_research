@@ -1,267 +1,418 @@
 #!/bin/bash
-# Ralph Deep Research - Claude Code Loop Runner
-#
-# Usage:
-#   ./loop.sh "Your research query"     Start new research
-#   ./loop.sh --resume [folder]         Resume from existing research
-#   ./loop.sh --clear [folder]          Clear specific research folder
-#   ./loop.sh --status [folder]         Show status
-#   ./loop.sh --list                    List all research folders
+# Ralph Deep Research - State Machine Runner
 
 set -e
 
-# Configuration
-MAX_ITERATIONS=15
+MAX_ITERATIONS=20
 PROMPTS_DIR="../src/prompts"
-PROMPT_FILE="PROMPT.md"
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+NC='\033[0m'
 
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_phase() { echo -e "${CYAN}[PHASE]${NC} $1"; }
 
-# Generate slug from query
 generate_slug() {
     echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g' | cut -c1-30
 }
 
-# Generate research folder name
 generate_research_folder() {
     local timestamp=$(date +%Y%m%d_%H%M%S)
     local slug=$(generate_slug "$1")
     echo "research_${timestamp}_${slug}"
 }
 
-# Find latest research folder
 find_latest_research() {
     ls -d research_* 2>/dev/null | sort -r | head -n1
 }
 
 show_help() {
     cat << EOF
-Ralph Deep Research - Claude Code Runner
+Ralph Deep Research - State Machine Runner
 
 Usage:
     ./loop.sh "Your research query"     Start new research
-    ./loop.sh --resume [folder]         Resume from existing (latest if no folder)
-    ./loop.sh --clear [folder]          Clear specific research folder
-    ./loop.sh --status [folder]         Show status (latest if no folder)
+    ./loop.sh --resume [folder]         Resume (latest if no folder)
+    ./loop.sh --status [folder]         Show detailed status with progress
     ./loop.sh --list                    List all research folders
-    ./loop.sh --help                    Show this help
+    ./loop.sh --search <query>          Search by tags, entities, query text
+    ./loop.sh --clear [folder]          Delete research folder
+    ./loop.sh --set-phase <f> <p>       Manually set phase (debug)
 
 Examples:
-    ./loop.sh "Analyze Realty Income Corporation for investment"
-    ./loop.sh "Research the AI chip market in 2024"
-    ./loop.sh --resume
-    ./loop.sh --resume research_20260119_realty_income
+    ./loop.sh "Analyze Tesla stock"
+    ./loop.sh --search "investment"
+    ./loop.sh --search "reit"
+    ./loop.sh --status
 
-Research data is stored in: ralph/research_YYYYMMDD_HHMMSS_slug/
-    state/      JSON state files
-    results/    Agent outputs
-    questions/  Generated questions
-    output/     Final reports (PDF, Excel, PPTX)
+Phases:
+    initial_research → brief_builder → planning → execution ⟷
+    questions_review → aggregation → reporting → complete
 EOF
+}
+
+get_phase() {
+    local folder="$1"
+    jq -r '.phase // "initial_research"' "$folder/state/session.json" 2>/dev/null || echo "initial_research"
+}
+
+get_iteration() {
+    local folder="$1"
+    jq -r '.execution.iteration // 0' "$folder/state/session.json" 2>/dev/null || echo "0"
+}
+
+# Progress bar function
+progress_bar() {
+    local percent=$1
+    local width=40
+    local filled=$((percent * width / 100))
+    local empty=$((width - filled))
+    printf "["
+    printf "%${filled}s" | tr ' ' '█'
+    printf "%${empty}s" | tr ' ' '░'
+    printf "] %d%%" "$percent"
+}
+
+show_status() {
+    local folder="${1:-$(find_latest_research)}"
+    [ -z "$folder" ] || [ ! -d "$folder" ] && { log_error "No research folder found"; exit 1; }
+
+    # Read session data
+    local session="$folder/state/session.json"
+    [ ! -f "$session" ] && { echo "Session not initialized"; return; }
+
+    local query=$(jq -r '.query' "$session")
+    local phase=$(jq -r '.phase' "$session")
+    local iteration=$(jq -r '.execution.iteration // 0' "$session")
+    local max_iter=$(jq -r '.execution.max_iterations // 5' "$session")
+    local coverage=$(jq -r '.coverage.current // 0' "$session")
+    local target=$(jq -r '.coverage.target // 80' "$session")
+    local tasks_done=$(jq -r '.execution.tasks_completed | length // 0' "$session")
+    local tasks_pending=$(jq -r '.execution.tasks_pending | length // 0' "$session")
+    local total_tasks=$((tasks_done + tasks_pending))
+
+    # Calculate progress percentage
+    local progress=0
+    case "$phase" in
+        "initial_research") progress=5 ;;
+        "brief_builder") progress=15 ;;
+        "planning") progress=25 ;;
+        "execution") progress=$((25 + (coverage * 50 / 100))) ;;
+        "questions_review") progress=$((25 + (coverage * 50 / 100))) ;;
+        "aggregation") progress=85 ;;
+        "reporting") progress=95 ;;
+        "complete") progress=100 ;;
+    esac
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════════"
+    echo "                      Ralph Deep Research"
+    echo "════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "  Folder: $folder"
+    echo "  Query:  $query"
+    echo ""
+    echo "  Progress: $(progress_bar $progress)"
+    echo ""
+    echo "  ┌─────────────────────────────────────────────────────────────┐"
+    echo "  │ Phases                                                      │"
+    echo "  ├─────────────────────────────────────────────────────────────┤"
+
+    # Phase list with status
+    local phases=("initial_research" "brief_builder" "planning" "execution" "questions_review" "aggregation" "reporting" "complete")
+    local phase_names=("Initial Research" "Brief Builder" "Planning" "Execution" "Questions Review" "Aggregation" "Reporting" "Complete")
+
+    for i in "${!phases[@]}"; do
+        local p="${phases[$i]}"
+        local name="${phase_names[$i]}"
+        local icon="○"
+        local extra=""
+
+        if [ "$p" = "$phase" ]; then
+            icon="●"
+            extra=" ← current"
+            [ "$p" = "execution" ] && extra=" ← current (iteration $iteration/$max_iter)"
+        elif [[ " initial_research brief_builder planning " =~ " $p " ]] && \
+             [[ " execution questions_review aggregation reporting complete " =~ " $phase " ]]; then
+            icon="✓"
+        elif [[ " initial_research brief_builder " =~ " $p " ]] && \
+             [[ " planning execution questions_review aggregation reporting complete " =~ " $phase " ]]; then
+            icon="✓"
+        elif [ "$p" = "initial_research" ] && [ "$phase" != "initial_research" ]; then
+            icon="✓"
+        fi
+
+        printf "  │  %s %-20s %s\n" "$icon" "$name" "$extra"
+    done
+
+    echo "  └─────────────────────────────────────────────────────────────┘"
+    echo ""
+
+    # Coverage bar
+    if [ "$coverage" -gt 0 ] || [ "$phase" = "execution" ] || [ "$phase" = "questions_review" ]; then
+        echo "  ┌─────────────────────────────────────────────────────────────┐"
+        printf "  │ Coverage: %d%% / %d%% target                              │\n" "$coverage" "$target"
+        echo "  ├─────────────────────────────────────────────────────────────┤"
+
+        # Per-scope coverage if available
+        local scopes=$(jq -r '.coverage.by_scope // {} | keys[]' "$session" 2>/dev/null)
+        if [ -n "$scopes" ]; then
+            for scope in $scopes; do
+                local scope_cov=$(jq -r ".coverage.by_scope[\"$scope\"]" "$session")
+                local bar_width=20
+                local filled=$((scope_cov * bar_width / 100))
+                local bar=$(printf "%${filled}s" | tr ' ' '█')
+                local empty=$(printf "%$((bar_width - filled))s" | tr ' ' '░')
+                printf "  │  %s%s %-15s %3d%%\n" "$bar" "$empty" "$scope" "$scope_cov"
+            done
+        fi
+
+        echo "  └─────────────────────────────────────────────────────────────┘"
+        echo ""
+    fi
+
+    # Tasks
+    if [ "$total_tasks" -gt 0 ]; then
+        echo "  ┌─────────────────────────────────────────────────────────────┐"
+        printf "  │ Tasks: %d/%d completed                                     │\n" "$tasks_done" "$total_tasks"
+        echo "  ├─────────────────────────────────────────────────────────────┤"
+
+        # Completed tasks
+        local completed=$(jq -r '.execution.tasks_completed[]?' "$session" 2>/dev/null)
+        for task in $completed; do
+            printf "  │  ✓ %s\n" "$task"
+        done
+
+        # Pending tasks
+        local pending=$(jq -r '.execution.tasks_pending[]?' "$session" 2>/dev/null)
+        for task in $pending; do
+            printf "  │  ○ %s\n" "$task"
+        done
+
+        echo "  └─────────────────────────────────────────────────────────────┘"
+        echo ""
+    fi
+
+    # Tags
+    local tags=$(jq -r '.tags // [] | join(", ")' "$session" 2>/dev/null)
+    if [ -n "$tags" ] && [ "$tags" != "" ]; then
+        echo "  Tags: $tags"
+        echo ""
+    fi
+
+    # Output files
+    echo "  ┌─────────────────────────────────────────────────────────────┐"
+    echo "  │ Output                                                      │"
+    echo "  ├─────────────────────────────────────────────────────────────┤"
+    [ -f "$folder/output/report.pdf" ] && echo "  │  ✓ report.pdf" || echo "  │  ○ report.pdf"
+    [ -f "$folder/output/report.xlsx" ] && echo "  │  ✓ report.xlsx" || echo "  │  ○ report.xlsx"
+    [ -f "$folder/output/report.pptx" ] && echo "  │  ✓ report.pptx" || echo "  │  ○ report.pptx"
+    echo "  └─────────────────────────────────────────────────────────────┘"
+    echo ""
+    echo "════════════════════════════════════════════════════════════════"
+}
+
+search_research() {
+    local query="$1"
+    [ -z "$query" ] && { log_error "Usage: --search <query>"; exit 1; }
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════════"
+    echo "  Search: \"$query\""
+    echo "════════════════════════════════════════════════════════════════"
+    echo ""
+
+    local found=0
+    for dir in research_*; do
+        [ -d "$dir" ] || continue
+        local session="$dir/state/session.json"
+        [ -f "$session" ] || continue
+
+        # Search in query, tags, entities
+        local match=$(jq -r "
+            .query + \" \" +
+            (.tags // [] | join(\" \")) + \" \" +
+            (.entities // [] | map(.name) | join(\" \"))
+        " "$session" | grep -i "$query" || true)
+
+        if [ -n "$match" ]; then
+            found=$((found + 1))
+            local q=$(jq -r '.query' "$session" | cut -c1-50)
+            local phase=$(jq -r '.phase' "$session")
+            local tags=$(jq -r '.tags // [] | join(", ")' "$session")
+            local date=$(echo "$dir" | grep -oE '[0-9]{8}' | head -1)
+
+            echo "  📁 $dir"
+            echo "     Query: $q..."
+            echo "     Phase: $phase"
+            echo "     Tags:  $tags"
+            echo "     Date:  ${date:0:4}-${date:4:2}-${date:6:2}"
+            echo ""
+        fi
+    done
+
+    if [ "$found" -eq 0 ]; then
+        echo "  No research found matching \"$query\""
+    else
+        echo "  Found: $found research(es)"
+    fi
+    echo ""
+    echo "════════════════════════════════════════════════════════════════"
 }
 
 list_research() {
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "════════════════════════════════════════════════════════════════"
     echo "         Research Folders"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "════════════════════════════════════════════════════════════════"
+
     for dir in research_*; do
-        if [ -d "$dir" ]; then
-            query=""
-            [ -f "$dir/state/session.json" ] && query=$(grep -o '"query": "[^"]*"' "$dir/state/session.json" | cut -d'"' -f4 | head -c50)
-            echo "  $dir"
-            [ -n "$query" ] && echo "    Query: $query..."
+        [ -d "$dir" ] || continue
+        local session="$dir/state/session.json"
+        if [ -f "$session" ]; then
+            local phase=$(get_phase "$dir")
+            local query=$(jq -r '.query // "?"' "$session" 2>/dev/null | cut -c1-40)
+            local tags=$(jq -r '.tags // [] | join(", ")' "$session" 2>/dev/null)
+            echo ""
+            echo "  📁 $dir"
+            echo "     Phase: $phase"
+            echo "     Query: $query..."
+            [ -n "$tags" ] && [ "$tags" != "" ] && echo "     Tags:  $tags"
         fi
     done
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "════════════════════════════════════════════════════════════════"
 }
 
 clear_research() {
-    local folder="$1"
-    if [ -z "$folder" ]; then
-        folder=$(find_latest_research)
-    fi
-    if [ -z "$folder" ] || [ ! -d "$folder" ]; then
-        log_error "Research folder not found: $folder"
-        exit 1
-    fi
-    log_warning "Clearing research: $folder"
+    local folder="${1:-$(find_latest_research)}"
+    [ -z "$folder" ] && { log_error "No folder specified"; exit 1; }
+    log_warning "Deleting: $folder"
     rm -rf "$folder"
-    log_success "Research cleared"
+    log_success "Deleted"
 }
 
-show_status() {
+set_phase() {
     local folder="$1"
-    if [ -z "$folder" ]; then
-        folder=$(find_latest_research)
-    fi
-    if [ -z "$folder" ] || [ ! -d "$folder" ]; then
-        log_error "Research folder not found"
-        exit 1
-    fi
+    local phase="$2"
+    [ -z "$folder" ] || [ -z "$phase" ] && { log_error "Usage: --set-phase <folder> <phase>"; exit 1; }
 
-    local STATE_DIR="$folder/state"
-    local OUTPUT_DIR="$folder/output"
-
-    echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "         Ralph Research Status"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "Folder: $folder"
-    echo ""
-
-    [ -f "$STATE_DIR/session.json" ] && echo "Session: ✓" || echo "Session: Not started"
-    [ -f "$STATE_DIR/initial_context.json" ] && echo "Initial Research: ✓" || echo "Initial Research: Pending"
-    [ -f "$STATE_DIR/brief.json" ] && echo "Brief: ✓ Approved" || echo "Brief: Not approved"
-    [ -f "$STATE_DIR/plan.json" ] && echo "Plan: ✓ Created" || echo "Plan: Not created"
-
-    round_count=$(ls -d "$STATE_DIR/round_"* 2>/dev/null | wc -l)
-    echo "Rounds completed: $round_count"
-
-    [ -f "$STATE_DIR/coverage.json" ] && echo "Coverage: ✓ Checked" || echo "Coverage: Pending"
-    [ -f "$STATE_DIR/questions_plan.json" ] && echo "Questions Plan: ✓" || echo "Questions Plan: Pending"
-    [ -f "$STATE_DIR/aggregation.json" ] && echo "Aggregation: ✓ Complete" || echo "Aggregation: Pending"
-
-    echo ""
-    echo "Results:"
-    [ -d "$folder/results" ] && ls "$folder/results"/*.json 2>/dev/null | wc -l | xargs -I{} echo "  {} result files"
-
-    echo ""
-    echo "Generated reports:"
-    [ -f "$OUTPUT_DIR/report.pdf" ] && echo "  ✓ report.pdf"
-    [ -f "$OUTPUT_DIR/report.xlsx" ] && echo "  ✓ report.xlsx"
-    [ -f "$OUTPUT_DIR/report.pptx" ] && echo "  ✓ report.pptx"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    jq --arg p "$phase" '.phase = $p | .updated_at = now' "$folder/state/session.json" > tmp.json
+    mv tmp.json "$folder/state/session.json"
+    log_success "Phase set to: $phase"
 }
 
 initialize() {
     local folder="$1"
     local query="$2"
 
-    mkdir -p "$folder/state"
-    mkdir -p "$folder/results"
-    mkdir -p "$folder/questions"
-    mkdir -p "$folder/output"
+    mkdir -p "$folder/state" "$folder/results" "$folder/questions" "$folder/output"
 
-    if [ ! -f "$folder/state/session.json" ] && [ -n "$query" ]; then
-        cat > "$folder/state/session.json" << EOF
+    cat > "$folder/state/session.json" << EOF
 {
-    "status": "initialized",
-    "started_at": "$(date -Iseconds)",
-    "query": "$query",
-    "research_folder": "$folder"
+  "id": "$folder",
+  "query": "$query",
+  "phase": "initial_research",
+  "tags": [],
+  "entities": [],
+  "execution": {
+    "iteration": 0,
+    "max_iterations": 5,
+    "tasks_pending": [],
+    "tasks_completed": []
+  },
+  "coverage": {
+    "current": 0,
+    "target": 80,
+    "by_scope": {}
+  },
+  "created_at": "$(date -Iseconds)",
+  "updated_at": "$(date -Iseconds)"
 }
 EOF
-    fi
 }
 
-check_completion() {
+run_loop() {
     local folder="$1"
-    [ -f "$folder/state/report_config.json" ] && \
-    ([ -f "$folder/output/report.pdf" ] || [ -f "$folder/output/report.xlsx" ])
+    local query="$2"
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════════"
+    echo "                      Ralph Deep Research"
+    echo "════════════════════════════════════════════════════════════════"
+    echo "  Folder:  $folder"
+    echo "  Query:   $query"
+    echo "════════════════════════════════════════════════════════════════"
+    echo ""
+
+    for i in $(seq 1 $MAX_ITERATIONS); do
+        local phase=$(get_phase "$folder")
+        local iteration=$(get_iteration "$folder")
+
+        log_phase "[$i/$MAX_ITERATIONS] Phase: $phase (iteration: $iteration)"
+
+        if [ "$phase" = "complete" ]; then
+            log_success "Research complete!"
+            show_status "$folder"
+            return 0
+        fi
+
+        if [ "$phase" = "failed" ]; then
+            log_error "Research failed. Check logs."
+            return 1
+        fi
+
+        # Run Claude Code
+        claude --dangerously-skip-permissions \
+               --model opus \
+               "Read PROMPT.md. Execute phase '$phase'.
+
+Research folder: $folder
+Prompts: $PROMPTS_DIR/
+
+Read state/session.json, execute current phase, update phase, save session.json."
+
+        sleep 1
+    done
+
+    log_warning "Max loop iterations reached"
+    show_status "$folder"
+    return 1
 }
 
-# Main execution
 main() {
     case "$1" in
         --help|-h) show_help; exit 0 ;;
         --list) list_research; exit 0 ;;
-        --clear) clear_research "$2"; exit 0 ;;
         --status) show_status "$2"; exit 0 ;;
+        --search) search_research "$2"; exit 0 ;;
+        --clear) clear_research "$2"; exit 0 ;;
+        --set-phase) set_phase "$2" "$3"; exit 0 ;;
         --resume)
-            RESEARCH_FOLDER="$2"
-            if [ -z "$RESEARCH_FOLDER" ]; then
-                RESEARCH_FOLDER=$(find_latest_research)
-            fi
-            if [ -z "$RESEARCH_FOLDER" ] || [ ! -d "$RESEARCH_FOLDER" ]; then
-                log_error "No research folder found to resume"
-                exit 1
-            fi
-            log_info "Resuming: $RESEARCH_FOLDER"
-            QUERY=""
+            folder="${2:-$(find_latest_research)}"
+            [ -z "$folder" ] || [ ! -d "$folder" ] && { log_error "No research to resume"; exit 1; }
+            query=$(jq -r '.query' "$folder/state/session.json")
+            run_loop "$folder" "$query"
             ;;
         "")
-            log_error "No query provided. Use --help for usage."
+            log_error "No query provided. Use --help."
             exit 1
             ;;
         *)
-            QUERY="$1"
-            RESEARCH_FOLDER=$(generate_research_folder "$QUERY")
-            initialize "$RESEARCH_FOLDER" "$QUERY"
-            log_info "Created: $RESEARCH_FOLDER"
+            query="$1"
+            folder=$(generate_research_folder "$query")
+            initialize "$folder" "$query"
+            log_info "Created: $folder"
+            run_loop "$folder" "$query"
             ;;
     esac
-
-    STATE_DIR="$RESEARCH_FOLDER/state"
-    OUTPUT_DIR="$RESEARCH_FOLDER/output"
-    RESULTS_DIR="$RESEARCH_FOLDER/results"
-    QUESTIONS_DIR="$RESEARCH_FOLDER/questions"
-
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "         Ralph Deep Research"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "Research: $RESEARCH_FOLDER"
-    echo "Prompts:  $PROMPTS_DIR/"
-    echo "Max iterations: $MAX_ITERATIONS"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-    for i in $(seq 1 $MAX_ITERATIONS); do
-        log_info "=== Iteration $i of $MAX_ITERATIONS ==="
-
-        if check_completion "$RESEARCH_FOLDER"; then
-            log_success "Research complete!"
-            show_status "$RESEARCH_FOLDER"
-            exit 0
-        fi
-
-        # Build prompt for Claude Code
-        if [ "$i" -eq 1 ] && [ -n "$QUERY" ]; then
-            FULL_PROMPT="Read PROMPT.md and execute the Ralph research pipeline.
-
-Research folder: $RESEARCH_FOLDER
-Prompts: $PROMPTS_DIR/
-Query: $QUERY
-
-Start with Phase 1: Initial Research."
-        else
-            FULL_PROMPT="Read PROMPT.md and continue the Ralph research pipeline.
-
-Research folder: $RESEARCH_FOLDER
-Prompts: $PROMPTS_DIR/
-
-Check $STATE_DIR/ to determine current phase and continue.
-Signal completion with <promise>COMPLETE</promise> when done."
-        fi
-
-        # Run Claude Code
-        echo "$FULL_PROMPT" | claude -p \
-            --dangerously-skip-permissions \
-            --output-format=stream-json \
-            --model opus \
-            --verbose
-
-        if check_completion "$RESEARCH_FOLDER"; then
-            log_success "Research complete!"
-            show_status "$RESEARCH_FOLDER"
-            exit 0
-        fi
-
-        sleep 2
-    done
-
-    log_warning "Max iterations reached."
-    show_status "$RESEARCH_FOLDER"
-    exit 1
 }
 
 main "$@"

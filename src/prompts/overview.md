@@ -1,45 +1,57 @@
 # Overview Agent (Deep Research Skill)
 
-## Роль
-Создание глубокого обзора темы с использованием Deep Research skill.
-
-## Инструмент
-Deep Research skill (9 фаз):
-1. SCOPE — определение границ
-2. PLAN — планирование поиска
-3. RETRIEVE — параллельный поиск
-4. TRIANGULATE — триангуляция источников
-5. OUTLINE REFINEMENT — уточнение структуры
-6. SYNTHESIZE — синтез
-7. CRITIQUE — критический анализ
-8. REFINE — доработка
-9. PACKAGE — упаковка результата
-
-## Вызов
-claude --dangerously-skip-permissions "Используй deep-research skill. Режим: deep (9 phases). Тема: {topic}. Выполни все 9 фаз. Сохрани в {output_path}."
+## Role
+Create comprehensive topic overview using Deep Research skill (9 phases).
 
 ## Input
-- task: описание задачи из plan.json
-- topic: тема для исследования
+- `state/session.json`
+- `state/plan.json` (overview_tasks)
+- Task from execution.tasks_pending
+
+## Process
+
+1. **Get task from plan**
+   - Read pending overview task
+   - Extract topic and scope
+
+2. **Execute Deep Research skill**
+   9 phases:
+   - SCOPE → define boundaries
+   - PLAN → plan search strategy
+   - RETRIEVE → parallel search
+   - TRIANGULATE → verify sources
+   - OUTLINE REFINEMENT → refine structure
+   - SYNTHESIZE → synthesize findings
+   - CRITIQUE → critical analysis
+   - REFINE → improvements
+   - PACKAGE → final packaging
+
+3. **Generate follow-up questions**
+   - What remains unclear?
+   - What needs verification?
+   - What adjacent topics matter?
 
 ## Output
-Сохранить в research_XXXXX/results/overview_N.json:
+
+Save to `results/overview_{N}.json`:
 ```json
 {
   "id": "overview_N",
-  "task": "...",
+  "task_id": "o1",
+  "topic": "Topic researched",
   "tool": "deep-research",
   "mode": "deep",
   "phases_completed": ["SCOPE", "PLAN", "RETRIEVE", "TRIANGULATE", "OUTLINE REFINEMENT", "SYNTHESIZE", "CRITIQUE", "REFINE", "PACKAGE"],
-  "content": "...",
-  "sources": [...],
-  "questions_generated": [...],
+  "content": "Comprehensive analysis...",
+  "key_findings": ["finding1", "finding2"],
+  "sources": [
+    {"title": "...", "url": "...", "credibility": "high|medium|low"}
+  ],
   "created_at": "ISO timestamp"
 }
 ```
 
-## Формат вопросов
-Сохранить в research_XXXXX/questions/overview_questions.json:
+Save questions to `questions/overview_questions.json`:
 ```json
 {
   "source": "overview_N",
@@ -47,11 +59,26 @@ claude --dangerously-skip-permissions "Используй deep-research skill. �
   "questions": [
     {
       "id": "oq1",
-      "question": "Текст вопроса",
+      "question": "Question text",
       "type": "data|research|overview",
-      "context": "Почему возник этот вопрос",
+      "context": "Why this question arose",
       "priority_hint": "high|medium|low"
     }
   ]
 }
 ```
+
+## Update session.json
+
+Move task from tasks_pending to tasks_completed:
+```json
+{
+  "execution": {
+    "tasks_pending": ["d1", "r1"],
+    "tasks_completed": ["o1"]
+  },
+  "updated_at": "ISO"
+}
+```
+
+When all tasks complete → set phase to "questions_review"

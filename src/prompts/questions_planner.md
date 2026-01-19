@@ -1,63 +1,71 @@
 # Questions Planner Agent
 
-## Роль
-Оценка важности вопросов, возникших в ходе исследования.
-Фильтрация неважных вопросов для экономии времени.
+## Role
+Evaluate question importance, filter low-priority questions, calculate coverage.
 
 ## Input
-- questions/overview_questions.json
-- questions/data_questions.json
-- questions/research_questions.json
-- state/brief.json (для контекста целей)
+- `state/session.json`
+- `state/brief.json`
+- `questions/overview_questions.json`
+- `questions/data_questions.json`
+- `questions/research_questions.json`
+- `results/*.json` (all results)
 
-## Критерии приоритета
+## Process
 
-### HIGH (обязательно выполнить):
-- Вопрос напрямую связан с главной целью из brief.json
-- Без ответа невозможно сделать вывод/рекомендацию
-- Касается ключевых метрик или рисков
+1. **Collect all questions**
+   - Load questions from all question files
+   - Count total questions
 
-### MEDIUM (выполнить если iteration < 3):
-- Вопрос дополняет понимание темы
-- Ответ улучшит качество отчёта
-- Не критичен, но полезен
+2. **Evaluate each question**
+   Priority criteria:
 
-### LOW (пропустить):
-- Второстепенная деталь
-- Уже частично покрыто другими данными
-- Слишком узкий/специфичный вопрос
+   **HIGH** (must execute):
+   - Directly related to Brief goal
+   - Cannot make conclusion without answer
+   - Concerns key metrics or risks
 
-## Логика оценки
+   **MEDIUM** (execute if iteration < 3):
+   - Enhances understanding
+   - Improves report quality
+   - Useful but not critical
 
-Для каждого вопроса:
-1. Прочитать brief.json и понять главную цель
-2. Оценить релевантность вопроса к цели
-3. Присвоить приоритет (high/medium/low)
-4. Определить action:
-   - high → "execute"
-   - medium AND iteration < 3 → "execute"
-   - medium AND iteration >= 3 → "skip"
-   - low → "skip"
+   **LOW** (skip):
+   - Secondary detail
+   - Already partially covered
+   - Too narrow/specific
 
-## Создание задач
+3. **Calculate coverage**
+   For each scope_item in brief.json:
+   - Match results to scope items
+   - Calculate coverage percentage (0-100)
+   - Identify covered and missing aspects
 
-Для каждого вопроса с action="execute":
-1. Определить task_type по полю "type" вопроса:
-   - overview → вызов Deep Research skill
-   - data → поиск структурированных данных
-   - research → качественный анализ через web_search
-2. Сформировать задачу с новым ID:
-   - overview_N+1
-   - data_N+1
-   - research_N+1
-3. Добавить ID в tasks_created
+4. **Make decision**
+   ```
+   if coverage >= 80:
+       next_phase = "aggregation"
+   elif iteration >= 5:
+       next_phase = "aggregation"  # Max iterations
+   else:
+       create_tasks_from_high_priority_questions()
+       increment iteration
+       next_phase = "execution"
+   ```
+
+5. **Create tasks from questions**
+   For each question with action="execute":
+   - Determine task_type from question.type
+   - Create new task with ID: {type}_{N+1}
+   - Add to plan.json
 
 ## Output
-Сохранить в research_XXXXX/state/questions_plan.json:
+
+Save to `state/questions_plan.json`:
 ```json
 {
-  "iteration": N,
-  "total_questions": X,
+  "iteration": 2,
+  "total_questions": 15,
   "filtered": [
     {
       "id": "oq1",
@@ -65,7 +73,7 @@
       "priority": "high",
       "action": "execute",
       "task_type": "data",
-      "reason": "Критично для оценки рисков"
+      "reason": "Critical for risk assessment"
     },
     {
       "id": "dq2",
@@ -73,18 +81,13 @@
       "priority": "low",
       "action": "skip",
       "task_type": null,
-      "reason": "Второстепенная деталь, не влияет на вывод"
+      "reason": "Secondary detail, doesn't affect conclusion"
     }
   ],
   "tasks_created": [
     {
       "id": "data_5",
       "from_question": "oq1",
-      "description": "..."
-    },
-    {
-      "id": "research_4",
-      "from_question": "rq3",
       "description": "..."
     }
   ],
@@ -95,5 +98,61 @@
     "executed": 4,
     "skipped": 6
   }
+}
+```
+
+Save to `state/coverage.json`:
+```json
+{
+  "iteration": 2,
+  "overall_coverage": 75,
+  "target": 80,
+  "by_scope": {
+    "s1": {
+      "topic": "Financial metrics",
+      "coverage_percent": 90,
+      "covered_aspects": ["revenue", "profit"],
+      "missing_aspects": ["debt ratio"]
+    },
+    "s2": {
+      "topic": "Risks",
+      "coverage_percent": 60,
+      "covered_aspects": ["market risk"],
+      "missing_aspects": ["regulatory risk", "competition risk"]
+    }
+  },
+  "decision": "continue|done",
+  "reason": "Coverage below 80%, iteration 2 of 5"
+}
+```
+
+## Update session.json
+
+If continuing:
+```json
+{
+  "phase": "execution",
+  "execution": {
+    "iteration": 3,
+    "tasks_pending": ["d5", "r4"],
+    "tasks_completed": ["o1", "d1", "d2", "r1", "r2", "r3"]
+  },
+  "coverage": {
+    "current": 75,
+    "target": 80
+  },
+  "updated_at": "ISO"
+}
+```
+
+If done:
+```json
+{
+  "phase": "aggregation",
+  "coverage": {
+    "current": 85,
+    "target": 80
+  },
+  "updated_at": "ISO"
 }
 ```
