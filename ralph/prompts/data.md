@@ -43,19 +43,33 @@ Save to `results/data_{N}.json`:
         "value": "number|string",
         "unit": "string|null",
         "period": "string|null",
-        "as_of_date": "ISO date"
+        "as_of_date": "ISO date",
+        "citation_id": "c1"
       }
     },
     "tables": [
       {
         "name": "string",
         "headers": ["col1", "col2"],
-        "rows": [["val1", "val2"]]
+        "rows": [["val1", "val2"]],
+        "citation_id": "c2"
       }
     ]
   },
+  "citations": [
+    {
+      "id": "c1",
+      "claim": "The specific data point or metric",
+      "source_title": "Page title",
+      "source_url": "https://...",
+      "snippet": "Relevant excerpt showing the data",
+      "confidence": "high|medium|low",
+      "accessed_at": "ISO timestamp"
+    }
+  ],
   "metadata": {
     "source": "string",
+    "source_url": "https://...",
     "timestamp": "ISO datetime",
     "data_freshness": "real-time|daily|weekly|monthly|quarterly|annual"
   },

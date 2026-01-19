@@ -209,13 +209,14 @@ show_status() {
         echo ""
     fi
 
-    # Output files
+    # Output files (based on preferences)
+    local output_format=$(jq -r '.preferences.output_format // "html+excel"' "$session")
     echo "  ┌─────────────────────────────────────────────────────────────┐"
-    echo "  │ Output                                                      │"
+    echo "  │ Output (format: $output_format)                             │"
     echo "  ├─────────────────────────────────────────────────────────────┤"
+    [ -f "$folder/output/report.html" ] && echo "  │  ✓ report.html" || echo "  │  ○ report.html"
     [ -f "$folder/output/report.pdf" ] && echo "  │  ✓ report.pdf" || echo "  │  ○ report.pdf"
-    [ -f "$folder/output/report.xlsx" ] && echo "  │  ✓ report.xlsx" || echo "  │  ○ report.xlsx"
-    [ -f "$folder/output/report.pptx" ] && echo "  │  ✓ report.pptx" || echo "  │  ○ report.pptx"
+    [ -f "$folder/output/data_pack.xlsx" ] && echo "  │  ✓ data_pack.xlsx" || echo "  │  ○ data_pack.xlsx"
     echo "  └─────────────────────────────────────────────────────────────┘"
     echo ""
     echo "════════════════════════════════════════════════════════════════"
@@ -324,6 +325,13 @@ initialize() {
   "phase": "initial_research",
   "tags": [],
   "entities": [],
+  "preferences": {
+    "output_format": "html+excel",
+    "style": "default",
+    "depth": "standard",
+    "audience": "analyst",
+    "components": ["full_report", "data_pack"]
+  },
   "execution": {
     "iteration": 0,
     "max_iterations": 5,

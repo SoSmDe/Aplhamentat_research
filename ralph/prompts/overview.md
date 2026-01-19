@@ -43,9 +43,32 @@ Save to `results/overview_{N}.json`:
   "mode": "deep",
   "phases_completed": ["SCOPE", "PLAN", "RETRIEVE", "TRIANGULATE", "OUTLINE REFINEMENT", "SYNTHESIZE", "CRITIQUE", "REFINE", "PACKAGE"],
   "content": "Comprehensive analysis...",
-  "key_findings": ["finding1", "finding2"],
+  "key_findings": [
+    {
+      "finding": "Key finding text",
+      "confidence": "high|medium|low",
+      "citation_ids": ["c1", "c2"]
+    }
+  ],
+  "citations": [
+    {
+      "id": "c1",
+      "claim": "The specific factual claim",
+      "source_title": "Page title",
+      "source_url": "https://...",
+      "snippet": "Relevant excerpt from the page",
+      "confidence": "high|medium|low",
+      "accessed_at": "ISO timestamp"
+    }
+  ],
   "sources": [
-    {"title": "...", "url": "...", "credibility": "high|medium|low"}
+    {
+      "title": "Page title",
+      "url": "https://...",
+      "type": "news|report|website|filing|academic|other",
+      "credibility": "high|medium|low",
+      "accessed_at": "ISO timestamp"
+    }
   ],
   "created_at": "ISO timestamp"
 }

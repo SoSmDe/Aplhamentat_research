@@ -48,7 +48,14 @@ Save to `state/initial_context.json`:
   ],
   "context_summary": "3-5 sentences of context",
   "suggested_topics": ["topic1", "topic2", "topic3"],
-  "sources_used": ["url1", "url2"],
+  "sources": [
+    {
+      "title": "Page title",
+      "url": "https://...",
+      "snippet": "Relevant excerpt from the page",
+      "accessed_at": "ISO timestamp"
+    }
+  ],
   "created_at": "ISO timestamp"
 }
 ```

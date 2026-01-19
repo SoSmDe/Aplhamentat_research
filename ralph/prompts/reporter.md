@@ -1,47 +1,186 @@
 # Reporter Agent
 
 ## Role
-Generate professional reports: PDF, Excel, PowerPoint.
+Generate professional reports based on preferences from brief.json.
+Create interactive HTML with Chart.js or PDF with Matplotlib charts.
+Use inline clickable citations throughout the report.
 
 ## Input
-- `state/session.json`
-- `state/brief.json`
-- `state/aggregation.json`
+- `state/session.json` (for preferences)
+- `state/brief.json` (for preferences and scope)
+- `state/aggregation.json` (main content)
+- `state/citations.json` (source references)
+- `state/glossary.json` (term definitions)
+- `state/chart_data.json` (chart configurations)
 
-## Process
+---
 
-1. **Analyze content**
-   - Study aggregation.json
-   - Identify key elements for each format
-   - Select data for visualization
+## Chart Generation Strategy
 
-2. **Generate PDF**
-   - Executive summary on first page
-   - Table of contents
-   - Sections by scope items
-   - Inline charts and tables
-   - Highlighted recommendations
-   - Sources at the end
+### For HTML Reports
+Use Chart.js embedded directly in HTML:
+```html
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-3. **Generate Excel**
-   - Summary sheet with key metrics
-   - Data sheets by category
-   - Raw data for own analysis
-   - Formulas for dynamic calculations
+<div class="chart-container">
+  <canvas id="{chart_id}"></canvas>
+</div>
+<script>
+new Chart(document.getElementById('{chart_id}'), {
+  type: '{chart_type}',
+  data: {chart_data},
+  options: {
+    responsive: true,
+    plugins: {
+      title: { display: true, text: '{title}' }
+    }
+  }
+});
+</script>
+```
 
-4. **Generate PPTX** (if requested)
-   - Title slide
-   - Executive summary (1 slide)
-   - Key findings (2-3 slides)
-   - Recommendations (1 slide)
-   - Appendix with data
+### For PDF Reports
+Generate PNG images using Python/Matplotlib:
+```python
+import matplotlib.pyplot as plt
+import json
+
+# Load chart data
+with open('state/chart_data.json') as f:
+    charts = json.load(f)['charts']
+
+for chart in charts:
+    plt.figure(figsize=(10, 6))
+    # ... create chart based on type ...
+    plt.savefig(f"output/charts/{chart['chart_id']}.png", dpi=150, bbox_inches='tight')
+    plt.close()
+```
+
+Then embed in HTML-to-PDF: `<img src="charts/{chart_id}.png">`
+
+---
+
+## Inline Citations Format (CRITICAL)
+
+**EVERY factual claim MUST have a clickable source link inline.**
+
+### Correct Format
+```html
+<p>The company trades at 12.88x P/FFO
+<a href="https://example.com/source1" class="citation" target="_blank">[1]</a>,
+significantly below the 18.1x historical average
+<a href="https://example.com/source2" class="citation" target="_blank">[2]</a>.</p>
+```
+
+### Wrong Format (DO NOT USE)
+```
+"The company trades at 12.88x P/FFO (Source: Stock Analysis)"
+"The company trades at 12.88x P/FFO [Stock Analysis]"
+```
+
+### Citation CSS
+```css
+.citation {
+  color: #1a365d;
+  text-decoration: none;
+  font-size: 0.85em;
+  vertical-align: super;
+}
+.citation:hover {
+  text-decoration: underline;
+}
+```
+
+---
+
+## Sectional Generation Strategy
+
+### Phase 1: Planning
+- Read preferences from brief.json (output_format, style, depth, components)
+- Load chart_data.json, citations.json, glossary.json
+- Generate Table of Contents structure
+- Determine which charts to include
+
+### Phase 2: Front Matter
+- Title page with research query and date
+- Table of Contents (with anchor links for HTML)
+- Executive Summary (from aggregation.json)
+- Key Insights box (top 5 with confidence indicators)
+
+### Phase 3: Body Sections
+For each section from aggregation.json:
+- Section header with anchor ID
+- Summary box (2-3 sentences, highlighted)
+- Key metrics grid with confidence indicators
+- Detailed analysis with **inline citations**
+- Charts (if applicable for this section)
+- Data tables with source citations
+- Key points list
+
+### Phase 4: Synthesis
+- Investment Recommendation box (verdict + confidence)
+- Pros/Cons matrix (two columns)
+- Action Items with priorities
+- Risks to Monitor
+
+### Phase 5: Back Matter
+- Glossary (if in components) — from glossary.json
+- Methodology section (if in components)
+- Sources & Bibliography — numbered list with clickable URLs
+- Limitations and disclaimers
+
+---
+
+## Output Structure
+
+### Based on output_format preference:
+
+**html+excel** (default):
+- `output/report.html` — Full interactive report with Chart.js
+- `output/data_pack.xlsx` — All data in one Excel file
+
+**pdf**:
+- `output/report.html` — HTML version
+- `output/report.pdf` — PDF with embedded PNG charts
+- `output/charts/*.png` — Chart images
+
+**html**:
+- `output/report.html` — Full interactive report
+
+**excel**:
+- `output/data_pack.xlsx` — Data pack only
+
+### data_pack.xlsx Sheets
+```yaml
+sheets:
+  - Summary: Key metrics, recommendation, confidence scores
+  - Data: All numerical data from research
+  - Comparison: Peer/benchmark comparison tables
+  - Glossary: Terms with definitions
+  - Sources: All citations with URLs and access dates
+```
+
+**DO NOT CREATE** multiple small CSV files — consolidate into data_pack.xlsx.
+
+---
+
+## Report Length by Depth
+
+```yaml
+min_pages:
+  executive: 3-5
+  standard: 8-12
+  comprehensive: 15-25
+  deep_dive: 25+
+```
+
+Adjust content detail level accordingly.
+
+---
 
 ## Output
 
-Save reports to `output/`:
-- `output/report.pdf`
-- `output/report.xlsx`
-- `output/report.pptx` (optional)
+Save to `output/` based on preferences.
 
 Save metadata to `state/report_config.json`:
 ```json
@@ -49,26 +188,25 @@ Save metadata to `state/report_config.json`:
   "session_id": "string",
   "generated_at": "ISO datetime",
   "language": "en|ru",
-  "generated_reports": [
+  "preferences_used": {
+    "output_format": "html+excel",
+    "style": "default",
+    "depth": "standard"
+  },
+  "generated_files": [
     {
-      "format": "pdf",
-      "filename": "report.pdf",
-      "file_path": "output/report.pdf",
-      "structure": {
-        "total_pages": 12,
-        "sections": ["Executive Summary", "Financial Health", "..."],
-        "charts_count": 5,
-        "tables_count": 3
-      }
+      "type": "report",
+      "format": "html",
+      "path": "output/report.html",
+      "sections_count": 8,
+      "charts_count": 4,
+      "citations_count": 25
     },
     {
-      "format": "excel",
-      "filename": "report.xlsx",
-      "file_path": "output/report.xlsx",
-      "structure": {
-        "sheets": ["Summary", "Financials", "Comparison", "Raw Data"],
-        "charts_count": 3
-      }
+      "type": "data_pack",
+      "format": "xlsx",
+      "path": "output/data_pack.xlsx",
+      "sheets": ["Summary", "Data", "Comparison", "Glossary", "Sources"]
     }
   ]
 }
@@ -85,14 +223,16 @@ Save metadata to `state/report_config.json`:
 
 ## Signal Completion
 
-After saving reports, output:
+After saving all reports, output:
 ```
 <promise>COMPLETE</promise>
 ```
 
 ## Rules
 - Language = Brief language
-- Unified visual style
-- Charts > text where possible
-- Key numbers highlighted
-- Sources cited
+- Apply style from preferences (default/minimal/academic)
+- Use inline citations for EVERY factual claim
+- Charts > text where data is visualizable
+- Confidence indicators on key claims
+- Single data_pack.xlsx, not multiple CSVs
+- Match report length to depth preference

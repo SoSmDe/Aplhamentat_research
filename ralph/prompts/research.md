@@ -51,32 +51,45 @@ Save to `results/research_{N}.json`:
         "finding": "string",
         "type": "fact|opinion|analysis",
         "confidence": "high|medium|low",
-        "source": "string"
+        "citation_ids": ["c1", "c2"]
       }
     ],
-    "detailed_analysis": "Extended analysis...",
+    "detailed_analysis": "Extended analysis with [c1] inline references...",
     "themes": [
       {
         "theme": "string",
         "points": ["point1", "point2"],
-        "sentiment": "positive|negative|neutral|mixed"
+        "sentiment": "positive|negative|neutral|mixed",
+        "citation_ids": ["c1"]
       }
     ],
     "contradictions": [
       {
         "topic": "string",
-        "view_1": {"position": "string", "source": "string"},
-        "view_2": {"position": "string", "source": "string"}
+        "view_1": {"position": "string", "citation_id": "c1"},
+        "view_2": {"position": "string", "citation_id": "c2"}
       }
     ]
   },
+  "citations": [
+    {
+      "id": "c1",
+      "claim": "The specific factual claim",
+      "source_title": "Page title",
+      "source_url": "https://...",
+      "snippet": "Relevant excerpt from the page",
+      "confidence": "high|medium|low",
+      "accessed_at": "ISO timestamp"
+    }
+  ],
   "sources": [
     {
       "type": "news|report|website|filing|academic|other",
       "title": "string",
       "url": "string",
       "date": "ISO date",
-      "credibility": "high|medium|low"
+      "credibility": "high|medium|low",
+      "accessed_at": "ISO timestamp"
     }
   ],
   "created_at": "ISO timestamp"
