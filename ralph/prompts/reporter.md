@@ -182,6 +182,57 @@ chart_rules:
     - "✅ Solid lines with different colors → clear distinction"
 ```
 
+### ⚠️ Color Consistency Rules (CRITICAL)
+
+**Один актив = один цвет на ВСЮ работу.**
+
+**Процесс определения цветов:**
+1. Найти график с максимальным количеством активов/серий
+2. Назначить цвета по приоритету (см. палитру ниже)
+3. На графиках с меньшим количеством — использовать те же цвета
+4. **НИКОГДА** не менять цвет актива между графиками
+
+**Стандартная палитра (приоритет):**
+```yaml
+color_palette:
+  # Crypto
+  BTC: "#F7931A"      # Bitcoin orange
+  ETH: "#627EEA"      # Ethereum blue
+
+  # Traditional
+  SPY: "#00D632"      # Green (S&P 500)
+  QQQ: "#6B5B95"      # Purple (Nasdaq)
+  GLD: "#FFD700"      # Gold
+
+  # Bonds/Fixed Income
+  TLT: "#4A90A4"      # Teal
+  AGG: "#8B4513"      # Brown
+
+  # Additional (if needed)
+  extra_1: "#E91E63"  # Pink
+  extra_2: "#00BCD4"  # Cyan
+  extra_3: "#795548"  # Brown dark
+```
+
+**Пример:**
+```
+График 1 (5 активов): BTC, ETH, SPY, QQQ, GLD
+  → Все 5 цветов назначены
+
+График 2 (3 актива): BTC, SPY, GLD
+  → BTC=#F7931A, SPY=#00D632, GLD=#FFD700
+  → НЕ переназначать цвета!
+
+График 3 (2 актива): ETH, QQQ
+  → ETH=#627EEA, QQQ=#6B5B95
+```
+
+**❌ Неправильно:**
+```
+График 1: GLD = #FFD700 (gold)
+График 2: GLD = #00D632 (green)  ← ОШИБКА: цвет изменился!
+```
+
 ### For HTML Reports
 Use Chart.js embedded directly in HTML:
 ```html
