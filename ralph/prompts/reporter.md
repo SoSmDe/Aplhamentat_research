@@ -162,9 +162,14 @@ ralph/templates/Warp/
 
 ### Template Files Location
 ```
-ralph/templates/html/
-├── base_warp.html      # Warp Capital style (red #C41E3A)
-└── snippets.html       # Reusable components
+ralph/templates/
+├── Warp/
+│   ├── base.html           # Warp Capital template (red #C41E3A)
+│   ├── footer-logo.svg     # Logo for footer
+│   ├── logo-white.svg      # White logo variant
+│   └── ...                 # Other Warp assets
+└── html/
+    └── snippets.html       # Shared reusable components
 ```
 
 ### Template Selection by Style
@@ -172,16 +177,16 @@ ralph/templates/html/
 | `brief.json → style` | Template to use |
 |---------------------|-----------------|
 | `default` | Generate HTML manually (no template) |
-| `warp` | `base_warp.html` |
-| `warp+reference` | `base_warp.html` |
+| `warp` | `ralph/templates/Warp/base.html` |
+| `warp+reference` | `ralph/templates/Warp/base.html` |
 
-**Note:** Templates are only available for Warp style. Default style uses manual HTML generation.
+**Note:** Company-specific templates are in `ralph/templates/{Company}/` folder. Default style uses manual HTML generation.
 
 ### Workflow (MANDATORY)
 
 ```
 Step 1: Read template
-  → Read ralph/templates/html/base_{style}.html
+  → Read ralph/templates/{Company}/base.html (e.g., ralph/templates/Warp/base.html)
   → Read ralph/templates/html/snippets.html
 
 Step 2: Read data
@@ -297,7 +302,7 @@ Keep generating...
 ### ✅ DO (Fast template method)
 ```
 # CORRECT - read template, replace all placeholders, single write
-1. template = Read("ralph/templates/html/base_warp.html")
+1. template = Read("ralph/templates/Warp/base.html")
 2. snippets = Read("ralph/templates/html/snippets.html")
 3. data = Read("state/aggregation.json")
 4. html = template with all {{PLACEHOLDERS}} replaced
@@ -365,7 +370,7 @@ corporate_colors:
 
 **⚠️ All CSS is in the HTML templates. DO NOT write CSS manually.**
 
-See `ralph/templates/html/base_warp.html` for full implementation.
+See `ralph/templates/Warp/base.html` for full implementation.
 
 ---
 
@@ -499,7 +504,7 @@ backBtn.addEventListener('click', () => {
 - `state/chart_data.json` (chart configurations)
 - **`results/series/*.json`** (time series data files)
 - **`ralph/references/warp_market_overview_cache.yaml`** (style rules — USE THIS, not PDF!)
-- **`ralph/templates/html/`** (HTML templates)
+- **`ralph/templates/{Company}/`** (company-specific templates, e.g., `Warp/base.html`)
 
 ---
 
