@@ -1,0 +1,253 @@
+<!--
+    RALPH HTML SNIPPETS
+    Copy and fill placeholders: {{PLACEHOLDER}}
+-->
+
+<!-- ============================================ -->
+<!-- TOC ITEM -->
+<!-- ============================================ -->
+<!--SNIPPET:TOC_ITEM-->
+<li><a href="#{{SECTION_ID}}">{{SECTION_TITLE}}</a></li>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- NUMBERED SECTION -->
+<!-- ============================================ -->
+<!--SNIPPET:SECTION-->
+<section class="numbered-section" id="{{SECTION_ID}}">
+    <h2>{{SECTION_TITLE}}</h2>
+    {{SECTION_CONTENT}}
+</section>
+<!--/SNIPPET-->
+
+<!--SNIPPET:SECTION_WITH_SUBTITLE-->
+<section class="numbered-section" id="{{SECTION_ID}}">
+    <h2>{{SECTION_TITLE}}</h2>
+    <h3>{{SECTION_SUBTITLE}}</h3>
+    {{SECTION_CONTENT}}
+</section>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- INSIGHT CARD -->
+<!-- ============================================ -->
+<!--SNIPPET:INSIGHT_CARD-->
+<div class="insight-card">
+    <div class="confidence">{{CONFIDENCE_INDICATOR}} {{CONFIDENCE_LEVEL}}</div>
+    <div class="insight-text">{{INSIGHT_TEXT}}</div>
+</div>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- METRIC CARD -->
+<!-- ============================================ -->
+<!--SNIPPET:METRIC_CARD-->
+<div class="metric-card">
+    <div class="metric-value">{{VALUE}}<sup><a href="#ref-{{CITATION_ID}}" class="citation">[{{CITATION_ID}}]</a></sup></div>
+    <div class="metric-label">{{LABEL}}</div>
+</div>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- METRICS GRID -->
+<!-- ============================================ -->
+<!--SNIPPET:METRICS_GRID-->
+<div class="metrics-grid">
+    {{METRIC_CARDS}}
+</div>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- TABLE -->
+<!-- ============================================ -->
+<!--SNIPPET:TABLE-->
+<table>
+    <thead>
+        <tr>{{TABLE_HEADERS}}</tr>
+    </thead>
+    <tbody>
+        {{TABLE_ROWS}}
+    </tbody>
+</table>
+<div class="table-caption">Source: <a href="#ref-{{CITATION_ID}}" class="citation">[{{CITATION_ID}}]</a></div>
+<!--/SNIPPET-->
+
+<!--SNIPPET:TABLE_HEADER-->
+<th>{{HEADER_TEXT}}</th>
+<!--/SNIPPET-->
+
+<!--SNIPPET:TABLE_ROW-->
+<tr>{{CELLS}}</tr>
+<!--/SNIPPET-->
+
+<!--SNIPPET:TABLE_CELL-->
+<td>{{CELL_VALUE}}</td>
+<!--/SNIPPET-->
+
+<!--SNIPPET:TABLE_CELL_NUMERIC-->
+<td class="numeric">{{CELL_VALUE}}</td>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- CHART -->
+<!-- ============================================ -->
+<!--SNIPPET:CHART_CONTAINER-->
+<div class="chart-container">
+    <div class="chart-title">{{CHART_TITLE}}</div>
+    <div class="chart-wrapper">
+        <canvas id="{{CHART_ID}}"></canvas>
+    </div>
+    <div class="chart-note">{{CHART_NOTE}}</div>
+</div>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- CHART.JS INITIALIZATION -->
+<!-- ============================================ -->
+<!--SNIPPET:CHART_JS_LINE-->
+new Chart(document.getElementById('{{CHART_ID}}'), {
+    type: 'line',
+    data: {
+        labels: {{LABELS_JSON}},
+        datasets: [{{DATASETS_JSON}}]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+            legend: { position: 'top' },
+            tooltip: { enabled: true }
+        },
+        scales: {
+            x: { display: true },
+            y: {
+                display: true,
+                type: '{{Y_SCALE_TYPE}}'
+            }
+        },
+        elements: {
+            line: { tension: 0, borderWidth: 2 },
+            point: { radius: 0 }
+        }
+    }
+});
+<!--/SNIPPET-->
+
+<!--SNIPPET:CHART_JS_BAR-->
+new Chart(document.getElementById('{{CHART_ID}}'), {
+    type: 'bar',
+    data: {
+        labels: {{LABELS_JSON}},
+        datasets: [{{DATASETS_JSON}}]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+            x: { display: true },
+            y: { display: true, beginAtZero: true }
+        }
+    }
+});
+<!--/SNIPPET-->
+
+<!--SNIPPET:DATASET-->
+{
+    label: '{{DATASET_LABEL}}',
+    data: {{DATA_JSON}},
+    borderColor: '{{BORDER_COLOR}}',
+    backgroundColor: '{{BG_COLOR}}',
+    fill: {{FILL}}
+}
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- SCENARIO CARDS -->
+<!-- ============================================ -->
+<!--SNIPPET:SCENARIO_CARD_BEAR-->
+<div class="scenario-card bear">
+    <div class="scenario-name">{{SCENARIO_NAME}}</div>
+    <div class="scenario-price">{{PRICE_TARGET}}</div>
+    <div class="scenario-description">{{DESCRIPTION}}</div>
+</div>
+<!--/SNIPPET-->
+
+<!--SNIPPET:SCENARIO_CARD_BASE-->
+<div class="scenario-card base">
+    <div class="scenario-name">{{SCENARIO_NAME}}</div>
+    <div class="scenario-price">{{PRICE_TARGET}}</div>
+    <div class="scenario-description">{{DESCRIPTION}}</div>
+</div>
+<!--/SNIPPET-->
+
+<!--SNIPPET:SCENARIO_CARD_BULL-->
+<div class="scenario-card bull">
+    <div class="scenario-name">{{SCENARIO_NAME}}</div>
+    <div class="scenario-price">{{PRICE_TARGET}}</div>
+    <div class="scenario-description">{{DESCRIPTION}}</div>
+</div>
+<!--/SNIPPET-->
+
+<!--SNIPPET:SCENARIO_CARD_EXTREME-->
+<div class="scenario-card extreme">
+    <div class="scenario-name">{{SCENARIO_NAME}}</div>
+    <div class="scenario-price">{{PRICE_TARGET}}</div>
+    <div class="scenario-description">{{DESCRIPTION}}</div>
+</div>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- SOURCE ITEM -->
+<!-- ============================================ -->
+<!--SNIPPET:SOURCE_ITEM-->
+<div class="source-item" id="ref-{{CITATION_ID}}">
+    <span class="source-id">[{{CITATION_ID}}]</span>
+    <strong>{{SOURCE_TITLE}}</strong><br>
+    <span class="source-url">{{SOURCE_URL}}</span>
+    <span style="color: #888;"> — accessed {{ACCESS_DATE}}</span>
+</div>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- PROS/CONS LIST ITEMS -->
+<!-- ============================================ -->
+<!--SNIPPET:LIST_ITEM-->
+<li>{{ITEM_TEXT}}</li>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- INLINE CITATION -->
+<!-- ============================================ -->
+<!--SNIPPET:CITATION-->
+<a href="#ref-{{CITATION_ID}}" class="citation">[{{CITATION_ID}}]</a>
+<!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- WARP LOGO SVG (inline) - wave pattern -->
+<!-- ============================================ -->
+<!--SNIPPET:WARP_LOGO-->
+<svg width="50" height="50" viewBox="0 0 50 50">
+    <circle cx="25" cy="25" r="24" fill="none" stroke="#C41E3A" stroke-width="2"/>
+    <g stroke="#C41E3A" stroke-width="1.5" fill="none">
+        <path d="M10,15 Q17,12 25,15 T40,15"/>
+        <path d="M10,20 Q17,17 25,20 T40,20"/>
+        <path d="M10,25 Q17,22 25,25 T40,25"/>
+        <path d="M10,30 Q17,27 25,30 T40,30"/>
+        <path d="M10,35 Q17,32 25,35 T40,35"/>
+    </g>
+</svg>
+<!--/SNIPPET-->

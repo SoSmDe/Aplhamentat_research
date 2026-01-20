@@ -97,7 +97,8 @@ Update `state/session.json` fields:
 ```
 
 ## Rules
-- Maximum 60 seconds execution
+- Take the time needed for quality results (target: ~120 seconds)
 - Facts only, no deep analysis
 - Use verified sources only
 - If entity is ambiguous, list variants
+- **STOP after completing this phase** — do not proceed to brief_builder

@@ -78,10 +78,64 @@ depth_multipliers:
     target_coverage: 95
 ```
 
+### 1.5. Check Style Settings (IMPORTANT)
+
+Get `preferences.style` and `preferences.style_reference` from brief.json.
+
+**If `style` is `warp` or `warp+reference`:**
+
+The report should follow Warp Capital analytical style. This affects planning:
+
+```yaml
+warp_style_implications:
+  structure:
+    - Start with clear thesis/question ("Начался ли медвежий тренд?")
+    - Present BOTH bullish AND bearish arguments (balanced)
+    - End with scenario analysis (extreme low, most likely, extreme high)
+
+  data_requirements:
+    - On-chain metrics: MVRV, NUPL, SOPR, LTH/STH supply (use BlockLens)
+    - Price data with cycle overlays
+    - Holder cohort analysis
+    - ETF flows and institutional data
+
+  story_line:
+    1. Frame the key question
+    2. Present evidence FOR thesis (with numbered points)
+    3. Present evidence AGAINST thesis (тревожные сигналы)
+    4. Scenario analysis with price targets
+    5. Conclusion with probability assessment
+```
+
+**If `style_reference` is set** — READ the **YAML cache file** (NOT PDF!) to get:
+- Exact section structure (from `structure` key)
+- Types of charts used (from `charts` key)
+- Metrics and data sources (from `metrics_display` key)
+- Analytical framework (from `writing_style` key)
+
+**⚠️ The `style_reference` points to a YAML file like `warp_market_overview_cache.yaml`, NOT a PDF!**
+
+**Add style-specific tasks:**
+```yaml
+warp_style_tasks:
+  - id: "d_onchain"
+    description: "BTC on-chain metrics for cycle analysis"
+    data_spec:
+      api_source: "blocklens"
+      metrics: ["mvrv", "nupl", "sopr", "lth_sth_supply"]
+
+  - id: "r_scenarios"
+    description: "Scenario analysis: extreme bottom, most likely, extreme top"
+    type: "research"
+```
+
+---
+
 ### 2. Analyze Scope
 - Read each scope item from brief.json
 - Determine type: overview, data, research, or combination
 - Apply tasks_per_scope multiplier
+- **If Warp style** — ensure on-chain data and scenario analysis tasks are included
 
 ### 3. Generate Tasks
 
@@ -109,7 +163,7 @@ For each scope item create appropriate tasks:
       assets: ["BTC", "ETH", "SPY"]      # Specific assets
       timeframe: "2020-01-01 to now"     # Date range
       frequency: "daily|hourly|weekly"   # Data granularity
-      api_source: "coingecko|yfinance|defillama"  # Which API
+      api_source: "coingecko|yfinance|defillama|blocklens"  # Which API (blocklens for BTC on-chain)
     calculations:                         # If analysis needed
       - "drawdown_series"
       - "correlation_matrix"

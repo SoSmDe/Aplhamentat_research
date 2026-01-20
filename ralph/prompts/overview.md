@@ -74,14 +74,14 @@ Save to `results/overview_{N}.json`:
 }
 ```
 
-Save questions to `questions/overview_questions.json`:
+Append questions to `questions/overview_questions.json`:
 ```json
 {
-  "source": "overview_N",
-  "generated_at": "ISO timestamp",
   "questions": [
     {
       "id": "oq1",
+      "source": "overview_1",
+      "generated_at": "ISO timestamp",
       "question": "Question text",
       "type": "data|research|overview",
       "context": "Why this question arose",
@@ -90,6 +90,7 @@ Save questions to `questions/overview_questions.json`:
   ]
 }
 ```
+**⚠️ APPEND mode:** If file exists, add new questions to the array. Do NOT overwrite previous questions.
 
 ## Update session.json
 
@@ -105,3 +106,11 @@ Move task from tasks_pending to tasks_completed:
 ```
 
 When all tasks complete → set phase to "questions_review"
+
+## Rules
+- Deep Research skill handles timing internally — take the time needed for quality
+- Focus on Brief scope — don't expand beyond what was requested
+- Prioritize authoritative sources
+- Generate follow-up questions for gaps and uncertainties
+- **STOP after completing assigned task** — do not execute other agents' work (data, research)
+- **Stay in your lane** — you are Overview agent; finish your task and end

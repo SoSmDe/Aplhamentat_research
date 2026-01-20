@@ -18,22 +18,30 @@ Evaluate question importance, filter low-priority questions, calculate coverage.
    - Count total questions
 
 2. **Evaluate each question**
-   Priority criteria:
 
-   **HIGH** (must execute):
-   - Directly related to Brief goal
-   - Cannot make conclusion without answer
-   - Concerns key metrics or risks
+```yaml
+priority_criteria:
+  high:
+    action: "must_execute"
+    conditions:
+      - "Directly related to Brief goal"
+      - "Cannot make conclusion without answer"
+      - "Concerns key metrics or risks"
 
-   **MEDIUM** (execute if iteration < 3):
-   - Enhances understanding
-   - Improves report quality
-   - Useful but not critical
+  medium:
+    action: "execute_if_iteration_lt_3"
+    conditions:
+      - "Enhances understanding"
+      - "Improves report quality"
+      - "Useful but not critical"
 
-   **LOW** (skip):
-   - Secondary detail
-   - Already partially covered
-   - Too narrow/specific
+  low:
+    action: "skip"
+    conditions:
+      - "Secondary detail"
+      - "Already partially covered"
+      - "Too narrow/specific"
+```
 
 3. **Calculate coverage**
    For each scope_item in brief.json:
@@ -42,16 +50,33 @@ Evaluate question importance, filter low-priority questions, calculate coverage.
    - Identify covered and missing aspects
 
 4. **Make decision**
-   ```
-   if coverage >= 80:
-       next_phase = "aggregation"
-   elif iteration >= 5:
-       next_phase = "aggregation"  # Max iterations
-   else:
-       create_tasks_from_high_priority_questions()
-       increment iteration
-       next_phase = "execution"
-   ```
+
+```yaml
+decision_inputs:
+  from_session_json:
+    - coverage.target      # varies by depth: 70-95
+    - coverage.current     # calculated in step 3
+    - execution.iteration  # current iteration
+    - execution.max_iterations  # varies by depth: 1-4
+
+decision_logic:
+  aggregation:
+    conditions:
+      - "coverage.current >= coverage.target"
+      - "iteration >= max_iterations"
+    result: "phase = aggregation"
+
+  continue_execution:
+    conditions:
+      - "coverage.current < coverage.target"
+      - "iteration < max_iterations"
+      - "high_priority_questions exist"
+    result: "phase = execution, iteration += 1"
+    actions:
+      - "create_tasks_from_high_priority_questions()"
+      - "add new tasks to plan.json"
+      - "add task IDs to tasks_pending"
+```
 
 5. **Create tasks from questions**
    For each question with action="execute":

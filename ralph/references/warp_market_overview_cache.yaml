@@ -1,0 +1,149 @@
+# Warp Capital Style Cache
+# Extracted from: Warp - 2025-12 BTC market overview_extract.pdf
+# DO NOT read the PDF - use this cache instead
+
+structure:
+  order:
+    - header: "Logo + Date (top row)"
+    - title: "Report title (bold, large)"
+    - subtitle: "Descriptive subtitle (lighter)"
+    - executive_summary: "3-5 bullet points with specific numbers"
+    - sections: "Numbered analytical sections with subtitles"
+    - scenarios: "Bear/Base/Bull price targets"
+    - sources: "Numbered footnotes"
+
+  section_pattern:
+    title: "Short name (e.g., 'Supply Analysis')"
+    subtitle: "Descriptive (e.g., 'Behavior of Long-Term Bitcoin Holders')"
+    content: "Analysis with inline citations [1], [2]"
+    charts: "Annotated charts with commentary below"
+
+writing_style:
+  tone: "Professional analytical, balanced, no hype"
+
+  patterns:
+    - "Specific numbers and ranges: '$59-63K', '72%', 'MVRV 2.42'"
+    - "On-chain terminology: NUPL, MVRV, LTH/STH, SOPR, realized price"
+    - "Balanced view: present BOTH bullish AND bearish signals"
+    - "Scenario-based: 'if X → Y, if Z → W'"
+    - "Quantitative: every claim backed by data"
+
+  phrases_ru:
+    - "Данные ончейн анализа свидетельствуют о том, что..."
+    - "Примечательно, что..."
+    - "Резюмируя, можно утверждать, что..."
+    - "При этом имеется ряд тревожных сигналов..."
+    - "Наиболее вероятным [X] выступает диапазон..."
+    - "Ключевым уровнем поддержки является..."
+    - "Текущая динамика указывает на..."
+
+  phrases_en:
+    - "On-chain data suggests that..."
+    - "Notably, ..."
+    - "In summary, it can be stated that..."
+    - "However, there are several warning signals..."
+    - "The most likely [X] is in the range of..."
+    - "Key support level is..."
+    - "Current dynamics indicate..."
+
+  avoid:
+    - "Generic marketing language"
+    - "One-sided analysis"
+    - "Claims without numerical evidence"
+    - "Ignoring contradicting data"
+
+visual_style:
+  colors:
+    corporate: "#C41E3A"
+    corporate_light: "#D4545F"
+    corporate_dark: "#8B0000"
+    text: "#1a1a1a"
+    text_secondary: "#4a4a4a"
+
+  typography:
+    h1: "32px, bold, dark"
+    h2: "20px, bold, italic, corporate color"
+    h3: "18px, normal, corporate_light"
+    body: "16px, justified"
+    small: "14px for captions"
+    min: "12px for footnotes"
+
+  headers:
+    section_title: "Bold italic, dark red (#C41E3A)"
+    section_subtitle: "Normal weight, light red (#D4545F)"
+    no_underlines: true
+    no_borders: true
+
+charts:
+  style:
+    - "Solid lines only (no dotted/dashed)"
+    - "No markers/points on lines"
+    - "Line width: 1.5-2px"
+    - "Log scale for prices/values (if all positive)"
+    - "Different COLORS per asset, not line styles"
+
+  annotations:
+    - "Key levels marked on chart"
+    - "Commentary below chart explaining what to see"
+    - "Source citation in caption"
+
+  color_palette:
+    - "#2563EB"  # Blue
+    - "#DC2626"  # Red
+    - "#16A34A"  # Green
+    - "#CA8A04"  # Gold
+    - "#9333EA"  # Purple
+    - "#0891B2"  # Cyan
+
+scenarios:
+  types:
+    bear:
+      name: "Pessimistic / Bear Case"
+      color: "#dc3545"
+      bg: "#fff5f5"
+    base:
+      name: "Base Case / Most Likely"
+      color: "#6c757d"
+      bg: "#f8f9fa"
+    bull:
+      name: "Optimistic / Bull Case"
+      color: "#28a745"
+      bg: "#f0fff4"
+    extreme:
+      name: "Extreme / Black Swan"
+      color: "#9333ea"
+      bg: "#faf5ff"
+
+  format:
+    - "Price target range (e.g., '$143,000 - $162,000')"
+    - "Timeframe (e.g., 'by spring 2026')"
+    - "Key conditions/triggers"
+    - "Probability assessment (optional)"
+
+executive_summary:
+  format: "Bullet points (not paragraphs)"
+  count: "4-6 bullets"
+  content:
+    - "Main thesis with specific numbers"
+    - "Key on-chain signals"
+    - "Demand/supply dynamics"
+    - "Cycle position assessment"
+    - "Base case scenario with price range"
+
+metrics_display:
+  format: "Value + superscript citation"
+  example: "155%[1]"
+  label_position: "Below value"
+  grid: "4-6 metrics per row"
+
+tables:
+  headers: "Corporate color background, white text"
+  units: "Always in column headers (%, $, $B)"
+  alignment: "Numbers right-aligned, text left"
+  citations: "In separate column or inline"
+
+citations:
+  format: "Superscript numbers [1], [2], [3]"
+  color: "Corporate color"
+  position: "Inline, immediately after claim"
+  sources_section: "Numbered list at end with URLs"

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{TITLE}}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* === WARP CAPITAL STYLE === */
+        :root {
+            --corporate-color: #C41E3A;
+            --corporate-light: #D4545F;
+            --corporate-dark: #8B0000;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --text-muted: #6a6a6a;
+            --bg-light: #f8f9fa;
+            --bg-card: #ffffff;
+            --border-color: #e0e0e0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: #fff;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        /* === HEADER === */
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+
+        .report-header .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .report-header .logo {
+            max-height: 50px;
+        }
+
+        .report-header .company-name {
+            font-size: 24px;
+            font-weight: 400;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .report-header .date {
+            font-size: 16px;
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        /* === TITLE SECTION === */
+        .report-title {
+            margin-bottom: 40px;
+        }
+
+        .report-title h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .report-title .subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        /* === TABLE OF CONTENTS === */
+        .toc {
+            background: var(--bg-light);
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            font-size: 20px;
+            color: var(--corporate-color);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--corporate-color);
+            padding-bottom: 10px;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .toc li:last-child {
+            border-bottom: none;
+        }
+
+        .toc a {
+            color: var(--corporate-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        /* === SECTIONS === */
+        section {
+            margin-bottom: 50px;
+        }
+
+        /* Pre-content sections (Executive Summary, Key Insights) - NO NUMBER */
+        .pre-content h2 {
+            font-size: 20px;
+            font-weight: 700;
+            font-style: italic;
+            color: var(--corporate-color);
+            margin-bottom: 20px;
+        }
+
+        /* Numbered sections */
+        .numbered-section h2 {
+            font-size: 20px;
+            font-weight: 700;
+            font-style: italic;
+            color: var(--corporate-color);
+            margin-bottom: 8px;
+        }
+
+        /* Section subtitle - lighter red */
+        .numbered-section h3,
+        .section-subtitle {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--corporate-light);
+            margin: 0 0 20px 0;
+        }
+
+        h3 {
+            font-size: 18px;
+            color: var(--text-primary);
+            margin: 25px 0 15px 0;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* === EXECUTIVE SUMMARY === */
+        .executive-summary h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--corporate-color);
+            margin-bottom: 15px;
+        }
+
+        .executive-summary ul {
+            list-style: disc;
+            margin-left: 20px;
+            color: var(--text-primary);
+        }
+
+        .executive-summary li {
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        /* === KEY INSIGHTS === */
+        .key-insights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .insight-card {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--corporate-color);
+        }
+
+        .insight-card .confidence {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .insight-card .insight-text {
+            font-weight: 500;
+        }
+
+        /* === METRIC CARDS === */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .metric-card {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-top: 3px solid var(--corporate-color);
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .metric-value sup {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--corporate-color);
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        /* === TABLES === */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        thead th {
+            background-color: var(--corporate-color);
+            color: white;
+            font-weight: 600;
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr:hover {
+            background-color: var(--bg-light);
+        }
+
+        td.numeric {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .table-caption {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        /* === CHARTS === */
+        .chart-container {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+
+        .chart-note {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 10px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        /* === CITATIONS === */
+        .citation {
+            color: var(--corporate-color);
+            text-decoration: none;
+            font-size: 0.85em;
+            vertical-align: super;
+            font-weight: 500;
+        }
+
+        .citation:hover {
+            text-decoration: underline;
+        }
+
+        /* === SCENARIOS BOX === */
+        .scenarios-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .scenario-card {
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+        }
+
+        .scenario-card.bear {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .scenario-card.base {
+            border-color: #6c757d;
+            background: #f8f9fa;
+        }
+
+        .scenario-card.bull {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .scenario-card.extreme {
+            border-color: #9333ea;
+            background: #faf5ff;
+        }
+
+        .scenario-name {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .scenario-price {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .scenario-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* === PROS/CONS === */
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .pros, .cons {
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .pros {
+            background: #f0fff4;
+            border-left: 4px solid #28a745;
+        }
+
+        .cons {
+            background: #fff5f5;
+            border-left: 4px solid #dc3545;
+        }
+
+        .pros h4, .cons h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .pros li, .cons li {
+            margin-bottom: 8px;
+        }
+
+        /* === SOURCES === */
+        .sources {
+            background: var(--bg-light);
+            padding: 30px;
+            border-radius: 8px;
+            margin-top: 50px;
+        }
+
+        .sources h2 {
+            font-size: 20px;
+            color: var(--corporate-color);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--corporate-color);
+            padding-bottom: 10px;
+        }
+
+        .source-item {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .source-item:last-child {
+            border-bottom: none;
+        }
+
+        .source-id {
+            color: var(--corporate-color);
+            font-weight: 600;
+        }
+
+        .source-url {
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+
+        /* === FOOTER === */
+        .report-footer {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid var(--corporate-color);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .report-footer .disclaimer {
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+
+            .scenarios-grid,
+            .pros-cons {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* === PRINT === */
+        @media print {
+            body {
+                padding: 20px;
+                font-size: 12px;
+            }
+
+            .chart-wrapper {
+                height: 300px;
+            }
+
+            section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="report-header">
+    <div class="logo-container">
+        {{LOGO_SVG}}
+        <div class="company-name">Warp<br>Capital</div>
+    </div>
+    <div class="date">{{DATE}}</div>
+</header>
+
+<!-- TITLE -->
+<div class="report-title">
+    <h1>{{TITLE}}</h1>
+    <div class="subtitle">{{SUBTITLE}}</div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<nav class="toc">
+    <h2>Table of Contents</h2>
+    <ul>
+        {{TOC_ITEMS}}
+    </ul>
+</nav>
+
+<!-- EXECUTIVE SUMMARY (no number) -->
+<section class="executive-summary" id="executive-summary">
+    <h2>Executive Summary</h2>
+    <ul>
+        {{EXECUTIVE_SUMMARY_BULLETS}}
+    </ul>
+</section>
+
+<!-- KEY INSIGHTS (no number) -->
+<section class="pre-content" id="key-insights">
+    <h2>Key Insights</h2>
+    <div class="key-insights">
+        {{KEY_INSIGHTS_CARDS}}
+    </div>
+</section>
+
+<!-- MAIN SECTIONS (numbered) -->
+{{SECTIONS}}
+
+<!-- SCENARIOS -->
+<section class="numbered-section" id="scenarios">
+    <h2>{{SCENARIOS_SECTION_NUMBER}}. Scenarios</h2>
+    <div class="scenarios-grid">
+        {{SCENARIOS_CARDS}}
+    </div>
+</section>
+
+<!-- RECOMMENDATION -->
+<section class="numbered-section" id="recommendation">
+    <h2>{{RECOMMENDATION_SECTION_NUMBER}}. Recommendation</h2>
+    {{RECOMMENDATION_CONTENT}}
+    <div class="pros-cons">
+        <div class="pros">
+            <h4>Bullish Arguments</h4>
+            <ul>
+                {{PROS_LIST}}
+            </ul>
+        </div>
+        <div class="cons">
+            <h4>Bearish Arguments</h4>
+            <ul>
+                {{CONS_LIST}}
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- SOURCES -->
+<section class="sources" id="sources">
+    <h2>Sources</h2>
+    {{SOURCES_LIST}}
+</section>
+
+<!-- FOOTER -->
+<footer class="report-footer">
+    {{FOOTER_CONTENT}}
+</footer>
+
+<!-- CHARTS INITIALIZATION -->
+<script>
+    // Chart.js default configuration for Warp style
+    Chart.defaults.font.family = "'Segoe UI', sans-serif";
+    Chart.defaults.color = '#4a4a4a';
+
+    // Color palette
+    const COLORS = {
+        primary: '#C41E3A',
+        secondary: '#2563EB',
+        success: '#16A34A',
+        warning: '#CA8A04',
+        danger: '#DC2626',
+        purple: '#9333EA',
+        cyan: '#0891B2',
+        orange: '#EA580C'
+    };
+
+    {{CHARTS_JS}}
+</script>
+
+</body>
+</html>

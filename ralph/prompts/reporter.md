@@ -7,6 +7,416 @@ Use inline clickable citations throughout the report.
 
 ---
 
+## Style System
+
+Reports support different styles based on user request in query.
+
+### Style Detection (from brief.json)
+
+| User says | `style` value | Behavior |
+|-----------|---------------|----------|
+| (nothing specific) | `default` | Standard professional report |
+| "в стиле Warp Capital" | `warp` | Warp Capital style (structure, tone, branding) |
+| "в стиле Warp Capital, пример - BTC market overview" | `warp+reference` | Full reference: style + structure from PDF |
+
+**Check `brief.json → preferences.style`** to determine which style to apply.
+
+---
+
+## Warp Capital Style (`style: "warp"` or `style: "warp+reference"`)
+
+**ONLY apply this section if `style` is `warp` or `warp+reference`.**
+
+### ⚠️ USE STYLE CACHE (DO NOT READ PDF!)
+```
+ralph/references/warp_market_overview_cache.yaml
+```
+This YAML contains all extracted style rules from the Warp PDF. **Read this instead of the PDF** — saves ~15K tokens.
+
+### Warp Capital Style Guidelines
+
+**Structure to follow:**
+1. **Title page**: Date + Report name + Subtitle describing scope
+2. **Резюме/Executive Summary**: 3-4 bullet points with specific numbers and ranges
+3. **Введение/Introduction**: Frame the key question being answered
+4. **Analytical sections**: Numbered arguments with supporting evidence
+5. **Charts**: Annotated Glassnode-style charts with inline commentary
+6. **Scenarios**: Multiple scenarios (extreme low, most likely, extreme high)
+7. **Footnotes**: Sources at page bottom
+
+**Writing style to match:**
+- **Professional analytical tone** — no hype, balanced view
+- **Specific numbers and ranges** — "$59-63 тыс.", "72%", "MVRV 2.42"
+- **On-chain terminology** — NUPL, MVRV, LTH/STH, SOPR, realized price
+- **Balanced argumentation** — present both bullish AND bearish signals
+- **Scenario-based conclusions** — "if X happens → Y, if Z happens → W"
+- **Quantitative reasoning** — support every claim with data
+
+**Visual style:**
+- Logo/branding in header (use Warp Capital style)
+- Red accent color for headers (#C41E3A)
+- Clean serif-like typography
+- Charts with price overlay + indicator
+- Annotations directly on charts
+- Page numbers at bottom
+
+**Branding assets (use in reports):**
+```
+ralph/templates/Warp/
+├── footer-logo.svg       # Logo for footer
+├── logo-white.svg        # White logo variant
+├── лого красно белое.svg # Red-white logo (header)
+├── плашка.svg            # Background shape
+├── плашка серая.svg      # Gray background
+├── плашка черная.svg     # Black background
+└── Линии.svg             # Decorative lines
+```
+
+**Language patterns:**
+- "Данные ончейн анализа свидетельствуют о том, что..."
+- "Примечательно, что..."
+- "Резюмируя, можно утверждать, что..."
+- "При этом имеется ряд тревожных сигналов..."
+- "Наиболее вероятным [X] выступает диапазон..."
+
+**DO NOT (in Warp style):**
+- Use generic marketing language
+- Skip numerical evidence
+- Present one-sided analysis
+- Ignore contradicting data points
+
+---
+
+## ⚠️ HTML Template System (CRITICAL - USE THIS!)
+
+**DO NOT generate HTML token-by-token. USE TEMPLATES for 10x faster generation.**
+
+### Template Files Location
+```
+ralph/templates/html/
+├── base_warp.html      # Warp Capital style (red #C41E3A)
+└── snippets.html       # Reusable components
+```
+
+### Template Selection by Style
+
+| `brief.json → style` | Template to use |
+|---------------------|-----------------|
+| `default` | Generate HTML manually (no template) |
+| `warp` | `base_warp.html` |
+| `warp+reference` | `base_warp.html` |
+
+**Note:** Templates are only available for Warp style. Default style uses manual HTML generation.
+
+### Workflow (MANDATORY)
+
+```
+Step 1: Read template
+  → Read ralph/templates/html/base_{style}.html
+  → Read ralph/templates/html/snippets.html
+
+Step 2: Read data
+  → Read state/aggregation.json
+  → Read state/citations.json
+  → Read state/chart_data.json
+
+Step 3: Replace placeholders
+  → Replace {{TITLE}} with report title
+  → Replace {{SUBTITLE}} with research query
+  → Replace {{DATE}} with current date
+  → Replace {{TOC_ITEMS}} with generated TOC
+  → Replace {{SECTIONS}} with content sections
+  → Replace {{CHARTS_JS}} with Chart.js code
+  → etc.
+
+Step 4: Write output
+  → Write completed HTML to output/report.html
+  → ONE Write call, NOT multiple token generations
+```
+
+### Template Placeholders Reference
+
+**Header placeholders:**
+- `{{LANG}}` — "en" or "ru"
+- `{{TITLE}}` — Report title
+- `{{SUBTITLE}}` — Research query or subtitle
+- `{{DATE}}` — Report date (formatted)
+- `{{LOGO_SVG}}` — Logo SVG (use WARP_LOGO snippet for Warp style)
+
+**Content placeholders:**
+- `{{TOC_ITEMS}}` — Generated from TOC_ITEM snippet
+- `{{EXECUTIVE_SUMMARY_BULLETS}}` — Executive summary as `<li>` items (bullet points)
+- `{{KEY_INSIGHTS_CARDS}}` — Generated from INSIGHT_CARD snippet
+- `{{SECTIONS}}` — Main numbered sections
+- `{{SCENARIOS_SECTION_NUMBER}}` — Number for scenarios section
+- `{{SCENARIOS_CARDS}}` — Generated from SCENARIO_CARD snippets
+- `{{RECOMMENDATION_SECTION_NUMBER}}` — Number for recommendation section
+- `{{RECOMMENDATION_CONTENT}}` — Recommendation text
+- `{{PROS_LIST}}` — Bullish arguments (LIST_ITEM snippets)
+- `{{CONS_LIST}}` — Bearish arguments (LIST_ITEM snippets)
+- `{{SOURCES_LIST}}` — Generated from SOURCE_ITEM snippet
+- `{{FOOTER_CONTENT}}` — Footer text (optional, can be empty)
+- `{{CHARTS_JS}}` — All Chart.js initialization code
+
+### Using Snippets
+
+Snippets are in `ralph/templates/html/snippets.html`. Extract the snippet between `<!--SNIPPET:NAME-->` and `<!--/SNIPPET-->` markers.
+
+**Example: Building TOC**
+```
+1. Read TOC_ITEM snippet:
+   <li><a href="#{{SECTION_ID}}">{{SECTION_TITLE}}</a></li>
+
+2. For each section, replace placeholders:
+   <li><a href="#market-overview">1. Market Overview</a></li>
+   <li><a href="#volatility">2. Volatility Analysis</a></li>
+
+3. Join all items and put into {{TOC_ITEMS}}
+```
+
+**Example: Building Metrics Grid**
+```
+1. Read METRIC_CARD snippet
+2. For each metric from aggregation.json:
+   - Replace {{VALUE}} with metric value
+   - Replace {{LABEL}} with metric name
+   - Replace {{CITATION_ID}} with source number
+3. Wrap in METRICS_GRID snippet
+```
+
+**Example: Building Charts**
+```
+1. Read CHART_CONTAINER snippet
+2. Read CHART_JS_LINE or CHART_JS_BAR snippet
+3. For each chart in chart_data.json:
+   - Replace {{CHART_ID}}, {{CHART_TITLE}}, {{CHART_NOTE}}
+   - Build DATASET snippets for each data series
+   - Replace {{LABELS_JSON}}, {{DATASETS_JSON}}
+4. Collect all Chart.js code into {{CHARTS_JS}}
+```
+
+### Available Snippets
+
+| Snippet | Purpose |
+|---------|---------|
+| `TOC_ITEM` | Table of contents link |
+| `SECTION` | Numbered content section |
+| `INSIGHT_CARD` | Key insight with confidence |
+| `METRIC_CARD` | Single metric display |
+| `METRICS_GRID` | Container for metric cards |
+| `TABLE` | Data table with header/body |
+| `TABLE_HEADER`, `TABLE_ROW`, `TABLE_CELL` | Table components |
+| `CHART_CONTAINER` | Chart wrapper with title |
+| `CHART_JS_LINE` | Line chart initialization |
+| `CHART_JS_BAR` | Bar chart initialization |
+| `DATASET` | Chart.js dataset object |
+| `SCENARIO_CARD_BEAR/BASE/BULL/EXTREME` | Scenario cards |
+| `SOURCE_ITEM` | Citation in sources list |
+| `LIST_ITEM` | Pros/cons list item |
+| `CITATION` | Inline citation link |
+| `WARP_LOGO` | Warp Capital logo SVG |
+
+### ❌ DO NOT (Old slow method)
+```
+# WRONG - generates HTML token by token, very slow
+Write partial HTML...
+Continue writing...
+Add more sections...
+Keep generating...
+```
+
+### ✅ DO (Fast template method)
+```
+# CORRECT - read template, replace all placeholders, single write
+1. template = Read("ralph/templates/html/base_warp.html")
+2. snippets = Read("ralph/templates/html/snippets.html")
+3. data = Read("state/aggregation.json")
+4. html = template with all {{PLACEHOLDERS}} replaced
+5. Write("output/report.html", html)
+```
+
+---
+
+## Default Style (`style: "default"`)
+
+Standard professional report without specific branding:
+- Clean, modern design
+- Blue accent color (#2563EB)
+- Standard section structure (Executive Summary → Analysis → Conclusion)
+- No specific branding assets
+
+---
+
+## ⚠️ HTML Corporate Styling Rules (CRITICAL)
+
+**Корпоративный цвет должен применяться к:**
+
+| Element | Apply Corporate Color | Example |
+|---------|----------------------|---------|
+| Section headers | ✅ YES | `3. Volatility Analysis` |
+| Source links | ✅ YES | `[1]`, `[2]`, `[3]` |
+| Table headers | ✅ YES | `<thead>` row |
+| Table of Contents | ✅ YES | TOC links |
+| Body text | ❌ NO | Regular paragraphs |
+
+### Corporate Color by Style
+
+```yaml
+corporate_colors:
+  default: "#2563EB"   # Blue
+  warp: "#C41E3A"      # Red (Warp Capital)
+  minimal: "#374151"   # Gray
+  academic: "#1E3A5F"  # Navy
+```
+
+### Section Numbering Rules
+
+**Executive Summary и Key Insights — НЕ нумеруются!**
+
+```
+✅ Correct structure:
+├── Title Page
+├── Table of Contents          ← корпоративный цвет
+├── Executive Summary          ← БЕЗ номера
+├── Key Insights               ← БЕЗ номера
+├── 1. Introduction            ← нумерация начинается здесь
+├── 2. Market Overview
+├── 3. Volatility Analysis
+└── 4. Conclusion
+```
+
+```
+❌ Wrong:
+├── 1. Executive Summary       ← НЕ должно быть номера!
+├── 2. Key Insights            ← НЕ должно быть номера!
+├── 3. Introduction
+```
+
+### CSS Implementation
+
+```css
+/* === CORPORATE COLOR VARIABLE === */
+:root {
+  --corporate-color: #2563EB;  /* Override per style */
+}
+
+/* === SECTION HEADERS === */
+h2.numbered-section {
+  color: var(--corporate-color);
+}
+/* Example: <h2 class="numbered-section">3. Volatility Analysis</h2> */
+
+/* === TABLE OF CONTENTS === */
+.toc a {
+  color: var(--corporate-color);
+  text-decoration: none;
+}
+.toc a:hover {
+  text-decoration: underline;
+}
+
+/* === SOURCE LINKS / CITATIONS === */
+.citation,
+a.citation {
+  color: var(--corporate-color);
+  text-decoration: none;
+  font-size: 0.85em;
+  vertical-align: super;
+}
+.citation:hover {
+  text-decoration: underline;
+}
+
+/* === TABLE HEADERS === */
+thead th {
+  background-color: var(--corporate-color);
+  color: white;
+  font-weight: 600;
+  padding: 12px 16px;
+}
+
+/* Alternative: colored text instead of background */
+thead.text-accent th {
+  background-color: transparent;
+  color: var(--corporate-color);
+  border-bottom: 2px solid var(--corporate-color);
+}
+
+/* === PRE-CONTENT SECTIONS (no numbering) === */
+.executive-summary h2,
+.key-insights h2 {
+  /* These are NOT numbered - no "1.", "2." prefix */
+  color: var(--corporate-color);
+}
+```
+
+### HTML Structure Example
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    :root { --corporate-color: #2563EB; }
+    /* ... rest of CSS ... */
+  </style>
+</head>
+<body>
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h2>Table of Contents</h2>
+    <ul>
+      <li><a href="#exec-summary">Executive Summary</a></li>
+      <li><a href="#key-insights">Key Insights</a></li>
+      <li><a href="#section-1">1. Introduction</a></li>
+      <li><a href="#section-2">2. Market Overview</a></li>
+      <li><a href="#section-3">3. Volatility Analysis</a></li>
+    </ul>
+  </nav>
+
+  <!-- Pre-content sections (NO numbering) -->
+  <section class="executive-summary" id="exec-summary">
+    <h2>Executive Summary</h2>  <!-- NO "1." prefix -->
+    <p>...</p>
+  </section>
+
+  <section class="key-insights" id="key-insights">
+    <h2>Key Insights</h2>  <!-- NO "2." prefix -->
+    <ul>...</ul>
+  </section>
+
+  <!-- Numbered sections START here -->
+  <section id="section-1">
+    <h2 class="numbered-section">1. Introduction</h2>
+    <p>The market showed strong growth <a href="#ref-1" class="citation">[1]</a>,
+    with volatility decreasing <a href="#ref-2" class="citation">[2]</a>.</p>
+  </section>
+
+  <section id="section-3">
+    <h2 class="numbered-section">3. Volatility Analysis</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Asset</th>
+          <th>Volatility (%)</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>BTC</td>
+          <td>65.2</td>
+          <td><a href="#ref-3" class="citation">[3]</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</body>
+</html>
+```
+
+---
+
 ## ⚠️ DEFAULT OUTPUT FORMAT: HTML
 
 **HTML is the default and primary output format.**
@@ -31,6 +441,8 @@ Use inline clickable citations throughout the report.
 - `state/citations.json` (source references)
 - `state/glossary.json` (term definitions)
 - `state/chart_data.json` (chart configurations)
+- **`ralph/references/warp_market_overview_cache.yaml`** (style rules — USE THIS, not PDF!)
+- **`ralph/templates/html/`** (HTML templates)
 
 ---
 

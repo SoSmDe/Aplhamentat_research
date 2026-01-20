@@ -81,15 +81,24 @@ Compile charts from all results:
 ```yaml
 chart_data_compilation:
   sources:
-    - results/data_*.json → read "time_series" field with "chart_hint"
-    - results/overview_*.json → extract key metrics
+    - results/data_*.json → read "time_series" field with "chart_hint" (if exists)
+    - results/data_*.json → read "tables" for bar/comparison charts
+    - results/overview_*.json → extract key metrics for summary charts
     - results/research_*.json → extract comparison data
 
   process:
-    1. Collect all time_series from data results
-    2. Use chart_hint (type, x_axis, y_axis) from Data agent
-    3. Add comparison charts if multiple data sources
-    4. Apply chart styling rules from reporter.md
+    1. Scan all data results for "time_series" field
+    2. If time_series exists → use chart_hint (type, x_axis, y_axis)
+    3. If time_series missing but "tables" exist → create bar charts from table data
+    4. If only "metrics" exist → create metric cards (no chart needed)
+    5. Add comparison charts if multiple data sources
+    6. Apply chart styling rules from reporter.md
+
+  handling_missing_time_series:
+    - NOT all data results have time_series (some are point-in-time metrics)
+    - Check for "time_series" key before processing
+    - Skip chart creation if no visualizable data
+    - Tables can become bar charts: rows → categories, columns → values
 
   output_format:
     chart_id: "unique_id"

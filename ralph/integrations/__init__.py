@@ -1,43 +1,36 @@
 # -*- coding: utf-8 -*-
 """
-Crypto Data API Integrations for Ralph
+Ralph Data Integrations
 
-Available integrations:
-- defillama: DeFi TVL, fees, revenue
-- l2beat: L2 security, risks, activity
-- coingecko: Token prices, market data
-- etherscan: Wallet data, gas, transactions
-- thegraph: Protocol-specific GraphQL
-- dune: Custom SQL queries (requires API key)
+Organized by domain:
+- crypto: Blockchain, DeFi, on-chain analytics
+- stocks: Equities, ETFs, macroeconomic data
+- research: Reports from major institutions
 
 Quick start:
-    from integrations import defillama, l2beat, coingecko
+    # Crypto
+    from integrations.crypto import coingecko, defillama, blocklens
+    prices = coingecko.get_price(["bitcoin"])
+    btc_cycle = blocklens.get_market_cycle_indicators()
 
-    # Get L2 TVL comparison
-    l2s = defillama.get_l2_comparison()
+    # Stocks
+    from integrations.stocks import yfinance_client, fmp
+    spy = yfinance_client.get_price_history("SPY", period="1y")
 
-    # Get L2 security analysis
-    risks = l2beat.get_l2_risk_scores()
-
-    # Get token prices
-    prices = coingecko.get_price(["ethereum", "arbitrum"])
+    # Research
+    from integrations.research import worldbank, imf
+    gdp = worldbank.get_indicator("NY.GDP.MKTP.CD", "USA")
 """
 
-from . import defillama
-from . import l2beat
-from . import coingecko
-from . import etherscan
-from . import thegraph
-from . import dune
+from . import crypto
+from . import stocks
+from . import research
 
 __all__ = [
-    "defillama",
-    "l2beat",
-    "coingecko",
-    "etherscan",
-    "thegraph",
-    "dune",
+    "crypto",
+    "stocks",
+    "research",
 ]
 
 # Version
-__version__ = "0.1.0"
+__version__ = "0.2.0"

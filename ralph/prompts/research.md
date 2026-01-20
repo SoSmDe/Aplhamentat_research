@@ -96,14 +96,14 @@ Save to `results/research_{N}.json`:
 }
 ```
 
-Save questions to `questions/research_questions.json`:
+Append questions to `questions/research_questions.json`:
 ```json
 {
-  "source": "research_N",
-  "generated_at": "ISO timestamp",
   "questions": [
     {
       "id": "rq1",
+      "source": "research_1",
+      "generated_at": "ISO timestamp",
       "question": "Question text",
       "type": "data|research|overview",
       "context": "Uncertainty, contradiction, or adjacent topic",
@@ -112,6 +112,7 @@ Save questions to `questions/research_questions.json`:
   ]
 }
 ```
+**⚠️ APPEND mode:** If file exists, add new questions to the array. Do NOT overwrite previous questions.
 
 ## Update session.json
 
@@ -133,4 +134,6 @@ When all tasks complete → set phase to "questions_review"
 - Explicitly separate facts from opinions
 - Critically evaluate information
 - Stay within Brief scope
-- Maximum 60 seconds per task
+- Take the time needed for quality results (target: ~180 seconds per task)
+- **STOP after completing assigned task** — do not execute other agents' work (data collection, overview)
+- **Stay in your lane** — you are Research agent; finish your task and end

@@ -60,24 +60,54 @@ Actions:
 - Generate PDF/Excel ONLY if user explicitly requests them
 - If user doesn't specify format → use `html`
 
-**Auto-answer logic**:
-- If query mentions "pdf", "PDF", "формат pdf", "format pdf", "print", "archive", "send", "document" → `pdf`
-- If query mentions "data", "spreadsheet", "analyze myself", "raw", "excel", "xlsx" → `excel`
-- If query mentions "html+excel", "data pack", "full package" → `html+excel`
-- If query mentions "interactive", "web", "online", "html" → `html`
-- **Default (no format mentioned): `html`**
+```yaml
+auto_answer_logic:
+  pdf:
+    keywords: ["pdf", "PDF", "формат pdf", "format pdf", "print", "archive", "send", "document"]
+  excel:
+    keywords: ["data", "spreadsheet", "analyze myself", "raw", "excel", "xlsx"]
+  html+excel:
+    keywords: ["html+excel", "data pack", "full package"]
+  html:
+    keywords: ["interactive", "web", "online", "html"]
+  default: "html"
+```
 
 ### 3. Report Style
 **Question**: What visual style?
 **Options**:
-- `default` — Professional styling
+- `default` — Professional styling (blue accent, standard structure)
 - `minimal` — Content-focused, no decorations
 - `academic` — Formal tone, footnotes style
+- `warp` — Warp Capital style (red accent, branding, balanced analysis)
+- `warp+reference` — Warp Capital style + follow reference PDF exactly
 
-**Auto-answer logic**:
-- If query mentions "academic", "research paper", "thesis", "formal" → `academic`
-- If query mentions "simple", "clean", "plain", "no frills" → `minimal`
-- Default: `default`
+```yaml
+auto_answer_logic:
+  warp+reference:
+    keywords: ["Warp Capital", "Warp"]
+    requires_also: ["пример", "example", "reference", "как в"]
+  warp:
+    keywords: ["Warp Capital", "Warp", "стиле Warp", "стиль Warp"]
+  academic:
+    keywords: ["academic", "research paper", "thesis", "formal"]
+  minimal:
+    keywords: ["simple", "clean", "plain", "no frills"]
+  default: "default"
+```
+
+**When `warp` or `warp+reference` is detected:**
+- Set `style_reference` in preferences pointing to **YAML cache** (NOT PDF!)
+- This affects Planner (story-line, data needs) and Reporter (visual style)
+
+```json
+"preferences": {
+  "style": "warp+reference",
+  "style_reference": "ralph/references/warp_market_overview_cache.yaml"
+}
+```
+
+**⚠️ DO NOT use PDF path!** The YAML cache contains all extracted style rules and saves ~15K tokens.
 
 ### 4. Report Depth
 **Question**: How detailed should the report be?
@@ -87,11 +117,16 @@ Actions:
 - `comprehensive` — 15-25 pages, thorough analysis
 - `deep_dive` — 25+ pages, exhaustive coverage
 
-**Auto-answer logic**:
-- If query mentions "quick", "brief", "summary", "overview", "short" → `executive`
-- If query mentions "detailed", "thorough", "comprehensive", "full" → `comprehensive`
-- If query mentions "deep", "exhaustive", "complete", "everything" → `deep_dive`
-- Default: `standard`
+```yaml
+auto_answer_logic:
+  executive:
+    keywords: ["quick", "brief", "summary", "overview", "short"]
+  comprehensive:
+    keywords: ["detailed", "thorough", "comprehensive", "full"]
+  deep_dive:
+    keywords: ["deep", "exhaustive", "complete", "everything"]
+  default: "standard"
+```
 
 ### 5. Target Audience
 **Question**: Who will read this report?
@@ -101,11 +136,16 @@ Actions:
 - `analyst` — Maximum data and methodology
 - `general` — Simple language, term explanations
 
-**Auto-answer logic**:
-- If query mentions "board", "executive", "CEO", "management", "decision" → `c_level`
-- If query mentions "committee", "review", "approval" → `committee`
-- If query mentions "beginner", "explain", "new to", "understand", "learn" → `general`
-- Default: `analyst`
+```yaml
+auto_answer_logic:
+  c_level:
+    keywords: ["board", "executive", "CEO", "management", "decision"]
+  committee:
+    keywords: ["committee", "review", "approval"]
+  general:
+    keywords: ["beginner", "explain", "new to", "understand", "learn"]
+  default: "analyst"
+```
 
 ### 6. Report Components
 **Question**: What components to include?
@@ -116,12 +156,24 @@ Actions:
 - `methodology` — Research methodology section
 - `data_pack` — Excel with all data (OPTIONAL, resource-intensive)
 
-**Auto-answer logic**:
-- Always include: `full_report`
-- Add `data_pack` ONLY if user explicitly requests Excel/data export
-- If depth is `comprehensive` or `deep_dive` → add `methodology`
-- If audience is `general` → add `glossary`
-- If audience is `c_level` → add `executive_one_pager`
+```yaml
+auto_answer_logic:
+  always_include:
+    - "full_report"
+
+  conditional:
+    methodology:
+      if_depth: ["comprehensive", "deep_dive"]
+    glossary:
+      if_audience: ["general"]
+    executive_one_pager:
+      if_audience: ["c_level"]
+
+  data_pack:
+    trigger: "explicit_request_only"
+    keywords: ["excel", "xlsx", "data export", "raw data", "spreadsheet"]
+    note: "Resource-intensive — never auto-add based on depth or audience"
+```
 
 ### 7. Focus Areas
 **Question**: What aspects to emphasize?
@@ -144,6 +196,7 @@ Save to `state/brief.json`:
   "preferences": {
     "output_format": "html",
     "style": "default",
+    "style_reference": null,
     "depth": "standard",
     "audience": "analyst",
     "components": ["full_report"]
@@ -189,6 +242,7 @@ After saving brief.json, update session.json:
   "preferences": {
     "output_format": "html",
     "style": "default",
+    "style_reference": null,
     "depth": "standard",
     "audience": "analyst",
     "components": ["full_report"]

@@ -32,6 +32,172 @@ data_requirements:
 
 ---
 
+## ⚠️ CRITICAL EXECUTION RULES (MUST FOLLOW)
+
+**These rules are NON-NEGOTIABLE. Failure to follow them results in unusable data.**
+
+### 3. FOLLOW data_spec EXACTLY
+
+```yaml
+execution_rules:
+  timeframe:
+    rule: "Download FULL date range as specified"
+    example:
+      spec: "timeframe: 2020-01-01 to now"
+      correct: "Call API with start_date='2020-01-01', get ~2000 daily points"
+      wrong: "Get only last 10-30 data points"
+
+  frequency:
+    rule: "Match frequency exactly"
+    example:
+      spec: "frequency: daily"
+      correct: "1 data point per day"
+      wrong: "Weekly or monthly aggregates"
+
+  assets:
+    rule: "Download ALL specified assets"
+    example:
+      spec: "assets: [BTC, ETH, SPY, QQQ, GLD]"
+      correct: "Download data for all 5 assets"
+      wrong: "Download only BTC and ETH"
+
+  calculations:
+    rule: "Perform ALL specified calculations"
+    example:
+      spec: "calculations: [drawdown_series, correlation_matrix, sharpe_ratio]"
+      correct: "Compute all 3 calculations from raw data"
+      wrong: "Skip calculations or search for pre-computed values"
+```
+
+### 4. NEVER Truncate Time Series
+
+```yaml
+time_series_rules:
+  full_history:
+    - "If spec says '2020-01-01 to now' → save ALL ~2000 daily points"
+    - "If spec says '2011-01-01 to now' → save ALL ~5000 daily points"
+    - "Reporter needs full data to create proper charts"
+
+  never:
+    - "Truncate to 'last 10 points' or 'recent data'"
+    - "Summarize history into single metrics"
+    - "Skip older data to save space"
+
+  output_format:
+    correct: |
+      "time_series": {
+        "labels": ["2020-01-01", "2020-01-02", ... "2026-01-20"],  // ~2000 items
+        "datasets": {
+          "price": [7200, 7150, ... 94454],  // ~2000 items
+          "mvrv": [1.2, 1.21, ... 2.42]      // ~2000 items
+        }
+      }
+    wrong: |
+      "time_series": {
+        "labels": ["2026-01-18", "2026-01-17", ...],  // only 10 items!
+        "datasets": {...}
+      }
+```
+
+### 5. API Calls with Date Parameters
+
+```yaml
+api_call_rules:
+  blocklens:
+    correct: |
+      # Full history from 2020
+      blocklens.get_holder_supply(
+        start_date="2020-01-01",
+        end_date="2026-01-20",
+        limit=3000
+      )
+    wrong: |
+      # Only recent data
+      blocklens.get_holder_supply()  # No date params = recent only!
+
+  coingecko:
+    correct: |
+      # Full history
+      coingecko.get_price_history("bitcoin", days=2190)  # ~6 years
+    wrong: |
+      coingecko.get_price_history("bitcoin", days=30)  # Only 30 days!
+
+  yfinance:
+    correct: |
+      yfinance.get_price_history("BTC-USD", start="2020-01-01")
+    wrong: |
+      yfinance.get_price_history("BTC-USD")  # Default = recent only
+```
+
+### 6. Validate Before Saving
+
+```yaml
+validation_checklist:
+  before_save:
+    - "time_series.labels.length matches expected (~2000 for daily since 2020)"
+    - "All assets from data_spec present in output"
+    - "All calculations from data_spec computed"
+    - "chart_hint matches chart_spec from plan"
+    - "No empty arrays or null datasets"
+
+  expected_counts:
+    "2020-01-01 to now (daily)": "~2000 data points"
+    "2024-01-01 to now (daily)": "~750 data points"
+    "2011-01-01 to now (daily)": "~5000 data points"
+
+  if_count_mismatch:
+    action: "Re-download with correct date parameters"
+    never: "Save truncated data anyway"
+```
+
+### 7. Chart Data Preparation
+
+```yaml
+chart_preparation:
+  rule: "Prepare data EXACTLY as chart_spec requires"
+
+  example:
+    chart_spec:
+      type: "line"
+      title: "BTC: LTH MVRV vs Price"
+      x_axis: "date"
+      y_axis: "mvrv_lth"
+      secondary_y: "price"
+
+    output_must_have:
+      labels: "Full date array from timeframe"
+      datasets:
+        mvrv_lth: "Full MVRV array matching labels"
+        price: "Full price array matching labels"
+      chart_hint:
+        type: "line"
+        x_axis: "date"
+        y_axis: "mvrv_lth"
+        secondary_y: "price"
+```
+
+### 8. Error Recovery
+
+```yaml
+error_handling:
+  api_timeout:
+    action: "Retry with smaller date chunks, then merge"
+    example: "2020-2022, then 2022-2024, then 2024-now → merge"
+
+  rate_limit:
+    action: "Wait and retry, or use alternative API"
+    never: "Return partial data without marking as incomplete"
+
+  missing_data:
+    action: "Mark gaps explicitly in output"
+    example: |
+      "gaps": [
+        {"start": "2021-03-15", "end": "2021-03-17", "reason": "API gap"}
+      ]
+```
+
+---
+
 ## Input
 - `state/session.json`
 - `state/plan.json` (data_tasks with data_spec)
@@ -39,7 +205,7 @@ data_requirements:
 
 ## Crypto Data APIs
 
-**Location**: `ralph/integrations/`
+**Location**: `ralph/integrations/crypto/`
 
 ### API Selection Matrix
 
@@ -58,12 +224,16 @@ data_requirements:
 | DEX pool data | `thegraph` | `get_uniswap_top_pools("arbitrum")` | Uni pools |
 | Lending rates | `thegraph` | `get_aave_markets("ethereum")` | Aave APY |
 | Custom on-chain | `dune` | `run_query(query_id)` | SQL query |
+| **BTC on-chain** | `blocklens` | `get_latest_metrics()` | LTH/STH, MVRV, SOPR |
+| **BTC holder analysis** | `blocklens` | `get_holder_supply()` | LTH/STH supply |
+| **BTC valuation** | `blocklens` | `get_holder_valuation()` | MVRV ratio |
+| **BTC market cycle** | `blocklens` | `get_market_cycle_indicators()` | Full cycle analysis |
 
 ### Usage Pattern
 
 ```python
 # Import what you need
-from integrations import coingecko, defillama, l2beat, etherscan, thegraph
+from integrations.crypto import coingecko, defillama, l2beat, etherscan, thegraph, blocklens
 
 # Example: Get BTC price for analysis
 btc = coingecko.get_price(["bitcoin"])
@@ -79,6 +249,14 @@ risks = l2beat.get_l2_risk_scores()
 
 # Example: Multi-chain wallet check
 balances = etherscan.get_multi_chain_balance("0x...", ["ethereum", "arbitrum", "base"])
+
+# Example: BTC on-chain analysis (BlockLens)
+metrics = blocklens.get_latest_metrics()
+# Returns: {prices: {...}, supply: {lth_supply, sth_supply}, valuation: {mvrv}, profit: {sopr}}
+
+# Example: BTC market cycle indicators
+cycle = blocklens.get_market_cycle_indicators()
+# Returns: {market_phase: "bull_market", signal: "caution", mvrv: {...}, sopr: {...}}
 ```
 
 ### API Priority (use in this order)
@@ -109,6 +287,92 @@ balances = etherscan.get_multi_chain_balance("0x...", ["ethereum", "arbitrum", "
 | etherscan | Recommended | Set `ETHERSCAN_API_KEY` |
 | thegraph | No | Hosted service |
 | dune | **Required** | Set `DUNE_API_KEY`, 2500 credits/mo |
+| blocklens | **Required** | Set `BLOCKLENS_API_KEY`, 100k calls/day |
+
+---
+
+## BlockLens API (Bitcoin On-Chain Analytics)
+
+**USE FOR:** Bitcoin-specific on-chain metrics, market cycle analysis, holder behavior.
+
+### Available Functions
+
+| Function | Description | Returns |
+|----------|-------------|---------|
+| `get_prices(symbol, start_date, end_date, limit)` | BTC OHLCV history | price, volume, market_cap |
+| `get_holder_supply(start_date, end_date, limit)` | LTH/STH supply | lth_supply, sth_supply |
+| `get_holder_valuation(start_date, end_date, limit)` | MVRV, Realized Price | mvrv, realized_price, unrealized_pl |
+| `get_holder_profit(start_date, end_date, limit)` | SOPR metrics | sopr, realized_pl |
+| `get_utxo_history(date_processed, limit)` | UTXO cohorts | token_amount by age |
+| `get_latest_metrics()` | All metrics in one call | prices, supply, valuation, profit |
+| `get_market_cycle_indicators()` | Full cycle analysis | market_phase, signal, all metrics |
+
+### Key Metrics Explained
+
+**LTH/STH Supply:**
+- LTH (Long-Term Holders): coins held > 155 days
+- STH (Short-Term Holders): coins held ≤ 155 days
+- Rising LTH = accumulation, conviction
+- Rising STH = distribution, potential top
+
+**MVRV (Market Value to Realized Value):**
+- MVRV > 1: holders in profit
+- MVRV < 1: holders at loss
+- LTH MVRV > 3.5: historically overheated
+- STH MVRV < 1: short-term holders underwater
+
+**SOPR (Spent Output Profit Ratio):**
+- SOPR > 1: coins sold at profit
+- SOPR < 1: coins sold at loss (capitulation)
+- SOPR = 1: break-even level
+
+### Example: Market Cycle Analysis
+
+```python
+from integrations.crypto import blocklens
+
+# Get comprehensive market cycle indicators
+cycle = blocklens.get_market_cycle_indicators()
+
+# Returns:
+{
+    "date": "2026-01-18",
+    "price": {
+        "current": 94454,
+        "lth_realized": 39060,
+        "sth_realized": 96836,
+        "vs_lth_realized": 141.8  # % above LTH cost basis
+    },
+    "supply": {
+        "lth_ratio_pct": 70.9,
+        "sth_ratio_pct": 29.1
+    },
+    "mvrv": {
+        "lth": 2.42,
+        "sth": 0.98,
+        "lth_signal": "elevated",
+        "sth_signal": "near_breakeven"
+    },
+    "sopr": {
+        "lth": 1.59,
+        "sth": 0.99
+    },
+    "market_phase": "bull_market",
+    "signal": "caution"
+}
+```
+
+### When to Use BlockLens vs CoinGecko
+
+| Need | Use |
+|------|-----|
+| BTC price, volume, market cap | CoinGecko or BlockLens |
+| Altcoin prices | CoinGecko |
+| BTC holder behavior (LTH/STH) | **BlockLens** |
+| BTC valuation (MVRV) | **BlockLens** |
+| BTC market cycle | **BlockLens** |
+| SOPR analysis | **BlockLens** |
+| UTXO age analysis | **BlockLens** |
 
 ## Process
 
@@ -278,14 +542,14 @@ Save to `results/data_{N}.json`:
 }
 ```
 
-Save questions to `questions/data_questions.json`:
+Append questions to `questions/data_questions.json`:
 ```json
 {
-  "source": "data_N",
-  "generated_at": "ISO timestamp",
   "questions": [
     {
       "id": "dq1",
+      "source": "data_1",
+      "generated_at": "ISO timestamp",
       "question": "Question text",
       "type": "data|research|overview",
       "context": "Anomaly, gap, or contradiction found",
@@ -294,6 +558,7 @@ Save questions to `questions/data_questions.json`:
   ]
 }
 ```
+**⚠️ APPEND mode:** If file exists, add new questions to the array. Do NOT overwrite previous questions.
 
 ## Update session.json
 
@@ -314,8 +579,10 @@ When all tasks complete → set phase to "questions_review"
 - Facts only, no interpretations
 - All numbers with source and date
 - If data unavailable → explicitly set null with reason
-- Maximum 30 seconds per task
+- Take the time needed for quality results (target: ~180 seconds per task)
 - On API error → try alternative source
+- **STOP after completing assigned task** — do not execute other agents' work (research, overview)
+- **Stay in your lane** — you are Data agent, not Research agent; finish your task and end
 
 ## Data Collection Examples
 
@@ -325,7 +592,7 @@ When all tasks complete → set phase to "questions_review"
 
 ```python
 # 1. Call API
-from integrations import coingecko
+from integrations.crypto import coingecko
 prices = coingecko.get_price(["bitcoin", "ethereum"])
 
 # 2. Result:
@@ -360,7 +627,7 @@ prices = coingecko.get_price(["bitcoin", "ethereum"])
 
 ```python
 # 1. Get TVL from DefiLlama
-from integrations import defillama, l2beat
+from integrations.crypto import defillama, l2beat
 tvl_data = defillama.get_l2_comparison()
 
 # 2. Get security from L2Beat
@@ -399,7 +666,7 @@ risks = l2beat.get_l2_risk_scores()
 **Task**: "Get Uniswap V3 pool data on Arbitrum"
 
 ```python
-from integrations import thegraph, defillama
+from integrations.crypto import thegraph, defillama
 
 # Pool data from TheGraph
 pools = thegraph.get_uniswap_top_pools("arbitrum", limit=10)
@@ -413,7 +680,7 @@ fees = defillama.get_protocol_fees("uniswap")
 **Task**: "Check whale wallet 0x... across chains"
 
 ```python
-from integrations import etherscan
+from integrations.crypto import etherscan
 
 # Multi-chain balance
 balances = etherscan.get_multi_chain_balance(
