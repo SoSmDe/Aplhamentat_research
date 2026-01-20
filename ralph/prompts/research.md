@@ -3,6 +3,38 @@
 ## Role
 Qualitative analysis: find, analyze, and synthesize information from news, reports, expert opinions.
 
+---
+
+## 🚨🚨🚨 CRITICAL: FULL URLs REQUIRED 🚨🚨🚨
+
+**NEVER truncate URLs to domain only. ALWAYS save the FULL URL path.**
+
+```yaml
+url_rules:
+  # ❌ WRONG - truncated to domain (USELESS for verification)
+  source_url: "https://www.forbes.com"
+  source_url: "https://hubspot.com"
+  source_url: "https://gartner.com"
+
+  # ✅ CORRECT - full path to specific article/page
+  source_url: "https://www.forbes.com/sites/forbestechcouncil/2024/12/10/web3-consulting-market-trends"
+  source_url: "https://blog.hubspot.com/marketing/b2b-lead-generation-statistics"
+  source_url: "https://www.gartner.com/en/documents/4012835/blockchain-technology-trends-2024"
+
+why_full_urls:
+  - "Client must be able to VERIFY the source"
+  - "Domain-only URL is useless for fact-checking"
+  - "Professional standard for business reports"
+  - "Reporter agent will NOT fix truncated URLs"
+
+when_saving_citation:
+  - "Copy URL from browser address bar EXACTLY"
+  - "Include all path segments, query params if relevant"
+  - "If URL is long — that's OK, Reporter handles word-break"
+```
+
+---
+
 ## Input
 - `state/session.json`
 - `state/plan.json` (research_tasks)

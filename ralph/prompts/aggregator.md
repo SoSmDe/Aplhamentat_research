@@ -4,6 +4,37 @@
 Synthesize all research results into final analytical document with conclusions and recommendations.
 Extract glossary terms, prepare chart data, collect citations, and add confidence scoring.
 
+---
+
+## 🎯 Tone Compliance (from brief.json → preferences.tone)
+
+**Default: `neutral_business`** — Maintain objective, fact-based tone throughout.
+
+```yaml
+tone_rules:
+  when_writing_sections:
+    - "State facts and metrics objectively"
+    - "Provide context via benchmarks and comparisons"
+    - "Avoid emotional or promotional language"
+    - "Let data support conclusions"
+
+  when_writing_recommendations:
+    - "Base on evidence from collected data"
+    - "Present options with pros/cons"
+    - "Avoid prescriptive 'must do' language"
+    - "Use 'recommend', 'consider', 'opportunity'"
+
+  # ❌ AVOID
+  bad: "Компания срочно должна инвестировать в маркетинг!"
+  bad: "Это критическая проблема требующая немедленного решения!"
+
+  # ✅ USE
+  good: "Рекомендуется рассмотреть увеличение маркетингового бюджета"
+  good: "Текущий уровень зависимости от referrals (90%) создаёт риск концентрации"
+```
+
+---
+
 ## Input
 - `state/session.json` (for preferences)
 - `state/brief.json`
@@ -32,6 +63,25 @@ citations_collection:
     url: "https://..."
     accessed: "ISO date"
     used_for: "What claims this supports"
+```
+
+**🚨 CRITICAL: Preserve FULL URLs**
+```yaml
+url_rules:
+  # ❌ WRONG - truncated to domain
+  url: "https://www.forbes.com"
+  url: "https://ahrefs.com"
+
+  # ✅ CORRECT - full path preserved
+  url: "https://www.forbes.com/sites/digital-assets/2024/12/15/blockchain-consulting-trends"
+  url: "https://ahrefs.com/blog/domain-authority-study-2024"
+
+  why_full_urls:
+    - "Credibility: readers can verify exact source"
+    - "Transparency: shows specific article, not just site"
+    - "Professional standard for business reports"
+
+  action: "Copy source_url from result files WITHOUT modification"
 ```
 
 Save to `state/citations.json`
@@ -81,24 +131,37 @@ Compile charts from all results:
 ```yaml
 chart_data_compilation:
   sources:
-    - results/data_*.json → read "time_series" field with "chart_hint" (if exists)
+    - results/data_*.json → read "time_series" field with "file_ref" or "file_refs"
+    - results/series/*.json → actual time series data files
     - results/data_*.json → read "tables" for bar/comparison charts
     - results/overview_*.json → extract key metrics for summary charts
     - results/research_*.json → extract comparison data
 
   process:
     1. Scan all data results for "time_series" field
-    2. If time_series exists → use chart_hint (type, x_axis, y_axis)
-    3. If time_series missing but "tables" exist → create bar charts from table data
-    4. If only "metrics" exist → create metric cards (no chart needed)
-    5. Add comparison charts if multiple data sources
-    6. Apply chart styling rules from reporter.md
+    2. If time_series has "file_ref" → load data from results/series/{filename}
+    3. If time_series has "file_refs" → load multiple series files
+    4. Use chart_hint for type, x_axis, y_axis settings
+    5. If time_series missing but "tables" exist → create bar charts from table data
+    6. If only "metrics" exist → create metric cards (no chart needed)
+    7. Apply chart styling rules from reporter.md
 
-  handling_missing_time_series:
-    - NOT all data results have time_series (some are point-in-time metrics)
-    - Check for "time_series" key before processing
-    - Skip chart creation if no visualizable data
-    - Tables can become bar charts: rows → categories, columns → values
+  loading_series_files:
+    # In data_N.json:
+    "time_series": {
+      "mvrv_history": {
+        "file_refs": ["series/BTC_LTH_MVRV.json", "series/BTC_STH_MVRV.json"],
+        "chart_hint": {"type": "line", "x_axis": "date", "y_axis": "mvrv"}
+      }
+    }
+
+    # Load results/series/BTC_LTH_MVRV.json:
+    {
+      "asset": "BTC",
+      "metric": "LTH_MVRV",
+      "labels": ["2024-01-01", ...],
+      "values": [1.82, 1.85, ...]
+    }
 
   output_format:
     chart_id: "unique_id"
@@ -106,14 +169,52 @@ chart_data_compilation:
     title: "Chart title"
     x_axis: "date|category"
     y_axis: "value description"
+    source_files: ["series/BTC_LTH_MVRV.json"]  # Reference for Reporter
     data:
-      labels: ["Label1", "Label2"]
+      labels: ["2024-01-01", "2024-01-02", ...]  # From series file
       datasets:
-        - label: "Series name"
-          data: [10, 20, 30]
+        - label: "LTH MVRV"
+          data: [1.82, 1.85, ...]  # From series file values
 ```
 
 Save to `state/chart_data.json`
+
+**🚨 CRITICAL: Create Charts for ALL Visualizable Data**
+```yaml
+chart_completeness:
+  rule: "Every table, comparison, or time series MUST become a chart"
+
+  sources_to_scan:
+    data_files:
+      - time_series field → LINE chart
+      - tables field → BAR chart (if comparative)
+      - metrics field → consider grouped metrics chart
+    research_files:
+      - comparison tables → BAR chart
+      - themes with numeric data → PIE/BAR
+    overview_files:
+      - key_findings with numbers → summary chart
+
+  validation:
+    # Before saving chart_data.json, verify:
+    - "All data_*.json with time_series → have corresponding chart"
+    - "All comparison tables → have corresponding chart"
+    - "All numeric summaries → have corresponding chart"
+
+  minimum_charts:
+    executive: 3
+    standard: 6
+    comprehensive: 10
+    deep_dive: 12+
+
+  # ❌ WRONG - missing charts
+  data_files: 7 with visualizable data
+  chart_data.json: 8 charts  # Where's the rest?
+
+  # ✅ CORRECT - all data visualized
+  data_files: 7 with visualizable data
+  chart_data.json: 12 charts  # Includes all data + research comparisons
+```
 
 **Note:** Chart library selection and styling rules are in `reporter.md`
 

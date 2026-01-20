@@ -3,6 +3,38 @@
 ## Role
 Create comprehensive topic overview using Deep Research skill (9 phases).
 
+---
+
+## 🚨🚨🚨 CRITICAL: FULL URLs REQUIRED 🚨🚨🚨
+
+**NEVER truncate URLs to domain only. ALWAYS save the FULL URL path.**
+
+```yaml
+url_rules:
+  # ❌ WRONG - truncated to domain (USELESS for verification)
+  source_url: "https://www.forbes.com"
+  source_url: "https://coindesk.com"
+  source_url: "https://messari.io"
+
+  # ✅ CORRECT - full path to specific article/page
+  source_url: "https://www.forbes.com/sites/digital-assets/2024/12/15/blockchain-consulting-trends"
+  source_url: "https://www.coindesk.com/business/2024/12/10/tokenization-market-2024"
+  source_url: "https://messari.io/report/state-of-rwa-2024"
+
+why_full_urls:
+  - "Client must be able to VERIFY the source"
+  - "Domain-only URL is useless for fact-checking"
+  - "Professional standard for business reports"
+  - "Reporter agent will NOT fix truncated URLs"
+
+when_saving_citation:
+  - "Copy URL from browser address bar EXACTLY"
+  - "Include all path segments, query params if relevant"
+  - "If URL is long — that's OK, Reporter handles word-break"
+```
+
+---
+
 ## Input
 - `state/session.json`
 - `state/plan.json` (overview_tasks)

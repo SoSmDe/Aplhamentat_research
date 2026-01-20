@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{TITLE}}</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
         /* === WARP CAPITAL STYLE === */
         :root {
@@ -444,21 +444,6 @@
             word-break: break-all;
         }
 
-        /* === FOOTER === */
-        .report-footer {
-            margin-top: 50px;
-            padding-top: 30px;
-            border-top: 2px solid var(--corporate-color);
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 12px;
-        }
-
-        .report-footer .disclaimer {
-            margin-top: 20px;
-            font-style: italic;
-        }
-
         /* === RESPONSIVE === */
         @media (max-width: 768px) {
             body {
@@ -570,30 +555,54 @@
     {{SOURCES_LIST}}
 </section>
 
-<!-- FOOTER -->
-<footer class="report-footer">
-    {{FOOTER_CONTENT}}
-</footer>
+<!-- NO FOOTER FOR WARP STYLE - this is a finished product for sale -->
 
-<!-- CHARTS INITIALIZATION -->
+<!-- CHARTS INITIALIZATION (Plotly) -->
 <script>
-    // Chart.js default configuration for Warp style
-    Chart.defaults.font.family = "'Segoe UI', sans-serif";
-    Chart.defaults.color = '#4a4a4a';
-
-    // Color palette
-    const COLORS = {
-        primary: '#C41E3A',
-        secondary: '#2563EB',
-        success: '#16A34A',
-        warning: '#CA8A04',
-        danger: '#DC2626',
-        purple: '#9333EA',
-        cyan: '#0891B2',
-        orange: '#EA580C'
+    // Plotly default layout for Warp style
+    const WARP_LAYOUT = {
+        font: {family: "'Segoe UI', sans-serif", color: '#4a4a4a'},
+        paper_bgcolor: '#f8f9fa',
+        plot_bgcolor: '#ffffff',
+        margin: {t: 40, r: 20, b: 40, l: 60},
+        showlegend: true,
+        legend: {orientation: 'h', y: -0.15}
     };
 
-    {{CHARTS_JS}}
+    // Color palette for Warp style
+    const COLORS = {
+        primary: '#C41E3A',      // Warp red
+        secondary: '#2563EB',    // Blue
+        success: '#16A34A',      // Green
+        warning: '#CA8A04',      // Yellow
+        danger: '#DC2626',       // Red
+        purple: '#9333EA',
+        cyan: '#0891B2',
+        orange: '#EA580C',
+        // Asset-specific colors
+        BTC: '#F7931A',
+        ETH: '#627EEA',
+        SOL: '#00FFA3',
+        SPY: '#1E3A8A',
+        QQQ: '#7C3AED',
+        GLD: '#FFD700'
+    };
+
+    // Helper: Create line chart
+    function createLineChart(containerId, traces, title, yAxisTitle, yAxis2Title = null) {
+        const layout = {
+            ...WARP_LAYOUT,
+            title: {text: title, font: {size: 16, color: '#1a1a1a'}},
+            xaxis: {title: 'Date', gridcolor: '#e0e0e0'},
+            yaxis: {title: yAxisTitle, gridcolor: '#e0e0e0'}
+        };
+        if (yAxis2Title) {
+            layout.yaxis2 = {title: yAxis2Title, overlaying: 'y', side: 'right'};
+        }
+        Plotly.newPlot(containerId, traces, layout, {responsive: true});
+    }
+
+    {{CHARTS_PLOTLY}}
 </script>
 
 </body>

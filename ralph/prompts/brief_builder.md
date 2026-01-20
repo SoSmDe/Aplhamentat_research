@@ -183,6 +183,48 @@ auto_answer_logic:
 **Question**: Any time/geography/scope limits?
 **Logic**: Extract from query, default to current state globally
 
+### 9. Report Tone
+**Question**: What communication tone should the report use?
+**Options**:
+- `neutral_business` — Objective, fact-based, no promotional language **(DEFAULT)**
+- `advisory` — Consultative, includes recommendations with reasoning
+- `promotional` — Highlights positives (only if explicitly requested)
+- `critical` — Focuses on risks and weaknesses (only if explicitly requested)
+
+```yaml
+auto_answer_logic:
+  neutral_business:
+    default: true
+    description: "Objective analysis without sales pitch or emotional language"
+  advisory:
+    keywords: ["recommend", "advise", "consult", "strategy", "what should"]
+  promotional:
+    keywords: ["pitch", "sell", "present to investors", "marketing"]
+    requires_explicit: true
+  critical:
+    keywords: ["audit", "due diligence", "risk assessment", "problems"]
+```
+
+**⚠️ IMPORTANT: Neutral Business is the DEFAULT tone.**
+- Reports should be objective and fact-based
+- Avoid "sales pitch" language in marketing gap blocks
+- Avoid emotional phrases like "это катастрофа", "это не стратегия — это отсутствие"
+- Present facts and let reader draw conclusions
+- If highlighting problems → use neutral formulations
+
+```yaml
+tone_examples:
+  # ❌ WRONG - promotional/emotional tone
+  bad: "Это критическая проблема! Компания срочно нуждается в маркетинге!"
+  bad: "Отсутствие SEO — это катастрофа для бизнеса"
+  bad: "Без инвестиций в маркетинг компания обречена"
+
+  # ✅ CORRECT - neutral business tone
+  good: "SEO-видимость ограничена: ~20 страниц в индексе Google"
+  good: "Текущая зависимость от referrals (90%) создаёт концентрационный риск"
+  good: "Конкуренты имеют в 28 раз больше LinkedIn followers"
+```
+
 ---
 
 ## Output
@@ -199,6 +241,7 @@ Save to `state/brief.json`:
     "style_reference": null,
     "depth": "standard",
     "audience": "analyst",
+    "tone": "neutral_business",
     "components": ["full_report"]
   },
 
@@ -245,6 +288,7 @@ After saving brief.json, update session.json:
     "style_reference": null,
     "depth": "standard",
     "audience": "analyst",
+    "tone": "neutral_business",
     "components": ["full_report"]
   },
   "updated_at": "ISO timestamp"

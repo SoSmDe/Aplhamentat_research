@@ -2,7 +2,124 @@
 
 ## Role
 Collect structured quantitative data: metrics, numbers, facts.
-**Primary method**: Use `ralph/integrations/` Python APIs for data.
+**Primary method**: Use `cli/fetch.py` via Bash to call data APIs.
+
+---
+
+## 🚨🚨🚨 CRITICAL: FULL URLs REQUIRED 🚨🚨🚨
+
+**NEVER truncate URLs to domain only. ALWAYS save the FULL URL path.**
+
+```yaml
+url_rules:
+  # ❌ WRONG - truncated to domain (USELESS for verification)
+  source_url: "https://api.coingecko.com"
+  source_url: "https://defillama.com"
+  source_url: "https://l2beat.com"
+
+  # ✅ CORRECT - full path to specific endpoint/page
+  source_url: "https://api.coingecko.com/api/v3/coins/bitcoin"
+  source_url: "https://defillama.com/protocol/aave"
+  source_url: "https://l2beat.com/scaling/projects/arbitrum"
+
+why_full_urls:
+  - "Client must be able to VERIFY the data source"
+  - "Domain-only URL is useless for fact-checking"
+  - "For APIs: link to specific endpoint or docs page"
+  - "Reporter agent will NOT fix truncated URLs"
+```
+
+---
+
+## 🚨 MANDATORY: USE CLI, NOT WEB SEARCH
+
+**YOU MUST call APIs via Bash CLI. DO NOT use web search for data that APIs provide.**
+
+**Working directory:** Run from `ralph/` folder (the research folder's parent).
+
+```bash
+# ✅ CORRECT: cd to ralph/ then use CLI
+cd C:/Users/.../ralph && python cli/fetch.py coingecko get_price '["bitcoin"]'
+cd C:/Users/.../ralph && python cli/fetch.py blocklens get_market_cycle_indicators
+cd C:/Users/.../ralph && python cli/fetch.py defillama get_l2_comparison
+
+# ❌ WRONG: Web searching for API data
+WebSearch("BTC price coingecko")  # NO!
+WebSearch("MVRV ratio bitcoin")   # NO! Use blocklens
+WebSearch("L2 TVL comparison")    # NO! Use defillama
+```
+
+**Why CLI is mandatory:**
+1. APIs return structured JSON → directly usable
+2. Web search returns articles with stale/inaccurate data
+3. APIs are the PRIMARY sources (CoinGecko, Glassnode, DefiLlama)
+4. Web search should ONLY be used for news/sentiment/qualitative data
+
+**Available modules:** `coingecko`, `blocklens`, `defillama`, `l2beat`, `etherscan`, `thegraph`, `dune`, `yfinance`, `finnhub`, `fred`, `sec`, `fmp`, `worldbank`, `imf`
+
+---
+
+## 🚨🚨🚨 CRITICAL: SAVE DATA TO SEPARATE FILES 🚨🚨🚨
+
+**Large time series (>50 points) MUST be saved to separate files in `results/series/`**
+
+### File Naming Convention
+```
+results/series/{ASSET}_{METRIC}.json
+```
+
+**Examples:**
+- `results/series/BTC_price.json` — BTC price history
+- `results/series/ETH_price.json` — ETH price history
+- `results/series/BTC_LTH_supply.json` — BTC Long-Term Holder supply
+- `results/series/BTC_STH_supply.json` — BTC Short-Term Holder supply
+- `results/series/BTC_MVRV.json` — BTC MVRV ratio history
+- `results/series/BTC_SOPR.json` — BTC SOPR history
+- `results/series/SPY_price.json` — SPY ETF price history
+
+### Series File Format
+```json
+{
+  "asset": "BTC",
+  "metric": "price",
+  "unit": "USD",
+  "frequency": "daily",
+  "source": "coingecko",
+  "labels": ["2024-01-01", "2024-01-02", "2024-01-03", ...],
+  "values": [42000, 42150, 41890, ...],
+  "updated_at": "2026-01-20T12:00:00Z"
+}
+```
+
+### In data_N.json — Reference Only
+```yaml
+# ❌ WRONG - Embedding large arrays:
+time_series:
+  price_history:
+    labels: ["2024-01-01", "2024-01-02", ...]  # 750 items embedded!
+    datasets:
+      BTC: [42000, 42150, ...]  # 750 items embedded!
+
+# ❌ WRONG - Text descriptions:
+time_series:
+  price_history:
+    labels: "See BTC_price.json"  # Useless string!
+
+# ✅ CORRECT - File references:
+time_series:
+  price_history:
+    file_ref: "series/BTC_price.json"
+    chart_hint: {"type": "line", "x_axis": "date", "y_axis": "price_usd"}
+  mvrv_history:
+    file_refs: ["series/BTC_MVRV.json", "series/BTC_price.json"]
+    chart_hint: {"type": "line", "x_axis": "date", "y_axis": "mvrv", "secondary_y": "price"}
+```
+
+### Workflow
+1. Call API → receive JSON with arrays
+2. **Save raw arrays to `results/series/{ASSET}_{METRIC}.json`**
+3. In `data_N.json` → put `file_ref` pointing to series file
+4. Reporter loads series files directly for charts
 
 ---
 
@@ -69,7 +186,42 @@ execution_rules:
       wrong: "Skip calculations or search for pre-computed values"
 ```
 
-### 4. NEVER Truncate Time Series
+### 4. 🚨 MANDATORY: DAILY GRANULARITY
+
+**Всегда собирай данные с ДНЕВНОЙ гранулярностью. Месячные данные = плохо!**
+
+```yaml
+granularity_rules:
+  required: "daily"
+
+  priority:
+    1_daily: "✅ ALWAYS USE — 1 data point per day"
+    2_weekly: "⚠️ Only if daily unavailable or period > 5 years"
+    3_monthly: "❌ AVOID — only for 10+ year periods"
+
+  why_daily:
+    - "Показывает реальную волатильность"
+    - "Не скрывает dumps/pumps"
+    - "Профессиональный стандарт"
+    - "Месячные данные сглаживают и теряют информацию"
+
+  api_settings:
+    coingecko:
+      correct: "days=365, interval не указывать (по умолчанию daily)"
+      wrong: "interval=monthly"
+    blocklens:
+      correct: "limit=365 для года дневных данных"
+      wrong: "limit=12 (месячные)"
+    yfinance:
+      correct: "interval='1d'"
+      wrong: "interval='1mo'"
+```
+
+**Проверь себя:** Если между датами > 7 дней — ты собрал не daily данные!
+
+---
+
+### 5. NEVER Truncate Time Series (Full History)
 
 ```yaml
 time_series_rules:
@@ -99,37 +251,33 @@ time_series_rules:
       }
 ```
 
-### 5. API Calls with Date Parameters
+### 6. API Calls with Date Parameters
 
 ```yaml
 api_call_rules:
   blocklens:
     correct: |
-      # Full history from 2020
-      blocklens.get_holder_supply(
-        start_date="2020-01-01",
-        end_date="2026-01-20",
-        limit=3000
-      )
+      # Full history from 2020 (via Bash)
+      python cli/fetch.py blocklens get_holder_supply '{"start_date": "2020-01-01", "end_date": "2026-01-20", "limit": 3000}'
     wrong: |
       # Only recent data
-      blocklens.get_holder_supply()  # No date params = recent only!
+      python cli/fetch.py blocklens get_holder_supply  # No params = recent only!
 
   coingecko:
     correct: |
-      # Full history
-      coingecko.get_price_history("bitcoin", days=2190)  # ~6 years
+      # Full history via CSV export (no limits!)
+      curl -o btc_prices.csv "https://www.coingecko.com/price_charts/export/bitcoin/usd.csv"
     wrong: |
-      coingecko.get_price_history("bitcoin", days=30)  # Only 30 days!
+      python cli/fetch.py coingecko get_price_history '{"days": 30}'  # API limited, use CSV!
 
   yfinance:
     correct: |
-      yfinance.get_price_history("BTC-USD", start="2020-01-01")
+      python cli/fetch.py yfinance get_price_history '{"ticker": "BTC-USD", "period": "5y"}'
     wrong: |
-      yfinance.get_price_history("BTC-USD")  # Default = recent only
+      python cli/fetch.py yfinance get_price_history '{"ticker": "BTC-USD"}'  # Default = 1y only
 ```
 
-### 6. Validate Before Saving
+### 7. Validate Before Saving
 
 ```yaml
 validation_checklist:
@@ -150,15 +298,25 @@ validation_checklist:
     never: "Save truncated data anyway"
 ```
 
-### 7. Chart Data Preparation
+### 8. Chart Data Preparation
 
 ```yaml
 chart_preparation:
   rule: "Prepare data EXACTLY as chart_spec requires"
 
+  # ⚠️ CRITICAL: Chart type selection
+  chart_type_rules:
+    time_series: "LINE"      # Prices, MVRV over time, supply history
+    comparison: "BAR"        # L2 TVL comparison, ETF AUM by fund
+    distribution: "HISTOGRAM"
+    composition: "PIE"       # Supply breakdown, market share
+
+  # If X-axis is dates → ALWAYS use LINE, never BAR!
+  x_axis_date: "type MUST be 'line'"
+
   example:
     chart_spec:
-      type: "line"
+      type: "line"           # ← LINE because x_axis is date!
       title: "BTC: LTH MVRV vs Price"
       x_axis: "date"
       y_axis: "mvrv_lth"
@@ -170,13 +328,13 @@ chart_preparation:
         mvrv_lth: "Full MVRV array matching labels"
         price: "Full price array matching labels"
       chart_hint:
-        type: "line"
+        type: "line"         # ← LINE for time series!
         x_axis: "date"
         y_axis: "mvrv_lth"
         secondary_y: "price"
 ```
 
-### 8. Error Recovery
+### 9. Error Recovery
 
 ```yaml
 error_handling:
@@ -212,7 +370,7 @@ error_handling:
 | Data Need | API | Function | Example |
 |-----------|-----|----------|---------|
 | Token price | `coingecko` | `get_price(["bitcoin"])` | BTC current price |
-| Price history | `coingecko` | `get_price_history("ethereum", days=30)` | ETH 30d chart |
+| Price history | `coingecko CSV` | Direct URL download | Full BTC history |
 | Market cap ranking | `coingecko` | `get_top_coins(100)` | Top 100 tokens |
 | DeFi TVL | `defillama` | `get_protocol_tvl("aave")` | Aave TVL |
 | L2 TVL comparison | `defillama` | `get_l2_comparison()` | All L2s TVL |
@@ -229,53 +387,161 @@ error_handling:
 | **BTC valuation** | `blocklens` | `get_holder_valuation()` | MVRV ratio |
 | **BTC market cycle** | `blocklens` | `get_market_cycle_indicators()` | Full cycle analysis |
 
-### Usage Pattern
+### ⚠️ HOW TO CALL APIs (CRITICAL)
 
-```python
-# Import what you need
-from integrations.crypto import coingecko, defillama, l2beat, etherscan, thegraph, blocklens
+**Use Bash to call `cli/fetch.py` - DO NOT use web search for data that APIs provide!**
 
-# Example: Get BTC price for analysis
-btc = coingecko.get_price(["bitcoin"])
+```bash
+# CLI syntax:
+python cli/fetch.py <module> <method> [args_json]
+
+# List available modules:
+python cli/fetch.py --list-modules
+
+# List methods for a module:
+python cli/fetch.py coingecko --list
+```
+
+### Usage Examples (Bash)
+
+```bash
+# Get BTC current price
+python cli/fetch.py coingecko get_price '["bitcoin"]'
 # Returns: {"bitcoin": {"usd": 93168, "usd_24h_change": -2.1, "usd_market_cap": 1.86e12}}
 
-# Example: Compare L2 TVL
-l2s = defillama.get_l2_comparison()
+# Get price history → USE CSV EXPORT (NOT API!)
+curl -o btc_prices.csv "https://www.coingecko.com/price_charts/export/bitcoin/usd.csv"
+curl -o eth_prices.csv "https://www.coingecko.com/price_charts/export/ethereum/usd.csv"
+
+# Compare L2 TVL
+python cli/fetch.py defillama get_l2_comparison
 # Returns: [{"name": "Arbitrum", "tvl": 15.2e9}, {"name": "Base", "tvl": 12.1e9}, ...]
 
-# Example: Get L2 security scores
-risks = l2beat.get_l2_risk_scores()
-# Returns: {"arbitrum": {"stage": "Stage 1", "risks": {...}}, ...}
+# Get L2 security scores
+python cli/fetch.py l2beat get_l2_risk_scores
 
-# Example: Multi-chain wallet check
-balances = etherscan.get_multi_chain_balance("0x...", ["ethereum", "arbitrum", "base"])
-
-# Example: BTC on-chain analysis (BlockLens)
-metrics = blocklens.get_latest_metrics()
+# BTC on-chain analysis (BlockLens)
+python cli/fetch.py blocklens get_latest_metrics
 # Returns: {prices: {...}, supply: {lth_supply, sth_supply}, valuation: {mvrv}, profit: {sopr}}
 
-# Example: BTC market cycle indicators
-cycle = blocklens.get_market_cycle_indicators()
+# BTC market cycle indicators
+python cli/fetch.py blocklens get_market_cycle_indicators
 # Returns: {market_phase: "bull_market", signal: "caution", mvrv: {...}, sopr: {...}}
+
+# BTC holder supply with date range
+python cli/fetch.py blocklens get_holder_supply '{"start_date": "2024-01-01", "limit": 365}'
+
+# Stock price history (yfinance)
+python cli/fetch.py yfinance get_price_history '{"ticker": "BTC-USD", "period": "2y"}'
+
+# Protocol TVL
+python cli/fetch.py defillama get_protocol_tvl '{"protocol": "aave"}'
 ```
 
 ### API Priority (use in this order)
 
-1. **Structured APIs first** (fast, reliable):
-   - `coingecko` → prices, market data
-   - `defillama` → TVL, fees, yields
-   - `l2beat` → L2 security, activity
-   - `etherscan` → wallet, gas, transactions
-   - `thegraph` → protocol-specific (Uniswap, Aave)
+**For crypto prices (BTC, ETH, etc.):**
+1. **CoinGecko CSV Export** (primary for history) → Direct download via URL
+2. **CoinGecko API** (for current price only) → `coingecko get_price`
+3. **yfinance** (fallback) → `yfinance get_price_history '{"ticker": "BTC-USD"}'`
 
-2. **Dune last** (slow, limited credits):
-   - Only when data not available elsewhere
-   - Custom on-chain queries
-   - Historical analysis
+---
 
-3. **Web search fallback**:
-   - Only if APIs don't have needed data
-   - For non-crypto data (traditional finance, news)
+## 🚨 CoinGecko: CSV Export (Primary Method for Price History)
+
+**API доступ ограничен. Для исторических данных используй CSV export:**
+
+### URL Format
+```
+https://www.coingecko.com/price_charts/export/{coin_id}/usd.csv
+```
+
+### How to Download (via Bash)
+```bash
+# Download BTC price history
+curl -o btc_prices.csv "https://www.coingecko.com/price_charts/export/bitcoin/usd.csv"
+
+# Download ETH price history
+curl -o eth_prices.csv "https://www.coingecko.com/price_charts/export/ethereum/usd.csv"
+
+# Download in different currency
+curl -o btc_eur.csv "https://www.coingecko.com/price_charts/export/bitcoin/eur.csv"
+```
+
+### Popular coin_id Examples
+```yaml
+# Top cryptocurrencies
+bitcoin: "bitcoin"
+ethereum: "ethereum"
+solana: "solana"
+bnb: "binancecoin"
+xrp: "ripple"
+cardano: "cardano"
+dogecoin: "dogecoin"
+polkadot: "polkadot"
+avalanche: "avalanche-2"      # Note: -2 suffix!
+chainlink: "chainlink"
+tron: "tron"
+polygon: "polygon-ecosystem-token"
+litecoin: "litecoin"
+
+# Stablecoins
+usdt: "tether"
+usdc: "usd-coin"
+
+# How to find coin_id:
+# Go to coingecko.com/en/coins/{slug} → slug is the coin_id
+# Example: coingecko.com/en/coins/avalanche-2 → coin_id = "avalanche-2"
+```
+
+### Available Currencies
+```
+usd, eur, rub, btc, eth, gbp, jpy, cny, krw, etc.
+```
+
+### CSV Format (what you get)
+```csv
+snapped_at,price,market_cap,total_volume
+2013-04-28 00:00:00 UTC,135.3,1500000000,0
+2013-04-29 00:00:00 UTC,141.96,1570000000,0
+...
+2026-01-20 00:00:00 UTC,94454,1860000000000,45000000000
+```
+
+### When to Use What
+
+| Need | Method | Example |
+|------|--------|---------|
+| **Price history** (any period) | CSV Export | `curl -o btc.csv "https://...bitcoin/usd.csv"` |
+| **Current price** only | CLI API | `python cli/fetch.py coingecko get_price '["bitcoin"]'` |
+| **Multiple current prices** | CLI API | `python cli/fetch.py coingecko get_price '["bitcoin","ethereum"]'` |
+| **Top coins list** | CLI API | `python cli/fetch.py coingecko get_top_coins` |
+
+### ⚠️ IMPORTANT
+- CSV export gives FULL history (from coin listing date to now)
+- No rate limits on CSV download
+- coin_id is the slug from CoinGecko URL, NOT ticker symbol
+- Some coins have suffixes: `avalanche-2`, `polygon-ecosystem-token`
+
+---
+
+**For on-chain metrics (MVRV, LTH/STH, SOPR):**
+1. **BlockLens** → `blocklens get_market_cycle_indicators`, `get_holder_supply`
+
+**For DeFi/L2 data:**
+1. `defillama` → TVL, fees, yields
+2. `l2beat` → L2 security, activity
+3. `thegraph` → protocol-specific (Uniswap, Aave)
+
+**For traditional stocks/ETFs:**
+1. `yfinance` → SPY, QQQ, AAPL, etc.
+
+**For macro data:**
+1. `fred` → interest rates, inflation, GDP
+
+**Dune** (slow, limited) → only for custom on-chain queries
+
+**Web search** → ONLY for news, sentiment, qualitative data (NOT prices!)
 
 ### API Availability
 
@@ -328,38 +594,36 @@ cycle = blocklens.get_market_cycle_indicators()
 
 ### Example: Market Cycle Analysis
 
-```python
-from integrations.crypto import blocklens
-
+```bash
 # Get comprehensive market cycle indicators
-cycle = blocklens.get_market_cycle_indicators()
+python cli/fetch.py blocklens get_market_cycle_indicators
 
 # Returns:
-{
-    "date": "2026-01-18",
-    "price": {
-        "current": 94454,
-        "lth_realized": 39060,
-        "sth_realized": 96836,
-        "vs_lth_realized": 141.8  # % above LTH cost basis
-    },
-    "supply": {
-        "lth_ratio_pct": 70.9,
-        "sth_ratio_pct": 29.1
-    },
-    "mvrv": {
-        "lth": 2.42,
-        "sth": 0.98,
-        "lth_signal": "elevated",
-        "sth_signal": "near_breakeven"
-    },
-    "sopr": {
-        "lth": 1.59,
-        "sth": 0.99
-    },
-    "market_phase": "bull_market",
-    "signal": "caution"
-}
+# {
+#     "date": "2026-01-18",
+#     "price": {
+#         "current": 94454,
+#         "lth_realized": 39060,
+#         "sth_realized": 96836,
+#         "vs_lth_realized": 141.8
+#     },
+#     "supply": {
+#         "lth_ratio_pct": 70.9,
+#         "sth_ratio_pct": 29.1
+#     },
+#     "mvrv": {
+#         "lth": 2.42,
+#         "sth": 0.98,
+#         "lth_signal": "elevated",
+#         "sth_signal": "near_breakeven"
+#     },
+#     "sopr": {
+#         "lth": 1.59,
+#         "sth": 0.99
+#     },
+#     "market_phase": "bull_market",
+#     "signal": "caution"
+# }
 ```
 
 ### When to Use BlockLens vs CoinGecko
@@ -416,27 +680,28 @@ task:
 4. Select API from Selection Matrix based on data type
 
 ### 2. Select API and Download Data
-Based on `api_source` in data_spec:
+Based on `api_source` in data_spec, use Bash to call fetch.py:
 
-| api_source | Module | Function |
-|------------|--------|----------|
-| `coingecko` | `integrations.crypto.coingecko` | `get_price_history()` |
-| `yfinance` | `integrations.stocks.yfinance_client` | `get_price_history()` |
-| `defillama` | `integrations.crypto.defillama` | `get_historical_tvl()` |
-| `fred` | `integrations.stocks.fred` | `get_series()` |
+| Data Type | Primary API | Function | Fallback |
+|-----------|-------------|----------|----------|
+| Crypto price history | `coingecko CSV` | Direct URL download | `yfinance` |
+| Crypto current price | `coingecko` | `get_price` | `yfinance` |
+| BTC on-chain (MVRV, LTH/STH) | `blocklens` | `get_market_cycle_indicators`, `get_holder_supply` | - |
+| DeFi TVL | `defillama` | `get_protocol_tvl`, `get_historical_tvl` | - |
+| Stocks/ETFs (SPY, QQQ) | `yfinance` | `get_price_history` | - |
+| Macro (rates, GDP) | `fred` | `get_series` | - |
 
-```python
-# Example: Download prices per data_spec
-from integrations.stocks import yfinance_client
+```bash
+# Example: Download prices per data_spec (via Bash)
 
-assets = ["BTC-USD", "ETH-USD", "SPY", "QQQ", "GLD"]
-prices = {}
-for asset in assets:
-    prices[asset] = yfinance_client.get_price_history(
-        asset,
-        start="2020-01-01",
-        interval="1d"
-    )
+# BTC price history - USE CSV EXPORT (full history!)
+curl -o btc_prices.csv "https://www.coingecko.com/price_charts/export/bitcoin/usd.csv"
+
+# ETH price history - USE CSV EXPORT
+curl -o eth_prices.csv "https://www.coingecko.com/price_charts/export/ethereum/usd.csv"
+
+# SPY price history - USE YFINANCE (for stocks/ETFs)
+python cli/fetch.py yfinance get_price_history '{"ticker": "SPY", "period": "5y", "interval": "1d"}'
 ```
 
 ### 3. Perform Calculations (if specified)
@@ -476,6 +741,9 @@ def calculate_sharpe(returns, rf=0.05):
 ## Output
 
 Save to `results/data_{N}.json`:
+
+**⚠️ CRITICAL: Large time series → save to `results/series/` and reference via `file_ref`**
+
 ```json
 {
   "id": "data_N",
@@ -492,17 +760,13 @@ Save to `results/data_{N}.json`:
       }
     },
     "time_series": {
+      "price_history": {
+        "file_ref": "series/BTC_price.json",
+        "chart_hint": {"type": "line", "x_axis": "date", "y_axis": "price_usd"}
+      },
       "drawdown": {
-        "labels": ["2020-01-01", "2020-01-02", "..."],
-        "datasets": {
-          "BTC": [-5.2, -3.1, "..."],
-          "ETH": [-8.1, -6.2, "..."]
-        },
-        "chart_hint": {
-          "type": "line",
-          "x_axis": "date",
-          "y_axis": "drawdown_pct"
-        }
+        "file_refs": ["series/BTC_drawdown.json", "series/ETH_drawdown.json"],
+        "chart_hint": {"type": "line", "x_axis": "date", "y_axis": "drawdown_pct"}
       }
     },
     "tables": [
@@ -590,10 +854,9 @@ When all tasks complete → set phase to "questions_review"
 
 **Task**: "Get BTC and ETH prices with 24h change"
 
-```python
-# 1. Call API
-from integrations.crypto import coingecko
-prices = coingecko.get_price(["bitcoin", "ethereum"])
+```bash
+# 1. Call API via Bash
+python cli/fetch.py coingecko get_price '["bitcoin", "ethereum"]'
 
 # 2. Result:
 # {"bitcoin": {"usd": 93168, "usd_24h_change": -2.1, "usd_market_cap": 1.86e12},
@@ -625,13 +888,12 @@ prices = coingecko.get_price(["bitcoin", "ethereum"])
 
 **Task**: "Compare L2s by TVL and security"
 
-```python
+```bash
 # 1. Get TVL from DefiLlama
-from integrations.crypto import defillama, l2beat
-tvl_data = defillama.get_l2_comparison()
+python cli/fetch.py defillama get_l2_comparison
 
 # 2. Get security from L2Beat
-risks = l2beat.get_l2_risk_scores()
+python cli/fetch.py l2beat get_l2_risk_scores
 ```
 
 **Save to** `results/data_2.json`:
@@ -665,41 +927,116 @@ risks = l2beat.get_l2_risk_scores()
 
 **Task**: "Get Uniswap V3 pool data on Arbitrum"
 
-```python
-from integrations.crypto import thegraph, defillama
-
+```bash
 # Pool data from TheGraph
-pools = thegraph.get_uniswap_top_pools("arbitrum", limit=10)
+python cli/fetch.py thegraph get_uniswap_top_pools '{"chain": "arbitrum", "limit": 10}'
 
 # Protocol fees from DefiLlama
-fees = defillama.get_protocol_fees("uniswap")
+python cli/fetch.py defillama get_protocol_fees '{"protocol": "uniswap"}'
 ```
 
 ### Example 4: Wallet Analysis
 
 **Task**: "Check whale wallet 0x... across chains"
 
-```python
-from integrations.crypto import etherscan
-
+```bash
 # Multi-chain balance
-balances = etherscan.get_multi_chain_balance(
-    "0x28C6c06298d514Db089934071355E5743bf21d60",  # Binance hot wallet
-    chains=["ethereum", "arbitrum", "optimism", "base"]
-)
+python cli/fetch.py etherscan get_multi_chain_balance '{"address": "0x28C6c06298d514Db089934071355E5743bf21d60", "chains": ["ethereum", "arbitrum", "optimism", "base"]}'
 
 # Recent large transactions
-whales = etherscan.get_whale_transactions("0x...", min_value_eth=100)
+python cli/fetch.py etherscan get_whale_transactions '{"address": "0x...", "min_value_eth": 100}'
 ```
+
+---
+
+## 🚨 Example: Correctly Saving Time Series from BlockLens
+
+**Task**: d5 - BTC on-chain metrics (MVRV, supply distribution)
+
+**Step 1: Call API**
+```bash
+cd C:/Users/.../ralph && python cli/fetch.py blocklens get_holder_valuation '{"start_date": "2024-01-01", "limit": 800}'
+```
+
+**Step 2: API returns JSON array**
+```json
+[
+  {"date_processed": "2026-01-18", "lth_mvrv": "2.418", "sth_mvrv": "0.975"},
+  {"date_processed": "2026-01-17", "lth_mvrv": "2.401", "sth_mvrv": "0.982"},
+  ...
+]
+```
+
+**Step 3: Save to separate series files**
+
+**File: `results/series/BTC_LTH_MVRV.json`**
+```json
+{
+  "asset": "BTC",
+  "metric": "LTH_MVRV",
+  "unit": "ratio",
+  "frequency": "daily",
+  "source": "blocklens",
+  "labels": ["2024-01-01", "2024-01-02", ..., "2026-01-18"],
+  "values": [1.82, 1.85, ..., 2.418],
+  "updated_at": "2026-01-20T12:00:00Z"
+}
+```
+
+**File: `results/series/BTC_STH_MVRV.json`**
+```json
+{
+  "asset": "BTC",
+  "metric": "STH_MVRV",
+  "unit": "ratio",
+  "frequency": "daily",
+  "source": "blocklens",
+  "labels": ["2024-01-01", "2024-01-02", ..., "2026-01-18"],
+  "values": [1.05, 1.03, ..., 0.975],
+  "updated_at": "2026-01-20T12:00:00Z"
+}
+```
+
+**Step 4: Reference in data_5.json**
+```json
+{
+  "id": "data_5",
+  "task_id": "d5",
+  "status": "done",
+  "output": {
+    "metrics": {
+      "mvrv_lth": {"value": 2.42, "unit": "ratio", "as_of_date": "2026-01-18"},
+      "mvrv_sth": {"value": 0.98, "unit": "ratio", "as_of_date": "2026-01-18"}
+    },
+    "time_series": {
+      "mvrv_history": {
+        "file_refs": ["series/BTC_LTH_MVRV.json", "series/BTC_STH_MVRV.json"],
+        "chart_hint": {"type": "line", "x_axis": "date", "y_axis": "mvrv_ratio", "title": "BTC MVRV: LTH vs STH"}
+      }
+    }
+  }
+}
+```
+
+**⚠️ Key points:**
+- Large arrays → separate files in `results/series/`
+- `data_N.json` contains only `file_refs` + `chart_hint`
+- Reporter loads series files directly for charts
+- Current values go in `metrics` section
+
+---
 
 ## Error Handling
 
-```python
-try:
-    data = coingecko.get_price(["bitcoin"])
-except Exception as e:
-    # Log error, try fallback
-    data = {"error": str(e), "fallback": "web_search"}
+When CLI returns error JSON, try alternative API or web search as fallback:
+
+```bash
+# If coingecko fails:
+python cli/fetch.py coingecko get_price '["bitcoin"]'
+# Returns: {"error": "Rate limit exceeded", "type": "RateLimitError"}
+
+# Fallback to alternative:
+python cli/fetch.py yfinance get_price_history '{"ticker": "BTC-USD"}'
 ```
 
 Save errors in output:

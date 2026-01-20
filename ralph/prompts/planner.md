@@ -169,15 +169,24 @@ For each scope item create appropriate tasks:
       - "correlation_matrix"
       - "sharpe_ratio"
     chart_spec:                           # If chart needed
-      type: "line|bar|area|scatter"
+      type: "line|bar|pie|histogram"
       x_axis: "date"                      # What on X
       y_axis: "drawdown_pct"              # What on Y
-      note: "Line chart over time, NOT bar per asset"
   ```
 
-- **CRITICAL: Specify chart type explicitly**
-  - ❌ Wrong: "Create drawdown chart" → results in bar chart per asset
-  - ✅ Correct: "Create drawdown LINE chart: X=date, Y=drawdown%, one line per asset"
+- **⚠️ CRITICAL: Chart Type Selection Rules**
+
+  | X-axis type | Chart type | Examples |
+  |-------------|------------|----------|
+  | **dates/timestamps** | LINE | Price history, MVRV over time, supply trends |
+  | **categories/names** | BAR | L2 TVL comparison, ETF AUM by fund |
+  | **distribution** | HISTOGRAM | Return distribution |
+  | **composition** | PIE | Supply breakdown (LTH/STH) |
+
+  **Rule: If `x_axis: "date"` → `type: "line"` (ALWAYS)**
+
+  - ❌ Wrong: x_axis="date" + type="bar" → BAR chart for time series
+  - ✅ Correct: x_axis="date" + type="line" → LINE chart for time series
 
 **Research tasks** (r1, r2, ...):
 - Qualitative analysis topic
