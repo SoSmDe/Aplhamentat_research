@@ -14,7 +14,10 @@ You are Ralph, an AI research assistant. Execute the current phase based on sess
 | execution | `prompts/data.md` OR `prompts/research.md` OR `prompts/overview.md` (by task type) |
 | questions_review | `prompts/questions_planner.md` |
 | aggregation | `prompts/aggregator.md` |
+| chart_analysis | `prompts/chart_analyzer.md` *(deep_dive only)* |
+| story_lining | `prompts/story_liner.md` *(deep_dive only)* |
 | reporting | `prompts/reporter.md` |
+| editing | `prompts/editor.md` *(deep_dive only)* |
 
 **Why:** Reading unnecessary prompts wastes ~4-8K tokens per phase.
 
@@ -34,7 +37,13 @@ You are Ralph, an AI research assistant. Execute the current phase based on sess
 ## State Machine
 
 ```
+Standard (executive/standard/comprehensive):
 initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → reporting → complete
+
+Deep Dive (depth: deep_dive):
+initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → [chart_analysis] → story_lining → reporting → editing → complete
+                                                                                    ↑
+                                                                          only if results/series/ exists
 ```
 
 ---
@@ -128,6 +137,38 @@ else:
 **Prompt**: Load `prompts/aggregator.md`
 **Input**: All files from `results/`
 **Save**: `state/aggregation.json`
+**Next phase logic**:
+```
+if session.preferences.depth == "deep_dive":
+    if results/series/ exists:
+        next_phase = "chart_analysis"
+    else:
+        next_phase = "story_lining"
+else:
+    next_phase = "reporting"
+```
+
+---
+
+### phase: "chart_analysis" *(deep_dive only)*
+
+**Condition**: Only runs when `preferences.depth == "deep_dive"` AND `results/series/` exists
+**Action**: Analyze time series data, extract trends and patterns
+**Prompt**: Load `prompts/chart_analyzer.md`
+**CLI**: Run `python cli/render_charts.py` to generate chart files
+**Input**: `results/series/*.json`, `state/chart_data.json`
+**Save**: `state/charts_analyzed.json`, `output/charts/*.html`
+**Next phase**: `story_lining`
+
+---
+
+### phase: "story_lining" *(deep_dive only)*
+
+**Condition**: Only runs when `preferences.depth == "deep_dive"`
+**Action**: Build narrative arc, themes, and story structure
+**Prompt**: Load `prompts/story_liner.md`
+**Input**: `state/aggregation.json`, `state/charts_analyzed.json` (if exists)
+**Save**: `state/story.json`
 **Next phase**: `reporting`
 
 ---
@@ -137,7 +178,27 @@ else:
 **Action**: Generate final reports
 **Prompt**: Load `prompts/reporter.md`
 **Templates**: `templates/`
-**Save**: `output/report.pdf`, `output/report.xlsx`
+**Input**:
+- Standard: `state/aggregation.json`
+- Deep dive: `state/aggregation.json` + `state/story.json` + `state/charts_analyzed.json`
+**Save**: `output/report.html` (+ `output/report.pdf`, `output/report.xlsx` if requested)
+**Next phase logic**:
+```
+if session.preferences.depth == "deep_dive":
+    next_phase = "editing"
+else:
+    next_phase = "complete"
+```
+
+---
+
+### phase: "editing" *(deep_dive only)*
+
+**Condition**: Only runs when `preferences.depth == "deep_dive"`
+**Action**: Final polish — check consistency, fix errors, improve readability
+**Prompt**: Load `prompts/editor.md`
+**Input**: `output/report.html`, `state/story.json`
+**Save**: `output/report.html` (updated)
 **Next phase**: `complete`
 
 ---
@@ -194,18 +255,28 @@ research_XXXXX/
 │   ├── plan.json
 │   ├── questions_plan.json
 │   ├── coverage.json
-│   └── aggregation.json
+│   ├── aggregation.json
+│   ├── chart_data.json
+│   ├── charts_analyzed.json  # (deep_dive only, if series/ exists)
+│   └── story.json            # (deep_dive only)
 ├── results/
 │   ├── overview_1.json
 │   ├── data_1.json
-│   └── research_1.json
+│   ├── research_1.json
+│   └── series/               # (if time series data collected)
+│       ├── BTC_price.json
+│       └── ...
 ├── questions/
 │   ├── overview_questions.json
 │   ├── data_questions.json
 │   └── research_questions.json
 └── output/
-    ├── report.pdf
-    └── report.xlsx
+    ├── report.html           # Primary output
+    ├── charts/               # (deep_dive only, rendered charts)
+    │   ├── c1_lth_supply.html
+    │   └── ...
+    ├── report.pdf            # (if requested)
+    └── report.xlsx           # (if requested)
 ```
 
 ---
