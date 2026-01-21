@@ -86,6 +86,48 @@ url_rules:
 
 Save to `state/citations.json`
 
+### 2.5. 🚨 Validate Citation-Claim Matches
+
+**Before finalizing citations, verify each claim matches its source.**
+
+```yaml
+citation_validation:
+  for_each_result_file:
+    1. Load key_findings with citation_ids
+    2. Load citations from same file
+    3. For each finding → find cited snippet
+    4. VERIFY: Does snippet contain the claimed fact/number?
+
+  validation_check:
+    # For finding: "Businesses generate 13x more leads"
+    # With citation_id: "c1"
+    # Check: Does c1.snippet contain "13x" or "13 times"?
+
+    if_mismatch_found:
+      - "Flag as potential error"
+      - "DO NOT propagate to final citations"
+      - "Log in contradictions_found"
+      - "Consider removing or marking low confidence"
+
+  example_mismatch:
+    finding: "Companies with blogs generate 13x more leads"
+    citation_id: "c1"
+    citation_snippet: "lead generation takes 12+ months..."
+    # ❌ "13x" NOT in snippet → CITATION MISMATCH!
+
+  example_valid:
+    finding: "Lead generation takes 12+ months for full value"
+    citation_id: "c1"
+    citation_snippet: "lead generation takes more than a year..."
+    # ✅ "12+ months" ≈ "more than a year" → VALID
+
+numbers_to_verify:
+  - Percentages (13x, 73%, 46%)
+  - Dollar amounts ($50K, $100B)
+  - Time periods (12 months, 2-3 years)
+  - Counts (700+ companies, 1,793 competitors)
+```
+
 ### 3. Extract Glossary Terms
 Automatically identify and define terms:
 ```yaml

@@ -228,6 +228,22 @@ const colors = [
 - **High confidence** — for key claims
 - **Recency** — prefer recent sources
 
+### Citation-Claim Match (Critical)
+
+**Every claimed number MUST exist in the citation's snippet.**
+
+```yaml
+# ❌ WRONG - "13x" not in snippet
+finding: "Businesses generate 13x more leads"
+citation: {snippet: "lead generation takes 12+ months..."}
+
+# ✅ CORRECT - snippet contains the fact
+finding: "Lead generation takes 12+ months"
+citation: {snippet: "lead generation takes more than a year..."}
+```
+
+If number not found in source → don't cite it.
+
 ---
 
 ## DO NOT

@@ -186,6 +186,52 @@ When all tasks complete → set phase to "questions_review"
 - **STOP after completing assigned task** — do not execute other agents' work (data collection, overview)
 - **Stay in your lane** — you are Research agent; finish your task and end
 
+---
+
+## 🚨🚨🚨 CRITICAL: Citation-Claim Verification 🚨🚨🚨
+
+**EVERY number/fact in key_findings MUST match the citation's snippet.**
+
+```yaml
+citation_claim_match:
+  rule: |
+    Before assigning citation_id to a finding:
+    1. READ the citation's snippet
+    2. VERIFY the finding's number/claim EXISTS in snippet
+    3. If NOT found → DO NOT assign this citation
+
+  # ❌ WRONG - "13x" does NOT exist in snippet
+  key_findings:
+    - finding: "Businesses generate 13x more leads"
+      citation_ids: ["c1"]
+
+  citations:
+    - id: "c1"
+      snippet: "lead generation takes 12+ months... 73% not sales-ready"
+      # ← "13x" is NOT in this snippet! Citation mismatch!
+
+  # ✅ CORRECT - snippet contains the cited fact
+  key_findings:
+    - finding: "Lead generation takes 12+ months for full value"
+      citation_ids: ["c1"]
+
+  citations:
+    - id: "c1"
+      snippet: "lead generation takes more than a year to deliver its value"
+      # ← "12+ months" matches "more than a year" ✓
+
+verification_checklist:
+  before_saving_citation:
+    - "Does snippet contain the exact number I'm claiming?"
+    - "Does snippet support the specific fact I'm citing?"
+    - "If I claim '13x leads' → is '13x' or '13 times' in the snippet?"
+
+  if_not_found:
+    - "DO NOT assign this citation to this finding"
+    - "Search for actual source of the claim"
+    - "If no source → mark confidence as 'low' or remove claim"
+```
+
 ### ⚠️ Technical Analysis Rule (Crypto/BTC research)
 
 **Избегай конкретных технических индикаторов. Фокус на on-chain данных.**
