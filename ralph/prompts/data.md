@@ -62,7 +62,11 @@ WebSearch("L2 TVL comparison")    # NO! Use defillama
 3. APIs are the PRIMARY sources (CoinGecko, Glassnode, DefiLlama)
 4. Web search should ONLY be used for news/sentiment/qualitative data
 
-**Available modules:** `coingecko`, `blocklens`, `defillama`, `l2beat`, `etherscan`, `thegraph`, `dune`, `yfinance`, `finnhub`, `fred`, `sec`, `fmp`, `worldbank`, `imf`
+**Available modules:**
+- **Crypto:** `coingecko`, `blocklens`, `defillama`, `l2beat`, `etherscan`, `thegraph`, `dune`
+- **Stocks:** `yfinance`, `finnhub`, `fred`, `sec`, `fmp`
+- **Research:** `worldbank`, `imf`, `wikipedia`, `arxiv`, `serper`, `pubmed`
+- **General:** `wikidata`
 
 ---
 
@@ -374,6 +378,8 @@ error_handling:
 
 ### API Selection Matrix
 
+#### Crypto & Finance APIs
+
 | Data Need | API | Function | Example |
 |-----------|-----|----------|---------|
 | Token price | `coingecko` | `get_price(["bitcoin"])` | BTC current price |
@@ -393,6 +399,24 @@ error_handling:
 | **BTC holder analysis** | `blocklens` | `get_holder_supply()` | LTH/STH supply |
 | **BTC valuation** | `blocklens` | `get_holder_valuation()` | MVRV ratio |
 | **BTC market cycle** | `blocklens` | `get_market_cycle_indicators()` | Full cycle analysis |
+
+#### General Research APIs
+
+| Data Need | API | Function | Example |
+|-----------|-----|----------|---------|
+| General knowledge | `wikipedia` | `get_summary(topic)` | Background on any topic |
+| Topic deep-dive | `wikipedia` | `get_full_article(topic)` | Full article with sections |
+| Article search | `wikipedia` | `search(query)` | Find related articles |
+| Scientific papers | `arxiv` | `search_papers(query)` | ML research papers |
+| Specific paper | `arxiv` | `get_paper(arxiv_id)` | Get paper by ID |
+| Medical research | `pubmed` | `search(query)` | Clinical studies |
+| Article abstract | `pubmed` | `get_abstract(pmid)` | Paper summary |
+| Current news | `serper` | `search_news(query)` | Recent events |
+| Web search | `serper` | `search(query)` | General queries |
+| Academic search | `serper` | `search_scholar(query)` | Academic papers |
+| Entity data | `wikidata` | `get_entity(id)` | Structured facts |
+| Company facts | `wikidata` | `get_company_info(name)` | Founding date, CEO, etc. |
+| Person facts | `wikidata` | `get_person_info(name)` | Biography, occupation |
 
 ### ⚠️ HOW TO CALL APIs (CRITICAL)
 
@@ -548,6 +572,32 @@ snapped_at,price,market_cap,total_volume
 
 **Dune** (slow, limited) → only for custom on-chain queries
 
+---
+
+### API Priority by Domain
+
+**For general research:**
+1. `wikipedia` → background, definitions, topic overviews
+2. `serper` → current events, news, web search
+3. `wikidata` → structured facts, entity relationships
+
+**For academic/science research:**
+1. `arxiv` → CS, physics, math, quantitative finance papers
+2. `pubmed` → medical, biology, biomedical papers
+3. `serper_scholar` → other academic papers (Google Scholar)
+4. `wikipedia` → topic background
+
+**For business research:**
+1. `serper` → company news, market info, recent events
+2. `wikipedia` → company background, industry overview
+3. `wikidata` → company facts (founding date, CEO, headquarters)
+
+**For technology research:**
+1. `serper` → tech news, product announcements
+2. `wikipedia` → technology background
+3. `arxiv` → technical papers (CS, AI/ML)
+4. `wikidata` → structured tech data
+
 **Web search** → ONLY for news, sentiment, qualitative data (NOT prices!)
 
 ### API Availability
@@ -561,6 +611,11 @@ snapped_at,price,market_cap,total_volume
 | thegraph | No | Hosted service |
 | dune | **Required** | Set `DUNE_API_KEY`, 2500 credits/mo |
 | blocklens | **Required** | Set `BLOCKLENS_API_KEY`, 100k calls/day |
+| wikipedia | No | Free, fair use |
+| arxiv | No | Free, 3s between requests |
+| pubmed | No | Free, fair use |
+| serper | **Required** | Set `SERPER_API_KEY` |
+| wikidata | No | Free, fair use |
 
 ---
 
@@ -644,6 +699,111 @@ python cli/fetch.py blocklens get_market_cycle_indicators
 | BTC market cycle | **BlockLens** |
 | SOPR analysis | **BlockLens** |
 | UTXO age analysis | **BlockLens** |
+
+---
+
+## General Research APIs
+
+**Location**: `ralph/integrations/research/` and `ralph/integrations/general/`
+
+### Wikipedia API
+
+**USE FOR:** Background information, definitions, general knowledge, topic summaries.
+
+```bash
+# Get article summary
+python cli/fetch.py wikipedia get_summary '{"topic": "Machine Learning"}'
+
+# Search for articles
+python cli/fetch.py wikipedia search '{"query": "artificial intelligence history", "limit": 10}'
+
+# Get full article with sections
+python cli/fetch.py wikipedia get_full_article '{"topic": "Neural network"}'
+
+# Get external references from article
+python cli/fetch.py wikipedia get_references '{"topic": "Bitcoin"}'
+```
+
+### Arxiv API (Scientific Papers)
+
+**USE FOR:** Academic research, scientific papers, CS/ML/Physics deep-dives.
+
+```bash
+# Search papers
+python cli/fetch.py arxiv search_papers '{"query": "transformer architecture", "max_results": 20}'
+
+# Get specific paper by ID
+python cli/fetch.py arxiv get_paper '{"arxiv_id": "1706.03762"}'
+
+# Get recent papers in category
+python cli/fetch.py arxiv get_recent_papers '{"category": "cs.LG", "max_results": 10}'
+
+# Search by author
+python cli/fetch.py arxiv search_by_author '{"author": "Yann LeCun", "max_results": 10}'
+```
+
+**Categories:** `cs.AI` (AI), `cs.LG` (Machine Learning), `cs.CL` (NLP), `q-fin.CP` (Quant Finance)
+
+### Serper API (Google Search)
+
+**USE FOR:** Current events, news, general web research, fact verification.
+
+**⚠️ Requires `SERPER_API_KEY` environment variable.**
+
+```bash
+# Web search
+python cli/fetch.py serper search '{"query": "OpenAI GPT-5 announcement", "num_results": 10}'
+
+# News search
+python cli/fetch.py serper search_news '{"query": "AI regulation 2024"}'
+
+# Scholar search (academic)
+python cli/fetch.py serper search_scholar '{"query": "large language models survey"}'
+
+# Fact verification
+python cli/fetch.py serper verify_fact '{"claim": "GPT-4 was released in March 2023"}'
+```
+
+### PubMed API (Medical/Bio Research)
+
+**USE FOR:** Medical research, clinical studies, biology, biomedical literature.
+
+```bash
+# Search medical literature
+python cli/fetch.py pubmed search '{"query": "CRISPR gene therapy", "max_results": 20}'
+
+# Get article abstract
+python cli/fetch.py pubmed get_abstract '{"pmid": "12345678"}'
+
+# Get full article details
+python cli/fetch.py pubmed get_article_details '{"pmid": "12345678"}'
+
+# Find related articles
+python cli/fetch.py pubmed get_related_articles '{"pmid": "12345678", "max_results": 10}'
+```
+
+### Wikidata API (Structured Entity Data)
+
+**USE FOR:** Structured facts, entity relationships, official identifiers (tickers, founding dates).
+
+```bash
+# Get entity by ID
+python cli/fetch.py wikidata get_entity '{"entity_id": "Q312"}'  # Apple Inc.
+
+# Search for entities
+python cli/fetch.py wikidata search_entities '{"query": "Tesla", "limit": 5}'
+
+# Get company info (convenience function)
+python cli/fetch.py wikidata get_company_info '{"company_name": "Microsoft"}'
+
+# Get person info
+python cli/fetch.py wikidata get_person_info '{"person_name": "Elon Musk"}'
+
+# SPARQL query (advanced)
+python cli/fetch.py wikidata sparql_query '{"query": "SELECT ?company WHERE { ?company wdt:P31 wd:Q891723 } LIMIT 10"}'
+```
+
+---
 
 ## Process
 
