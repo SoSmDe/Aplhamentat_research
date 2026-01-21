@@ -359,7 +359,7 @@ def main():
             results.append(result)
         except Exception as e:
             results.append({
-                "chart_id": chart_spec.get("id", "unknown"),
+                "chart_id": chart_spec.get("chart_id", chart_spec.get("id", "unknown")),
                 "error": str(e)
             })
 

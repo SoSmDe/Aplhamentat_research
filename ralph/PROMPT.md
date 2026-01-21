@@ -273,6 +273,8 @@ research_XXXXX/
 │   ├── questions_plan.json
 │   ├── coverage.json
 │   ├── aggregation.json
+│   ├── citations.json          # (created by aggregator)
+│   ├── glossary.json           # (created by aggregator)
 │   ├── chart_data.json
 │   ├── charts_analyzed.json  # (deep_dive only, if series/ exists)
 │   ├── story.json            # (deep_dive only)
