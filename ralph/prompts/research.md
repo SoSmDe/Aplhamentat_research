@@ -31,6 +31,22 @@ when_saving_citation:
   - "Copy URL from browser address bar EXACTLY"
   - "Include all path segments, query params if relevant"
   - "If URL is long — that's OK, Reporter handles word-break"
+
+verification:
+  # ❌ WRONG - URL from search snippet without verification
+  - "Don't trust WebSearch snippet URLs blindly"
+  - "Search results may have outdated or broken links"
+
+  # ✅ CORRECT - verify URL is accessible
+  - "Use WebFetch to actually READ the article"
+  - "Confirm the data/quote exists on that page"
+  - "If page doesn't load → find alternative source"
+
+  # If you cite a number, the source must SHOW that number
+  claim_verification:
+    - "If you write 'mNAV 1.05' → source must contain '1.05'"
+    - "If number not found in source → don't cite it"
+    - "No assumptions or calculations presented as source data"
 ```
 
 ---

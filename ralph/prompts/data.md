@@ -27,6 +27,13 @@ why_full_urls:
   - "Domain-only URL is useless for fact-checking"
   - "For APIs: link to specific endpoint or docs page"
   - "Reporter agent will NOT fix truncated URLs"
+
+claim_verification:
+  # If you cite a number, the source must SHOW that number
+  - "If you write 'ETF AUM $113B' → source must contain '$113B' or '113 billion'"
+  - "If number not found in source → don't cite it"
+  - "No assumptions or calculations presented as source data"
+  - "Use WebFetch to verify web sources actually contain the data"
 ```
 
 ---
