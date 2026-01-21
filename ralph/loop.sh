@@ -494,11 +494,12 @@ initialize() {
   "tags": [],
   "entities": [],
   "preferences": {
-    "output_format": "html+excel",
+    "output_format": "html",
     "style": "default",
     "depth": "standard",
     "audience": "analyst",
-    "components": ["full_report", "data_pack"]
+    "tone": "neutral_business",
+    "components": ["full_report"]
   },
   "execution": {
     "iteration": 0,

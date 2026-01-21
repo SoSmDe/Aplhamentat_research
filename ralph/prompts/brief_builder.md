@@ -125,8 +125,24 @@ auto_answer_logic:
     keywords: ["detailed", "thorough", "comprehensive", "full"]
   deep_dive:
     keywords: ["deep", "exhaustive", "complete", "everything"]
+
+  # ⚠️ STRUCTURAL DETECTION (overrides keywords!)
+  structural_indicators:
+    deep_dive:
+      any_of:
+        - "Query contains numbered sections (## 1., ## 2., etc.)"
+        - "Query specifies exact data sources or API endpoints"
+        - "Query specifies number of charts (e.g., '6-8 графиков')"
+        - "Query contains detailed per-section requirements"
+        - "Query length > 1000 characters with structured content"
+        - "Query contains tables (┌─, │, └─)"
+      action: "If ANY structural indicator present → deep_dive"
+
   default: "standard"
 ```
+
+**⚠️ CRITICAL: Structured queries = deep_dive**
+If the user provides a detailed report structure with sections, data sources, or chart specifications, this is ALWAYS `deep_dive` regardless of keywords.
 
 ### 5. Target Audience
 **Question**: Who will read this report?
