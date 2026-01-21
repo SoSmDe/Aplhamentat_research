@@ -241,6 +241,47 @@ tone_examples:
   good: "Конкуренты имеют в 28 раз больше LinkedIn followers"
 ```
 
+### 10. Research Domain
+**Question**: What domain does this research belong to?
+**Options**:
+- `crypto` — Cryptocurrency, blockchain, DeFi, on-chain analysis
+- `finance` — Stocks, bonds, REITs, traditional investments
+- `business` — Company analysis, market research, competitive analysis
+- `science` — Academic research, scientific topics, medical
+- `technology` — Software, hardware, tech trends, AI/ML
+- `general` — General knowledge, current events, how-to guides
+
+```yaml
+auto_answer_logic:
+  crypto:
+    keywords: ["bitcoin", "btc", "ethereum", "eth", "crypto", "blockchain", "defi", "token", "nft", "web3", "on-chain", "mvrv", "hodl", "altcoin", "stablecoin", "dex", "tvl", "l2", "layer 2", "solana", "cardano"]
+    data_sources: ["coingecko", "blocklens", "defillama", "l2beat", "etherscan", "dune", "thegraph"]
+  finance:
+    keywords: ["stock", "etf", "reit", "dividend", "p/e", "earnings", "investment", "portfolio", "bond", "yield", "market cap", "quarterly", "sec filing", "10-k", "fed", "interest rate", "gdp", "inflation"]
+    data_sources: ["yfinance", "finnhub", "fred", "sec", "fmp", "worldbank", "imf"]
+  business:
+    keywords: ["company", "market research", "competitor", "swot", "marketing", "revenue", "startup", "industry", "b2b", "b2c", "saas", "growth", "strategy", "consulting"]
+    data_sources: ["serper", "wikipedia", "wikidata"]
+  science:
+    keywords: ["research", "study", "paper", "journal", "experiment", "hypothesis", "clinical", "scientific", "peer-reviewed", "methodology", "findings", "crispr", "vaccine", "trial"]
+    data_sources: ["arxiv", "pubmed", "wikipedia", "serper"]
+  technology:
+    keywords: ["software", "api", "programming", "ai", "machine learning", "ml", "llm", "cloud", "saas", "tech stack", "framework", "library", "open source", "github", "devops"]
+    data_sources: ["arxiv", "wikipedia", "serper", "wikidata"]
+  general:
+    default: true
+    description: "Fallback for queries not matching other domains"
+    data_sources: ["wikipedia", "serper", "wikidata"]
+
+confidence_rules:
+  high:
+    criteria: "3+ domain keywords found OR explicit domain mention"
+  medium:
+    criteria: "1-2 domain keywords found"
+  low:
+    criteria: "No keywords, using general domain as fallback"
+```
+
 ---
 
 ## Output
@@ -250,6 +291,10 @@ Save to `state/brief.json`:
 {
   "goal": "Main research goal derived from query",
   "language": "en|ru",
+
+  "domain": "crypto|finance|business|science|technology|general",
+  "domain_confidence": "high|medium|low",
+  "suggested_data_sources": ["wikipedia", "arxiv", "serper", "..."],
 
   "preferences": {
     "output_format": "html",
@@ -265,9 +310,10 @@ Save to `state/brief.json`:
     {
       "id": "s1",
       "topic": "Topic name",
-      "type": "overview|data|research",
+      "type": "overview|data|research|literature_review|fact_check",
       "priority": "high|medium|low",
-      "questions": ["Specific questions to answer"]
+      "questions": ["Specific questions to answer"],
+      "suggested_sources": ["specific sources for this scope item"]
     }
   ],
 
@@ -283,6 +329,11 @@ Save to `state/brief.json`:
       "question": "Output format?",
       "answer": "html",
       "why": "Default choice (HTML), no specific format requested by user"
+    },
+    {
+      "question": "Research domain?",
+      "answer": "science",
+      "why": "Query contains 'research paper', 'clinical study' keywords"
     }
   ],
 
@@ -298,6 +349,8 @@ After saving brief.json, update session.json:
 ```json
 {
   "phase": "planning",
+  "domain": "crypto|finance|business|science|technology|general",
+  "domain_confidence": "high|medium|low",
   "preferences": {
     "output_format": "html",
     "style": "default",
@@ -311,4 +364,4 @@ After saving brief.json, update session.json:
 }
 ```
 
-Copy `preferences` from brief.json to session.json for easy access by other phases.
+Copy `domain`, `domain_confidence`, and `preferences` from brief.json to session.json for easy access by other phases.
