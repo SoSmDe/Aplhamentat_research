@@ -197,8 +197,14 @@ else:
 **Condition**: Only runs when `preferences.depth == "deep_dive"`
 **Action**: Final polish — check consistency, fix errors, improve readability
 **Prompt**: Load `prompts/editor.md`
-**Input**: `output/report.html`, `state/story.json`
-**Save**: `output/report.html` (updated)
+**Input**:
+- `output/report.html` (generated report)
+- `state/story.json` (narrative structure and themes)
+- `state/brief.json` (for tone preferences and audience)
+- `state/aggregation.json` (source data for fact-checking)
+- `state/charts_analyzed.json` (if exists — for chart narrative verification)
+- `state/citations.json` (for citation accuracy checks)
+**Save**: `output/report.html` (updated), `state/editor_log.json`
 **Next phase**: `complete`
 
 ---
@@ -269,7 +275,8 @@ research_XXXXX/
 │   ├── aggregation.json
 │   ├── chart_data.json
 │   ├── charts_analyzed.json  # (deep_dive only, if series/ exists)
-│   └── story.json            # (deep_dive only)
+│   ├── story.json            # (deep_dive only)
+│   └── editor_log.json       # (deep_dive only, editor changes log)
 ├── results/
 │   ├── overview_1.json
 │   ├── data_1.json

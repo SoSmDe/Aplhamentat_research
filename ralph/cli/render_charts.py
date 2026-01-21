@@ -127,7 +127,8 @@ def detect_pattern(values: List[float]) -> Dict[str, str]:
 def analyze_series(series_data: Dict) -> Dict[str, Any]:
     """Analyze a single series."""
     values = series_data.get("values", [])
-    timestamps = series_data.get("timestamps", [])
+    # Support both "timestamps" and "labels" field names (data.md uses labels)
+    timestamps = series_data.get("timestamps", series_data.get("labels", []))
 
     if not values:
         return {"error": "No values in series"}
@@ -202,10 +203,24 @@ def create_narrative_options(analysis: Dict, chart_title: str) -> Dict[str, str]
 
 def render_chart(chart_spec: Dict, series_data: Dict[str, Dict], output_dir: str) -> Dict[str, Any]:
     """Render a single chart and return analysis."""
-    chart_id = chart_spec.get("id", "unknown")
+    # Support both "id" and "chart_id" field names (aggregator uses chart_id)
+    chart_id = chart_spec.get("chart_id", chart_spec.get("id", "unknown"))
     title = chart_spec.get("title", f"Chart {chart_id}")
-    chart_type = chart_spec.get("type", "line")
+    # Support both "type" and "chart_type" field names
+    chart_type = chart_spec.get("chart_type", chart_spec.get("type", "line"))
+
+    # Support multiple formats for series references:
+    # 1. "series": [{file, label, secondary_y}] - direct format
+    # 2. "source_files": ["series/file.json"] - aggregator format
+    # 3. "data.datasets": [{label, data}] - Chart.js format from aggregator
     series_refs = chart_spec.get("series", [])
+
+    # Convert aggregator's source_files format to series format
+    if not series_refs and "source_files" in chart_spec:
+        for sf in chart_spec["source_files"]:
+            # Extract filename from path like "series/BTC_price.json"
+            filename = sf.split("/")[-1] if "/" in sf else sf
+            series_refs.append({"file": filename, "label": filename.replace(".json", "").replace("_", " ")})
 
     # Create figure
     fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -223,7 +238,8 @@ def render_chart(chart_spec: Dict, series_data: Dict[str, Dict], output_dir: str
 
         data = series_data[series_file]
         values = data.get("values", [])
-        timestamps = data.get("timestamps", [])
+        # Support both "timestamps" and "labels" field names (data.md uses labels)
+        timestamps = data.get("timestamps", data.get("labels", []))
 
         # Handle object format
         if values and isinstance(values[0], dict):
