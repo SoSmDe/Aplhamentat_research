@@ -878,7 +878,7 @@ python cli/fetch.py coingecko get_price '["bitcoin", "ethereum"]'
     }
   },
   "citations": [
-    {"id": "c1", "source_title": "CoinGecko API", "source_url": "https://api.coingecko.com", "confidence": "high"}
+    {"id": "c1", "source_title": "CoinGecko Bitcoin API", "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true", "confidence": "high"}
   ],
   "metadata": {"source": "coingecko", "data_freshness": "real-time"}
 }
@@ -917,7 +917,8 @@ python cli/fetch.py l2beat get_l2_risk_scores
     ]
   },
   "citations": [
-    {"id": "c1", "source_title": "DefiLlama + L2Beat APIs", "source_url": "https://defillama.com", "confidence": "high"}
+    {"id": "c1", "source_title": "DefiLlama L2 Chains", "source_url": "https://defillama.com/chains/Rollup", "confidence": "high"},
+    {"id": "c2", "source_title": "L2Beat Scaling Projects", "source_url": "https://l2beat.com/scaling/summary", "confidence": "high"}
   ],
   "metadata": {"source": "defillama+l2beat", "data_freshness": "daily"}
 }
