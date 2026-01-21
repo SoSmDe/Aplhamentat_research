@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Research & Consulting Firm Data Integrations for Ralph
+Research & Knowledge Integrations for Ralph
 
 Available integrations:
 - worldbank: Macro indicators, GDP, inflation, development data (API)
@@ -9,18 +9,22 @@ Available integrations:
 - mckinsey: Global Institute reports, industry insights
 - goldman: Public market research
 - aggregator: Multi-source search
+- wikipedia: Article summaries, full text, references
+- arxiv: Scientific papers (CS, ML, Finance, Crypto)
+- serper: Google Search API (requires SERPER_API_KEY)
+- pubmed: Medical/biomedical literature from NCBI
 
 Quick start:
-    from integrations.research import worldbank, deloitte, aggregator
+    from integrations.research import worldbank, wikipedia, arxiv
 
     # Get GDP data
     gdp = worldbank.get_indicator("NY.GDP.MKTP.CD", country="USA")
 
-    # Get latest Deloitte insights
-    articles = deloitte.get_latest("tech", limit=10)
+    # Get Wikipedia summary
+    summary = wikipedia.get_summary("Bitcoin")
 
-    # Search across all sources
-    results = aggregator.search("AI productivity impact")
+    # Search arXiv papers
+    papers = arxiv.search_papers("transformer attention")
 """
 
 from . import worldbank
@@ -29,6 +33,10 @@ from . import deloitte
 from . import mckinsey
 from . import goldman
 from . import aggregator
+from . import wikipedia
+from . import arxiv
+from . import serper
+from . import pubmed
 
 __all__ = [
     "worldbank",
@@ -37,6 +45,10 @@ __all__ = [
     "mckinsey",
     "goldman",
     "aggregator",
+    "wikipedia",
+    "arxiv",
+    "serper",
+    "pubmed",
 ]
 
 __version__ = "0.1.0"
