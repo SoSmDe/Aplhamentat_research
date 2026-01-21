@@ -14,8 +14,10 @@ No Python backend — Claude Code handles web search, file generation, and state
 ## State Machine
 
 ```
-initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → reporting → complete
+initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → story_lining → reporting → complete
 ```
+
+**Note:** `story_lining` runs for ALL depths (creates layout blueprint for Reporter).
 
 ## Directory Structure
 ```
@@ -30,12 +32,13 @@ ralph/
 │   │   ├── plan.json
 │   │   ├── coverage.json
 │   │   ├── questions_plan.json
-│   │   └── aggregation.json
+│   │   ├── aggregation.json
+│   │   └── story.json     # Layout blueprint (ALL depths)
 │   ├── results/           # Agent outputs
 │   ├── questions/         # Generated questions
 │   └── output/            # Final reports
 └── src/
-    ├── prompts/           # Agent prompts (9 files)
+    ├── prompts/           # Agent prompts (12 files)
     └── templates/         # Report templates
 ```
 
@@ -78,12 +81,13 @@ Each phase:
 ## Pipeline Phases
 1. **initial_research** — Quick context + extract tags/entities
 2. **brief_builder** — Auto-generate research Brief
-3. **planning** — Decompose brief into overview/data/research tasks
+3. **planning** — Decompose brief into overview/data/research/literature/fact_check tasks
 4. **execution** — Execute pending tasks (loops with questions_review)
 5. **questions_review** — Evaluate questions, check coverage, decide next
 6. **aggregation** — Synthesize findings into recommendations
-7. **reporting** — Generate PDF/Excel reports
-8. **complete** — Signal completion
+7. **story_lining** — Plan report layout (ALL depths)
+8. **reporting** — Generate HTML reports following story.json layout
+9. **complete** — Signal completion
 
 ## session.json Structure
 ```json
@@ -98,8 +102,8 @@ Each phase:
   "execution": {
     "iteration": 2,
     "max_iterations": 5,
-    "tasks_pending": ["d3", "r2"],
-    "tasks_completed": ["o1", "d1", "d2", "r1"]
+    "tasks_pending": ["d3", "r2", "l1"],
+    "tasks_completed": ["o1", "d1", "d2", "r1", "f1"]
   },
   "coverage": {
     "current": 65,

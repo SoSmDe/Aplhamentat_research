@@ -146,7 +146,7 @@ Get `domain` from brief.json and apply domain-specific task patterns:
 ```yaml
 domain_task_patterns:
   crypto:
-    data_sources: ["blocklens", "coingecko", "defillama", "l2beat"]
+    data_sources: ["blocklens", "coingecko", "defillama", "l2beat", "thegraph"]
     typical_tasks:
       - "On-chain metrics analysis"
       - "Price and market data"
@@ -154,7 +154,7 @@ domain_task_patterns:
     chart_types: ["line (time series)", "bar (comparison)"]
 
   finance:
-    data_sources: ["yfinance", "fred", "sec", "fmp"]
+    data_sources: ["yfinance", "fred", "sec", "fmp", "worldbank", "imf"]
     typical_tasks:
       - "Financial statements analysis"
       - "Valuation metrics"
@@ -216,10 +216,10 @@ data_task_api_selection:
   # Select primary APIs based on domain
   crypto:
     primary_apis: ["blocklens", "coingecko", "defillama"]
-    secondary_apis: ["l2beat", "etherscan", "dune"]
+    secondary_apis: ["l2beat", "etherscan", "dune", "thegraph"]
   finance:
     primary_apis: ["yfinance", "fred", "fmp"]
-    secondary_apis: ["sec", "finnhub"]
+    secondary_apis: ["sec", "finnhub", "worldbank", "imf"]
   science:
     primary_apis: ["arxiv", "pubmed"]
     secondary_apis: ["serper_scholar", "wikipedia"]

@@ -11,11 +11,11 @@ You are Ralph, an AI research assistant. Execute the current phase based on sess
 | initial_research | `prompts/initial_research.md` |
 | brief_builder | `prompts/brief_builder.md` |
 | planning | `prompts/planner.md` |
-| execution | `prompts/data.md` OR `prompts/research.md` OR `prompts/overview.md` (by task type) |
+| execution | `prompts/data.md` OR `prompts/research.md` OR `prompts/overview.md` OR `prompts/literature.md` OR `prompts/fact_check.md` (by task type) |
 | questions_review | `prompts/questions_planner.md` |
 | aggregation | `prompts/aggregator.md` |
 | chart_analysis | `prompts/chart_analyzer.md` *(deep_dive only)* |
-| story_lining | `prompts/story_liner.md` *(deep_dive only)* |
+| story_lining | `prompts/story_liner.md` *(ALL depths)* |
 | reporting | `prompts/reporter.md` |
 | editing | `prompts/editor.md` *(deep_dive only)* |
 
@@ -37,14 +37,16 @@ You are Ralph, an AI research assistant. Execute the current phase based on sess
 ## State Machine
 
 ```
-Standard (executive/standard/comprehensive):
-initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → reporting → complete
+ALL depths (story_lining now runs for everyone):
+initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → story_lining → reporting → complete
 
-Deep Dive (depth: deep_dive):
-initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → [chart_analysis] → story_lining → reporting → editing → complete
-                                                                                    ↑
-                                                                          only if results/series/ exists
+Deep Dive additions (depth: deep_dive):
+... → aggregation → [chart_analysis] → story_lining → reporting → editing → complete
+                          ↑
+                only if results/series/ exists
 ```
+
+**Key change:** `story_lining` (Layout Planner) runs for ALL depths, not just deep_dive.
 
 ---
 
@@ -70,7 +72,7 @@ initial_research → brief_builder → planning → execution ⟷ questions_revi
 
 ### phase: "planning"
 
-**Action**: Decompose Brief into tasks (overview/data/research)
+**Action**: Decompose Brief into tasks (overview/data/research/literature/fact_check)
 **Prompt**: Load `prompts/planner.md`
 **Save**: `state/plan.json`
 **Update session.json**:
@@ -79,7 +81,7 @@ initial_research → brief_builder → planning → execution ⟷ questions_revi
   "phase": "execution",
   "execution": {
     "iteration": 1,
-    "tasks_pending": ["o1", "d1", "d2", "r1", "r2"],
+    "tasks_pending": ["o1", "d1", "d2", "r1", "r2", "l1", "f1"],
     "tasks_completed": []
   }
 }
@@ -95,6 +97,8 @@ initial_research → brief_builder → planning → execution ⟷ questions_revi
 - Overview tasks → `prompts/overview.md` (Deep Research skill)
 - Data tasks → `prompts/data.md`
 - Research tasks → `prompts/research.md`
+- Literature tasks → `prompts/literature.md` (academic papers, science domain)
+- Fact check tasks → `prompts/fact_check.md` (verification, general domain)
 
 **Save**:
 - Results → `results/{type}_{N}.json`
@@ -145,7 +149,7 @@ if session.preferences.depth == "deep_dive":
     else:
         next_phase = "story_lining"
 else:
-    next_phase = "reporting"
+    next_phase = "story_lining"  # story_lining now runs for ALL depths!
 ```
 
 ---
@@ -162,14 +166,22 @@ else:
 
 ---
 
-### phase: "story_lining" *(deep_dive only)*
+### phase: "story_lining" *(ALL depths)*
 
-**Condition**: Only runs when `preferences.depth == "deep_dive"`
-**Action**: Build narrative arc, themes, and story structure
+**Action**: Plan report layout and structure (complexity varies by depth)
 **Prompt**: Load `prompts/story_liner.md`
-**Input**: `state/aggregation.json`, `state/charts_analyzed.json` (if exists)
-**Save**: `state/story.json`
+**Input**:
+- `state/aggregation.json`
+- `state/chart_data.json`
+- `state/charts_analyzed.json` (if exists, deep_dive only)
+- Template file based on style
+**Save**: `state/story.json` (layout instructions for Reporter)
 **Next phase**: `reporting`
+
+**Output varies by depth:**
+- executive/standard: Simple layout (sections, metrics, charts)
+- comprehensive: Layout + themes
+- deep_dive: Full narrative arc + themes + chart analysis integration
 
 ---
 
@@ -179,8 +191,8 @@ else:
 **Prompt**: Load `prompts/reporter.md`
 **Templates**: `templates/`
 **Input**:
-- Standard: `state/aggregation.json`
-- Deep dive: `state/aggregation.json` + `state/story.json` + `state/charts_analyzed.json`
+- ALL depths: `state/aggregation.json` + `state/story.json` (layout blueprint)
+- Deep dive additionally: `state/charts_analyzed.json`
 **Save**: `output/report.html` (+ `output/report.pdf`, `output/report.xlsx` if requested)
 **Next phase logic**:
 ```
@@ -238,8 +250,8 @@ else:
   "execution": {
     "iteration": 2,
     "max_iterations": 5,
-    "tasks_pending": ["d3", "r2"],
-    "tasks_completed": ["o1", "d1", "d2", "r1"]
+    "tasks_pending": ["d3", "r2", "l1"],
+    "tasks_completed": ["o1", "d1", "d2", "r1", "f1"]
   },
 
   "coverage": {
@@ -277,19 +289,23 @@ research_XXXXX/
 │   ├── glossary.json           # (created by aggregator)
 │   ├── chart_data.json
 │   ├── charts_analyzed.json  # (deep_dive only, if series/ exists)
-│   ├── story.json            # (deep_dive only)
+│   ├── story.json            # (ALL depths — layout blueprint)
 │   └── editor_log.json       # (deep_dive only, editor changes log)
 ├── results/
 │   ├── overview_1.json
 │   ├── data_1.json
 │   ├── research_1.json
+│   ├── literature_1.json     # (science domain)
+│   ├── fact_check_1.json     # (general domain)
 │   └── series/               # (if time series data collected)
 │       ├── BTC_price.json
 │       └── ...
 ├── questions/
 │   ├── overview_questions.json
 │   ├── data_questions.json
-│   └── research_questions.json
+│   ├── research_questions.json
+│   ├── literature_questions.json
+│   └── fact_check_questions.json
 └── output/
     ├── report.html           # Primary output
     ├── charts/               # (deep_dive only, rendered charts)

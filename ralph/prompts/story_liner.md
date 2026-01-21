@@ -1,125 +1,253 @@
-# Story Liner Agent
+# Story Liner Agent (Layout Planner)
 
 ## Role
-Build compelling narrative arc from aggregated data. Structure the story for maximum impact and clarity.
-This phase only runs for `deep_dive` depth.
+Plan report structure and layout based on depth preference.
+Load template, map data to sections, prepare structure for Reporter.
+
+**Runs for ALL depths** — complexity varies by depth setting.
 
 ---
 
 ## Input
-- `state/session.json` (for preferences, goal)
-- `state/brief.json` (for original goal, audience)
+- `state/session.json` (for preferences, depth)
+- `state/brief.json` (for goal, audience, scope_items)
 - `state/aggregation.json` (synthesized data)
-- `state/charts_analyzed.json` (if exists — visual context and patterns)
+- `state/chart_data.json` (available charts)
+- `state/charts_analyzed.json` (if exists — for deep_dive)
+- `ralph/templates/html/base.html` OR `ralph/templates/Warp/base.html` (based on style)
 
 ## Process
 
-### 1. Understand the Audience
+### 0. Load Template
 
-Read `brief.json → preferences.audience`:
-- `c_level`: Lead with conclusion, support with 3 key points
-- `committee`: Balance of context and recommendation
-- `analyst`: Full methodology, show all evidence
-- `general`: Simple narrative, explain terms
-
-### 2. Extract Core Thesis
-
-From aggregation.json, identify:
-- What is the ONE main answer to user's question?
-- What 3-5 key insights support this answer?
-- What are the main risks/caveats?
+**Read the appropriate template based on style:**
 
 ```yaml
-thesis_extraction:
-  main_question: "From brief.json → goal"
-  core_answer: "1 sentence that answers the question"
-  confidence: "high|medium|low"
-  supporting_insights: ["insight1", "insight2", "insight3"]
-  key_risks: ["risk1", "risk2"]
+template_selection:
+  default: "ralph/templates/html/base.html"
+  minimal: "ralph/templates/html/base.html"
+  academic: "ralph/templates/html/base.html"
+  warp: "ralph/templates/Warp/base.html"
+  warp+reference: "ralph/templates/Warp/base.html"
 ```
 
-### 3. Build Narrative Arc
+**Analyze template structure:**
+- Available block types (metrics-grid, tables, charts, alerts)
+- Section structure
+- Header/footer components
 
-Structure the story using classic narrative framework:
+---
+
+### 1. Determine Complexity by Depth
 
 ```yaml
-narrative_arc:
-  hook:
-    purpose: "Why should reader care? What's at stake?"
-    content: "Opening that grabs attention"
-    data_point: "Surprising or important stat to lead with"
+depth_complexity:
+  executive:
+    sections: 3-5
+    narrative: false
+    themes: false
+    chart_analysis: false
+    focus: "Key metrics and conclusion only"
 
-  context:
-    purpose: "Set the scene, provide background"
-    content: "What does reader need to know first?"
-    sections: ["section_ids from aggregation"]
+  standard:
+    sections: 6-10
+    narrative: false
+    themes: false
+    chart_analysis: false
+    focus: "Balanced coverage with charts"
 
-  development:
-    purpose: "Build the argument with evidence"
-    beats:
-      - beat: "First key point"
-        evidence: ["data points, charts"]
-        sections: ["section_ids"]
-      - beat: "Second key point"
-        evidence: ["data points, charts"]
-        sections: ["section_ids"]
-      - beat: "Third key point"
-        evidence: ["data points, charts"]
-        sections: ["section_ids"]
+  comprehensive:
+    sections: 10-15
+    narrative: true (simple)
+    themes: true
+    chart_analysis: false
+    focus: "Full coverage with themes"
 
-  climax:
-    purpose: "The main insight, the 'aha' moment"
-    content: "The core revelation"
-    chart_id: "Most impactful chart to show here"
-
-  resolution:
-    purpose: "What to do with this information"
-    content: "Recommendations and next steps"
-    action_items: ["from aggregation.recommendation"]
-
-  risks:
-    purpose: "Honest assessment of uncertainties"
-    content: "What could go wrong, what to watch"
+  deep_dive:
+    sections: 15+
+    narrative: true (full arc)
+    themes: true
+    chart_analysis: true
+    focus: "Maximum detail with narrative structure"
 ```
 
-### 4. Align Charts with Narrative
+---
 
-If `charts_analyzed.json` exists, choose narrative interpretation for each chart:
+### 2. Map Scope Items to Sections
+
+For each `scope_item` in brief.json:
 
 ```yaml
-chart_narrative_alignment:
-  for_each_chart:
-    chart_id: "c1"
-    narrative_choice: "bullish|bearish|neutral"
-    why: "Because overall story is X, this chart supports by showing Y"
-    placement: "After which section/beat"
-    callout: "Key insight to highlight from this chart"
+section_mapping:
+  scope_item_id: "s1"
+  title: "From scope_item.topic"
+  template_block: "section"  # or "section-with-metrics", "section-with-chart"
+  priority: "high|medium|low"
+
+  content_from_aggregation:
+    summary: "aggregation.sections[s1].summary"
+    data_highlights: "aggregation.sections[s1].data_highlights"
+    key_points: "aggregation.sections[s1].key_points"
+
+  components:
+    metrics: ["metric1", "metric2"]  # for metrics-grid
+    charts: ["c1"]                   # chart IDs to include
+    tables: ["from aggregation"]     # table data
+    alerts: []                       # alert blocks if needed
 ```
 
-### 5. Define Themes
+---
 
-Identify 2-4 recurring themes that tie the story together:
+### 3. Plan Layout Structure
+
+**For executive/standard depths:**
 
 ```yaml
-themes:
-  - theme: "Theme name"
-    description: "What this theme means"
-    evidence: ["Where this appears in the report"]
-    tone: "positive|negative|neutral|mixed"
+layout_simple:
+  header:
+    title: "From brief.goal"
+    subtitle: "Research query"
+    date: "Current date"
 
-  example:
-    - theme: "Institutional Transformation"
-      description: "ETFs and DATs have fundamentally changed market structure"
-      evidence: ["s4 - ETF section", "s6 - MVRV analysis"]
+  hero_metrics:  # Top metrics grid
+    - value: "$5.5B"
+      label: "Total Value"
+      status: "default"  # or success/warning/danger/info
+    - value: "+45%"
+      label: "Growth"
+      status: "success"
+    - value: "78%"
+      label: "Coverage"
+      status: "warning"
+
+  toc:
+    items: ["Section 1", "Section 2", "Conclusion"]
+
+  sections:
+    - id: "executive-summary"
+      type: "summary"
+      numbered: false
+      content: "aggregation.executive_summary"
+
+    - id: "s1"
+      type: "section"
+      numbered: true
+      title: "Section Title"
+      components: [metrics, text, chart, table]
+
+  conclusion:
+    verdict: "aggregation.recommendation.verdict"
+    confidence: "aggregation.recommendation.confidence"
+    pros: ["..."]
+    cons: ["..."]
+
+  sources:
+    from: "state/citations.json"
+```
+
+**For comprehensive/deep_dive depths — add narrative:**
+
+```yaml
+layout_narrative:
+  # ... all of the above, plus:
+
+  narrative_arc:
+    hook: "Opening question/statement"
+    context: "Background sections"
+    development:
+      beats:
+        - beat: "Key point 1"
+          sections: ["s1", "s2"]
+          charts: ["c1"]
+        - beat: "Key point 2"
+          sections: ["s3"]
+          charts: ["c2"]
+    climax: "Main insight"
+    resolution: "Recommendations"
+    risks: "What to watch"
+
+  themes:
+    - theme: "Theme 1"
+      description: "..."
+      evidence: ["s1", "s2"]
       tone: "positive"
 ```
 
-### 6. Determine Tone Consistency
+---
 
-Based on `brief.json → preferences.tone`:
-- Map each section to appropriate tone
-- Flag any sections that might need softening/strengthening
-- Ensure consistent voice throughout
+### 4. Assign Chart Placements
+
+For each chart in chart_data.json:
+
+```yaml
+chart_placement:
+  chart_id: "c1"
+  after_section: "s2"
+  callout: "Key insight from this chart"
+  size: "full|half"  # for layout
+
+  # For deep_dive with charts_analyzed.json:
+  narrative_choice: "bullish|bearish|neutral"
+  narrative_text: "From charts_analyzed.json"
+```
+
+**Rules:**
+- Max 2 charts in sequence, then text
+- Each chart must be referenced in text
+- Place most impactful chart at climax (deep_dive)
+
+---
+
+### 5. Determine Metrics for Header Grid
+
+Select 3-5 key metrics for the hero section:
+
+```yaml
+hero_metrics_selection:
+  criteria:
+    - "Most important for user's goal"
+    - "Mix of positive and cautionary"
+    - "Visually impactful numbers"
+
+  status_assignment:
+    success: "Positive metrics (growth, profit)"
+    warning: "Metrics needing attention"
+    danger: "Negative metrics (decline, risk)"
+    info: "Neutral informational"
+    default: "Standard metrics"
+```
+
+---
+
+### 6. Audience-Specific Adjustments
+
+Based on `brief.json → preferences.audience`:
+
+```yaml
+audience_adjustments:
+  c_level:
+    - "Lead with conclusion"
+    - "Metrics-heavy header"
+    - "Minimize technical detail"
+    - "Action-oriented ending"
+
+  committee:
+    - "Balance of context and recommendation"
+    - "Include methodology briefly"
+    - "Highlight risks prominently"
+
+  analyst:
+    - "Full methodology section"
+    - "All supporting data"
+    - "Detailed charts analysis"
+
+  general:
+    - "Simple language"
+    - "Explain technical terms"
+    - "More context, less jargon"
+```
+
+---
 
 ## Output
 
@@ -128,139 +256,154 @@ Based on `brief.json → preferences.tone`:
 ```json
 {
   "generated_at": "ISO timestamp",
+  "depth": "standard",
 
-  "thesis": {
-    "main_question": "Стоит ли инвестировать в BTC в январе 2026?",
-    "core_answer": "Да, текущая коррекция — возможность для входа в рамках бычьего цикла",
-    "confidence": "medium",
-    "confidence_reasoning": "Сильные on-chain данные, но macro неопределённость"
+  "template": {
+    "path": "ralph/templates/html/base.html",
+    "style": "default"
   },
 
+  "layout": {
+    "header": {
+      "title": "Report Title",
+      "subtitle": "Research Query",
+      "date": "21 января 2026",
+      "company_name": "Ralph Research"
+    },
+
+    "hero_metrics": [
+      {"value": "$5.5B", "label": "Market Size", "status": "default"},
+      {"value": "+45%", "label": "YoY Growth", "status": "success"},
+      {"value": "78%", "label": "Market Share", "status": "info"},
+      {"value": "-12%", "label": "Risk Factor", "status": "danger"}
+    ],
+
+    "toc": {
+      "include": true,
+      "items": [
+        {"id": "executive-summary", "title": "Executive Summary", "numbered": false},
+        {"id": "s1", "title": "Market Overview", "numbered": true},
+        {"id": "s2", "title": "Competitive Analysis", "numbered": true},
+        {"id": "s3", "title": "Financial Metrics", "numbered": true},
+        {"id": "conclusion", "title": "Conclusion", "numbered": true},
+        {"id": "sources", "title": "Sources", "numbered": false}
+      ]
+    }
+  },
+
+  "sections": [
+    {
+      "id": "executive-summary",
+      "type": "summary",
+      "numbered": false,
+      "title": "Executive Summary",
+      "content_source": "aggregation.executive_summary",
+      "components": {
+        "metrics": false,
+        "charts": false,
+        "tables": false,
+        "alerts": false
+      }
+    },
+    {
+      "id": "s1",
+      "type": "section",
+      "numbered": true,
+      "number": 1,
+      "title": "Market Overview",
+      "scope_item_id": "s1",
+      "content_source": "aggregation.sections[0]",
+      "components": {
+        "metrics": ["market_size", "growth_rate"],
+        "charts": ["c1"],
+        "tables": ["market_comparison"],
+        "alerts": []
+      }
+    }
+  ],
+
+  "chart_placements": [
+    {
+      "chart_id": "c1",
+      "after_section": "s1",
+      "callout": "Market growth accelerating since 2024",
+      "size": "full"
+    },
+    {
+      "chart_id": "c2",
+      "after_section": "s2",
+      "callout": "Competitor A leads with 45% share",
+      "size": "full"
+    }
+  ],
+
+  "conclusion": {
+    "section_id": "conclusion",
+    "verdict": "aggregation.recommendation.verdict",
+    "confidence": "aggregation.recommendation.confidence",
+    "show_pros_cons": true,
+    "show_action_items": true,
+    "show_risks": true
+  },
+
+  "sources": {
+    "include": true,
+    "from": "state/citations.json"
+  },
+
+  "glossary": {
+    "include": false,
+    "from": "state/glossary.json"
+  }
+}
+```
+
+**For comprehensive/deep_dive, add narrative fields:**
+
+```json
+{
   "narrative_arc": {
     "hook": {
-      "content": "Bitcoin упал на 25% от ATH — это начало медвежьего рынка или возможность?",
-      "data_point": "Исторически, медвежьи рынки = падение 70-85%, сейчас только 25%",
-      "emotional_appeal": "Страх vs возможность"
+      "content": "Opening question",
+      "data_point": "Key statistic"
     },
-
-    "context": {
-      "content": "Рынок изменился: ETF, институционалы, новая структура",
-      "sections_to_cover": ["s1"],
-      "key_context_points": [
-        "ETF накопили $56.9B притоков",
-        "LTH перешли к накоплению",
-        "Институциональный cost basis создаёт поддержку"
-      ]
-    },
-
     "development": {
       "beats": [
         {
-          "beat": "LTH накапливают — умные деньги не продают",
-          "narrative": "После трёх волн распределения, LTH снова покупают",
-          "evidence": ["+158k BTC за 30 дней", "LTH Supply 70.93%"],
-          "sections": ["s2"],
+          "beat": "First key point",
+          "sections": ["s1", "s2"],
           "charts": ["c1"],
-          "chart_narrative": "bullish"
-        },
-        {
-          "beat": "STH в стрессе, но не капитуляция",
-          "narrative": "Краткосрочники нервничают, но паники нет",
-          "evidence": ["NUPL -3.5%", "SOPR 0.98"],
-          "sections": ["s3"],
-          "charts": ["c2"],
-          "chart_narrative": "neutral"
-        },
-        {
-          "beat": "Институциональная поддержка устойчива",
-          "narrative": "ETF и DAT создают структурный bid",
-          "evidence": ["$114B AUM", "Cost basis $55k-$75k"],
-          "sections": ["s4"],
-          "charts": ["c5"],
           "chart_narrative": "bullish"
         }
       ]
     },
-
     "climax": {
-      "content": "MVRV = 2.38 далёк от потолка 4.0-4.5 — upside $157k-$176k",
-      "insight": "Институционализация снизила потолок, но мы далеко от него",
-      "sections": ["s6"],
-      "charts": ["c6", "c7"],
-      "chart_narrative": "bullish"
+      "content": "Main insight",
+      "chart_id": "c3"
     },
-
     "resolution": {
-      "content": "DCA стратегия 4-8 недель, лимитные ордера $82k-$88k",
-      "action_items": [
-        "DCA вход для снижения timing risk",
-        "Лимитные ордера в зоне поддержки",
-        "Частичная фиксация при $143k-$150k"
-      ],
-      "sections": ["s8"]
-    },
-
-    "risks": {
-      "content": "Следить за Strategy mNAV, ETF outflows, пробоем $88k",
-      "key_risks": [
-        "Strategy mNAV < 1 создаст давление",
-        "Пробой $88k изменит структуру",
-        "Macro факторы (ФРС, геополитика)"
-      ]
+      "content": "Recommendations",
+      "action_items": ["Item 1", "Item 2"]
     }
   },
 
   "themes": [
     {
-      "theme": "Институциональная трансформация",
-      "description": "ETFs и DATs изменили структуру рынка навсегда",
-      "evidence": ["s4", "s6"],
+      "theme": "Theme Name",
+      "description": "What this means",
+      "evidence": ["s1", "s2"],
       "tone": "positive"
-    },
-    {
-      "theme": "Diminishing returns",
-      "description": "Каждый цикл даёт меньшую кратность роста",
-      "evidence": ["s6", "c7"],
-      "tone": "neutral"
-    },
-    {
-      "theme": "LTH vs STH динамика",
-      "description": "Разные когорты в разных состояниях — LTH спокойны, STH нервничают",
-      "evidence": ["s2", "s3", "c1", "c2"],
-      "tone": "mixed"
     }
-  ],
-
-  "section_order": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"],
-
-  "chart_placements": [
-    {"chart_id": "c3", "after_section": "s1", "callout": "Drawdown -25% в рамках нормы"},
-    {"chart_id": "c1", "after_section": "s2", "callout": "Три волны распределения → накопление"},
-    {"chart_id": "c2", "after_section": "s3", "callout": "STH в Hope/Fear, не капитуляция"},
-    {"chart_id": "c5", "after_section": "s4", "callout": "IBIT доминирует с 60% рынка"},
-    {"chart_id": "c4", "after_section": "s5", "callout": "Три всплеска спроса в цикле"},
-    {"chart_id": "c6", "after_section": "s6", "callout": "MVRV 2.38 → потолок 4.0-4.5"},
-    {"chart_id": "c7", "after_section": "s7", "callout": "Текущий цикл vs предыдущие"},
-    {"chart_id": "c8", "after_section": "s7", "callout": "Сценарии 2026"}
   ],
 
   "tone_guide": {
     "overall": "neutral_business",
-    "exceptions": [
-      {"section": "s7", "note": "Scenarios — slightly more advisory tone"},
-      {"section": "s8", "note": "Recommendations — action-oriented but not pushy"}
-    ]
-  },
-
-  "writing_guidelines": {
-    "opening_hook": "Start with the question on everyone's mind",
-    "transitions": "Each section should flow naturally to the next",
-    "evidence_density": "Every claim backed by data or citation",
-    "chart_integration": "Refer to charts before showing them",
-    "conclusion_strength": "End with clear, actionable takeaway"
+    "exceptions": []
   }
 }
 ```
+
+---
 
 ## Update session.json
 
@@ -271,10 +414,25 @@ Based on `brief.json → preferences.tone`:
 }
 ```
 
+---
+
 ## Rules
-- **Serve the narrative, not the data dump** — organize for impact, not just structure
-- **Choose chart interpretations** based on overall story coherence
-- **Be honest about confidence** — don't oversell uncertain conclusions
-- **Maintain tone consistency** — follow brief.json preferences
-- **Think like a reader** — what do they need to understand first?
-- **Every section should earn its place** — if it doesn't advance the story, reconsider
+
+- **Always load template first** — understand available blocks
+- **Depth determines complexity** — don't over-engineer for executive
+- **Every section earns its place** — map to scope items
+- **Charts support narrative** — don't just dump all charts
+- **Metrics tell the story** — choose hero metrics wisely
+- **Audience shapes tone** — c_level ≠ analyst
+- **Reporter follows your structure** — be explicit about layout
+
+---
+
+## Quick Reference: Depth → Output
+
+| Depth | Sections | Narrative | Themes | Charts Analysis |
+|-------|----------|-----------|--------|-----------------|
+| executive | 3-5 | ❌ | ❌ | ❌ |
+| standard | 6-10 | ❌ | ❌ | ❌ |
+| comprehensive | 10-15 | ✅ simple | ✅ | ❌ |
+| deep_dive | 15+ | ✅ full | ✅ | ✅ |

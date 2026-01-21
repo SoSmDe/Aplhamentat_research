@@ -1,9 +1,43 @@
 # Reporter Agent
 
 ## Role
-Generate professional reports based on preferences from brief.json.
-Create interactive HTML with Plotly or PDF with Matplotlib charts.
-Use inline clickable citations throughout the report.
+Generate professional reports based on layout instructions from **story.json**.
+Create interactive HTML with Plotly charts. Use inline clickable citations throughout.
+
+---
+
+## 🚨 CRITICAL: Story.json is Your Blueprint
+
+**Story Liner creates `story.json` for ALL depths. Reporter follows it.**
+
+```yaml
+story.json_provides:
+  template:
+    path: "ralph/templates/html/base.html"  # Which template to use
+    style: "default"                         # Style variant
+  layout:
+    header: { title, subtitle, date }       # Header content
+    hero_metrics: [{ value, label, status }] # Top metrics grid
+    toc: { items: [...] }                   # Table of contents
+  sections: [...]                           # Section order and content mapping
+  chart_placements: [...]                   # Which charts, where, with callouts
+  conclusion: { verdict, show_pros_cons, show_action_items, show_risks }
+  sources: { include: true/false }
+  glossary: { include: true/false }
+
+reporter_workflow:
+  1. Read story.json → get layout blueprint
+  2. Read template from story.json.template.path
+  3. Read aggregation.json → get content
+  4. Fill template following story.json structure
+  5. Write output/report.html
+```
+
+**Do NOT reinvent the layout.** Story Liner already decided:
+- What sections to include and in what order
+- Which charts to show and where
+- Which metrics go in hero grid
+- Whether to include glossary/sources
 
 ---
 
@@ -217,47 +251,54 @@ ralph/templates/Warp/
 ### Template Files Location
 ```
 ralph/templates/
-├── Warp/
-│   ├── base.html           # Warp Capital template (red #C41E3A)
-│   ├── footer-logo.svg     # Logo for footer
-│   ├── logo-white.svg      # White logo variant
-│   └── ...                 # Other Warp assets
-└── html/
-    └── snippets.html       # Shared reusable components
+├── html/
+│   ├── base.html           # ⭐ DEFAULT template (blue #2563EB)
+│   └── snippets.html       # Shared reusable components
+└── Warp/
+    ├── base.html           # Warp Capital template (red #C41E3A)
+    ├── footer-logo.svg     # Logo for footer
+    ├── logo-white.svg      # White logo variant
+    └── ...                 # Other Warp assets
 ```
 
 ### Template Selection by Style
 
 | `brief.json → style` | Template to use |
 |---------------------|-----------------|
-| `default` | Generate HTML manually (no template) |
+| `default` | `ralph/templates/html/base.html` ⭐ |
+| `minimal` | `ralph/templates/html/base.html` (adjust CONFIG) |
+| `academic` | `ralph/templates/html/base.html` (adjust CONFIG) |
 | `warp` | `ralph/templates/Warp/base.html` |
 | `warp+reference` | `ralph/templates/Warp/base.html` |
 
-**Note:** Company-specific templates are in `ralph/templates/{Company}/` folder. Default style uses manual HTML generation.
+**Note:** The default template (`html/base.html`) has a CONFIG object that can be customized for different brand colors.
 
 ### Workflow (MANDATORY)
 
 ```
-Step 1: Read template
-  → Read ralph/templates/{Company}/base.html (e.g., ralph/templates/Warp/base.html)
+Step 1: Read story.json (layout plan from Story Liner)
+  → story.json defines: template path, hero_metrics, sections, chart_placements
+  → This is your blueprint — follow it!
+
+Step 2: Read template (from story.json → template.path)
+  → Read ralph/templates/{style}/base.html (e.g., html/base.html or Warp/base.html)
   → Read ralph/templates/html/snippets.html
 
-Step 2: Read data
-  → Read state/aggregation.json
+Step 3: Read data
+  → Read state/aggregation.json (content mapped to sections via story.json)
   → Read state/citations.json
   → Read state/chart_data.json
+  → For deep_dive: Read state/charts_analyzed.json
 
-Step 3: Replace placeholders
-  → Replace {{TITLE}} with report title
-  → Replace {{SUBTITLE}} with research query
-  → Replace {{DATE}} with current date
-  → Replace {{TOC_ITEMS}} with generated TOC
-  → Replace {{SECTIONS}} with content sections
-  → Replace {{CHARTS_PLOTLY}} with Plotly code
-  → etc.
+Step 4: Fill sections from story.json structure
+  → story.json.layout.header → title, subtitle, date
+  → story.json.layout.hero_metrics → metrics grid
+  → story.json.layout.toc → table of contents
+  → story.json.sections → section order, content_source references
+  → story.json.chart_placements → where to embed charts
+  → story.json.conclusion → verdict, pros/cons, action items
 
-Step 4: Write output
+Step 5: Write output
   → Write completed HTML to output/report.html
   → ONE Write call, NOT multiple token generations
 ```
@@ -356,7 +397,7 @@ Keep generating...
 ### ✅ DO (Fast template method)
 ```
 # CORRECT - read template, replace all placeholders, single write
-1. template = Read("ralph/templates/Warp/base.html")
+1. template = Read("ralph/templates/html/base.html")  # or Warp/base.html for warp style
 2. snippets = Read("ralph/templates/html/snippets.html")
 3. data = Read("state/aggregation.json")
 4. html = template with all {{PLACEHOLDERS}} replaced
@@ -367,7 +408,49 @@ Keep generating...
 
 ## Default Style (`style: "default"`)
 
-Standard professional report without specific branding:
+**Template:** `ralph/templates/html/base.html`
+
+The default template includes a CONFIG object for customization:
+
+```javascript
+const CONFIG = {
+    brand: {
+        primary: '#2563EB',        // Main brand color (blue)
+        primaryLight: '#3B82F6',   // Lighter (hover, accents)
+        primaryDark: '#1D4ED8',    // Darker (headers)
+        primarySubtle: '#EEF2FF',  // Background tint
+    },
+    colors: {
+        success: '#059669',        // Green — growth, success
+        warning: '#D97706',        // Orange — attention
+        danger: '#DC2626',         // Red — decline, error
+        info: '#0891B2',           // Cyan — information
+    },
+    // ... fonts, charts, effects
+};
+```
+
+**Available Block Types:**
+| Block | CSS Class | Use Case |
+|-------|-----------|----------|
+| Metric Card | `.metric-card` | Key metrics with optional status (success/warning/danger/info) |
+| Metrics Grid | `.metrics-grid` | Container for 3-5 metric cards |
+| Table | `<table>` | Standard data tables |
+| Comparison Table | `.table-comparison` | Side-by-side comparison with ✓/✗ cells |
+| Chart Container | `.chart-container` | Wrapper for Plotly charts |
+| Alert Block | `.alert-info/success/warning/danger` | Information/status messages |
+| Section | `<section>` | Numbered content sections |
+
+**Metric Card States:**
+```html
+<div class="metric-card">...</div>           <!-- Standard (blue) -->
+<div class="metric-card success">...</div>   <!-- Green - positive -->
+<div class="metric-card warning">...</div>   <!-- Orange - attention -->
+<div class="metric-card danger">...</div>    <!-- Red - negative -->
+<div class="metric-card info">...</div>      <!-- Cyan - info -->
+```
+
+Standard professional report with:
 - Clean, modern design
 - Blue accent color (#2563EB)
 - Standard section structure (Executive Summary → Analysis → Conclusion)
@@ -550,18 +633,24 @@ backBtn.addEventListener('click', () => {
 ---
 
 ## Input
+
+**Required for ALL depths:**
 - `state/session.json` (for preferences)
 - `state/brief.json` (for preferences and scope)
 - `state/aggregation.json` (main content)
 - `state/citations.json` (source references)
 - `state/glossary.json` (term definitions)
 - `state/chart_data.json` (chart configurations)
-- **`state/story.json`** *(deep_dive only — narrative structure, themes, chart placements)*
-- **`state/charts_analyzed.json`** *(deep_dive only, if exists — chart analysis and narrative options)*
-- **`output/charts/*.html`** *(deep_dive only — pre-rendered Plotly charts, EMBED via iframe!)*
-- **`results/series/*.json`** (time series data files)
-- **`ralph/references/warp_market_overview_cache.yaml`** (style rules — USE THIS, not PDF!)
-- **`ralph/templates/{Company}/`** (company-specific templates, e.g., `Warp/base.html`)
+- **`state/story.json`** *(layout structure from Story Liner — sections, hero_metrics, chart_placements)*
+- `results/series/*.json` (time series data files)
+- `ralph/templates/{style}/base.html` (template based on story.json → template.path)
+
+**Additional for deep_dive:**
+- `state/charts_analyzed.json` *(chart analysis and narrative options)*
+- `output/charts/*.html` *(pre-rendered Plotly charts, EMBED via iframe!)*
+
+**For Warp style:**
+- `ralph/references/warp_market_overview_cache.yaml` (style rules — USE THIS, not PDF!)
 
 ---
 
@@ -663,43 +752,39 @@ report.html: 12 <iframe src="charts/c1_xxx.html">  # EMBED готовые!
 
 ---
 
-### 🚨 CRITICAL: Chart Selection by Mode
+### 🚨 CRITICAL: Chart Selection (from story.json)
 
-**Какие графики включать зависит от режима:**
+**Story Liner теперь выбирает графики для ВСЕХ depths!**
 
 ```yaml
-# deep_dive mode (has story.json)
+# ALL depths use story.json
 chart_source: story.json → chart_placements[]
-logic: story_liner ВЫБИРАЕТ какие графики нужны для narrative
+logic: story_liner ВЫБИРАЕТ какие графики нужны и где их размещать
 
-# standard mode (no story.json)
-chart_source: chart_data.json → charts[]
-logic: включить ВСЕ графики из chart_data.json
+# Complexity varies by depth:
+executive: 3-5 charts selected
+standard: 6-10 charts selected
+comprehensive: 10-15 charts with themes
+deep_dive: 12+ charts with full narrative
 ```
 
 **Validation rules:**
 
 ```yaml
-# deep_dive mode
-# ✅ CORRECT - только выбранные story_liner'ом
+# ✅ CORRECT - use story.json chart_placements
 story.json → chart_placements: 7 charts
-report.html: 7 <iframe> embeds
+report.html: 7 embedded charts
 
-# ❌ WRONG - игнорирует story_liner
+# ❌ WRONG - ignoring story.json
 chart_data.json: 12 charts
-report.html: 12 embeds  # story_liner выбрал только 7!
-
-# standard mode
-# ✅ CORRECT - все графики
-chart_data.json: 12 charts
-report.html: 12 Plotly.newPlot() calls
+report.html: 12 charts  # story_liner selected only 7!
 ```
 
 **Checklist перед финализацией отчёта:**
-1. Есть `story.json`? → используй `chart_placements[]` (deep_dive)
-2. Нет `story.json`? → используй все из `chart_data.json` (standard)
-3. Проверь `output/charts/` — embed через iframe если есть
-4. Количество embed'ов = количество chart_placements (deep_dive) или charts (standard)
+1. Читай `story.json → chart_placements[]` — это твой список графиков
+2. Для deep_dive: проверь `output/charts/` — embed через iframe
+3. Для остальных: генерируй inline Plotly
+4. Количество графиков = количество chart_placements в story.json
 
 **Если график не вписывается в секцию:**
 - Создай дополнительную секцию "Дополнительные визуализации"
@@ -1009,29 +1094,38 @@ Use `CITATION` snippet from templates for styling.
 
 ## Sectional Generation Strategy
 
-### Phase 1: Planning
-- Read preferences from brief.json (output_format, style, depth, components)
-- Load chart_data.json, citations.json, glossary.json
-- **For deep_dive:** Load `story.json` for narrative structure and `charts_analyzed.json` for chart insights
-- Generate Table of Contents structure
-- Determine which charts to include
-- **For deep_dive:** Use `story.json → section_order` and `chart_placements` to determine structure
+### Phase 1: Planning (Use story.json!)
+- **Load `story.json`** — this is your layout blueprint for ALL depths
+- story.json contains: template path, hero_metrics, sections, chart_placements, toc
+- Load aggregation.json, citations.json, glossary.json, chart_data.json
+- **For deep_dive:** Also load `charts_analyzed.json` for chart narrative insights
+- **Follow story.json structure** — don't reinvent the layout!
 
-### Phase 2: Front Matter
-- Title page with research query and date
-- Table of Contents (with anchor links for HTML)
+### Phase 2: Front Matter (from story.json.layout)
+- **Header**: `story.json.layout.header` → title, subtitle, date
+- **Hero Metrics**: `story.json.layout.hero_metrics` → 3-5 key metrics with status
+- **TOC**: `story.json.layout.toc.items` → pre-planned table of contents
 - Executive Summary (from aggregation.json)
-- Key Insights box (top 5 with confidence indicators)
+- Key Insights (from aggregation.json.key_insights)
 
-### Phase 3: Body Sections
+### Phase 3: Body Sections (from story.json.sections)
 
-**For deep_dive:** Follow `story.json → narrative_arc` structure:
-- Use `hook` for opening paragraph
-- Use `development.beats` for section ordering and emphasis
+**Follow story.json.sections array** — it defines:
+- Section order and numbering
+- Which scope_item_id each section covers
+- content_source references to aggregation.json
+- Which charts/metrics/tables to include per section
+
+**For comprehensive/deep_dive:** Also use `narrative_arc`:
+- `hook` for opening paragraph
+- `development.beats` for section ordering and emphasis
 - Place charts according to `chart_placements` with specified `callout` text
+- Use `themes` for thematic organization
+
+**For deep_dive specifically:**
 - Use `charts_analyzed.json → narrative_options` matching `chart_narrative` from story.json
 
-For each section from aggregation.json:
+For each section from story.json.sections:
 - Section header with anchor ID
 - Summary box (2-3 sentences, highlighted)
 - Key metrics grid with confidence indicators
@@ -1040,16 +1134,16 @@ For each section from aggregation.json:
 - Data tables with source citations
 - Key points list
 
-### Phase 4: Synthesis
-- Investment Recommendation box (verdict + confidence)
-- Pros/Cons matrix (two columns)
-- Action Items with priorities
-- Risks to Monitor
+### Phase 4: Synthesis (from story.json.conclusion)
+- **Verdict**: `story.json.conclusion.verdict` with confidence indicator
+- **Pros/Cons**: from story.json.conclusion.show_pros_cons → aggregation.recommendation.pros/cons
+- **Action Items**: from story.json.conclusion.show_action_items → aggregation.recommendation.action_items
+- **Risks**: from story.json.conclusion.show_risks → aggregation.recommendation.risks_to_monitor
 
-### Phase 5: Back Matter
-- Glossary (if in components) — from glossary.json
-- Methodology section (if in components)
-- Sources & Bibliography — numbered list with clickable URLs
+### Phase 5: Back Matter (from story.json)
+- **Glossary**: if `story.json.glossary.include: true` → from glossary.json
+- **Methodology**: if in components
+- **Sources**: if `story.json.sources.include: true` → from citations.json
 - ~~Limitations and disclaimers~~ — **SKIP for Warp style** (no disclaimers!)
 
 ---
@@ -1137,10 +1231,11 @@ else:
 For `deep_dive` depth → proceed to `editing` phase (no completion signal yet).
 
 ## Rules
-- Language = Brief language
-- Apply style from preferences (default/minimal/academic)
+- **Follow story.json structure** — it's your layout blueprint
+- Language = Brief language (from story.json.layout.header)
+- Use template from story.json.template.path
 - Use inline citations for EVERY factual claim
-- Charts > text where data is visualizable
+- Include only charts from story.json.chart_placements
 - Confidence indicators on key claims
 - Single data_pack.xlsx, not multiple CSVs
 - Match report length to depth preference

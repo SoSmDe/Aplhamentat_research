@@ -56,6 +56,8 @@ citations_collection:
     - results/overview_*.json
     - results/data_*.json
     - results/research_*.json
+    - results/literature_*.json
+    - results/fact_check_*.json
 
   output_format:
     id: "[1]"  # Sequential numbering
@@ -429,21 +431,21 @@ For each scope item from Brief:
 
 ## Update session.json
 
-**Next phase depends on depth:**
+**Next phase — story_lining runs for ALL depths now:**
 
 ```
 if session.preferences.depth == "deep_dive":
     if results/series/ directory exists:
-        phase = "chart_analysis"
+        phase = "chart_analysis"  # analyze charts first, then story_lining
     else:
         phase = "story_lining"
 else:
-    phase = "reporting"
+    phase = "story_lining"  # story_liner handles all depths!
 ```
 
 ```json
 {
-  "phase": "chart_analysis|story_lining|reporting",
+  "phase": "chart_analysis|story_lining",
   "updated_at": "ISO"
 }
 ```

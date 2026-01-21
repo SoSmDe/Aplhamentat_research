@@ -982,7 +982,7 @@ Append questions to `questions/data_questions.json`:
       "source": "data_1",
       "generated_at": "ISO timestamp",
       "question": "Question text",
-      "type": "data|research|overview",
+      "type": "data|research|overview|literature|fact_check",
       "context": "Anomaly, gap, or contradiction found",
       "priority_hint": "high|medium|low"
     }

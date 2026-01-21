@@ -115,7 +115,7 @@ Append questions to `questions/overview_questions.json`:
       "source": "overview_1",
       "generated_at": "ISO timestamp",
       "question": "Question text",
-      "type": "data|research|overview",
+      "type": "data|research|overview|literature|fact_check",
       "context": "Why this question arose",
       "priority_hint": "high|medium|low"
     }

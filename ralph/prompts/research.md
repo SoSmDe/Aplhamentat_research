@@ -153,7 +153,7 @@ Append questions to `questions/research_questions.json`:
       "source": "research_1",
       "generated_at": "ISO timestamp",
       "question": "Question text",
-      "type": "data|research|overview",
+      "type": "data|research|overview|literature|fact_check",
       "context": "Uncertainty, contradiction, or adjacent topic",
       "priority_hint": "high|medium|low"
     }

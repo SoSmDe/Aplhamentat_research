@@ -1,0 +1,4164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Универсальный шаблон отчёта</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    
+    <!-- ============================================================
+         ЕДИНЫЙ КОНФИГ — МЕНЯЙТЕ ТОЛЬКО ЗДЕСЬ!
+         ============================================================ -->
+    <script>
+    const CONFIG = {
+        // ═══════════════════════════════════════════════════════════
+        // БРЕНДИНГ
+        // ═══════════════════════════════════════════════════════════
+        brand: {
+            primary: '#2563EB',        // Основной цвет бренда
+            primaryLight: '#3B82F6',   // Светлее (hover, акценты)
+            primaryDark: '#1D4ED8',    // Темнее (заголовки)
+            primarySubtle: '#EEF2FF',  // Фоновый оттенок
+        },
+        
+        // ═══════════════════════════════════════════════════════════
+        // СЕМАНТИЧЕСКИЕ ЦВЕТА
+        // ═══════════════════════════════════════════════════════════
+        colors: {
+            success: '#059669',        // Зелёный — рост, успех, завершено
+            successLight: 'rgba(5, 150, 105, 0.2)',
+            
+            warning: '#D97706',        // Оранжевый — внимание, в процессе
+            warningLight: 'rgba(217, 119, 6, 0.2)',
+            
+            danger: '#DC2626',         // Красный — падение, ошибка, критично
+            dangerLight: 'rgba(220, 38, 38, 0.2)',
+            
+            info: '#0891B2',           // Голубой — информация, нейтрально
+            infoLight: 'rgba(8, 145, 178, 0.2)',
+            
+            purple: '#8B5CF6',         // Фиолетовый — дополнительный
+            purpleLight: 'rgba(139, 92, 246, 0.2)',
+            
+            gray: '#9CA3AF',           // Серый — неактивно, запланировано
+            grayLight: 'rgba(156, 163, 175, 0.2)',
+        },
+        
+        // ═══════════════════════════════════════════════════════════
+        // ТЕКСТ
+        // ═══════════════════════════════════════════════════════════
+        text: {
+            primary: '#111827',        // Заголовки
+            secondary: '#374151',      // Основной текст
+            muted: '#6B7280',          // Подписи, второстепенный
+            inverse: '#FFFFFF',        // На тёмном фоне
+        },
+        
+        // ═══════════════════════════════════════════════════════════
+        // ФОН И ГРАНИЦЫ
+        // ═══════════════════════════════════════════════════════════
+        background: {
+            page: '#F3F4F6',           // Фон страницы
+            card: '#FFFFFF',           // Фон карточек
+            light: '#F9FAFB',          // Альтернативные строки
+        },
+        border: {
+            color: '#E5E7EB',          // Основные границы
+            light: '#F3F4F6',          // Лёгкие разделители
+        },
+        
+        // ═══════════════════════════════════════════════════════════
+        // ШРИФТЫ
+        // ═══════════════════════════════════════════════════════════
+        font: {
+            family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+            sizeBase: '15px',
+            sizeSmall: '13px',
+            sizeLarge: '18px',
+        },
+        
+        // ═══════════════════════════════════════════════════════════
+        // ГРАФИКИ (Plotly)
+        // ═══════════════════════════════════════════════════════════
+        charts: {
+            fontSize: {
+                title: 14,
+                axis: 11,
+                legend: 11,
+                annotation: 11,
+                tick: 10,
+            },
+            lineWidth: {
+                thin: 1,
+                normal: 2,
+                thick: 3,
+            },
+            markerSize: {
+                small: 5,
+                normal: 7,
+                large: 9,
+            },
+        },
+        
+        // ═══════════════════════════════════════════════════════════
+        // ЭФФЕКТЫ
+        // ═══════════════════════════════════════════════════════════
+        effects: {
+            radiusSm: '6px',
+            radiusMd: '10px',
+            radiusLg: '16px',
+            shadowSm: '0 1px 2px rgba(0,0,0,0.04)',
+            shadowMd: '0 4px 12px rgba(0,0,0,0.08)',
+            shadowLg: '0 12px 40px rgba(0,0,0,0.12)',
+            transition: '0.2s ease',
+        },
+    };
+    
+    // Применяем конфиг к CSS variables при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+        const root = document.documentElement;
+        
+        // Бренд
+        root.style.setProperty('--corporate-color', CONFIG.brand.primary);
+        root.style.setProperty('--corporate-light', CONFIG.brand.primaryLight);
+        root.style.setProperty('--corporate-dark', CONFIG.brand.primaryDark);
+        root.style.setProperty('--corporate-subtle', CONFIG.brand.primarySubtle);
+        
+        // Цвета
+        root.style.setProperty('--success', CONFIG.colors.success);
+        root.style.setProperty('--success-light', CONFIG.colors.successLight);
+        root.style.setProperty('--warning', CONFIG.colors.warning);
+        root.style.setProperty('--warning-light', CONFIG.colors.warningLight);
+        root.style.setProperty('--danger', CONFIG.colors.danger);
+        root.style.setProperty('--danger-light', CONFIG.colors.dangerLight);
+        root.style.setProperty('--info', CONFIG.colors.info);
+        root.style.setProperty('--info-light', CONFIG.colors.infoLight);
+        
+        // Текст
+        root.style.setProperty('--text-primary', CONFIG.text.primary);
+        root.style.setProperty('--text-secondary', CONFIG.text.secondary);
+        root.style.setProperty('--text-muted', CONFIG.text.muted);
+        
+        // Фон
+        root.style.setProperty('--bg-page', CONFIG.background.page);
+        root.style.setProperty('--bg-card', CONFIG.background.card);
+        root.style.setProperty('--bg-light', CONFIG.background.light);
+        root.style.setProperty('--border-color', CONFIG.border.color);
+        root.style.setProperty('--border-light', CONFIG.border.light);
+        
+        // Шрифты
+        root.style.setProperty('--font-family', CONFIG.font.family);
+        root.style.setProperty('--font-size-base', CONFIG.font.sizeBase);
+        
+        // Эффекты
+        root.style.setProperty('--radius-sm', CONFIG.effects.radiusSm);
+        root.style.setProperty('--radius-md', CONFIG.effects.radiusMd);
+        root.style.setProperty('--radius-lg', CONFIG.effects.radiusLg);
+        root.style.setProperty('--shadow-sm', CONFIG.effects.shadowSm);
+        root.style.setProperty('--shadow-md', CONFIG.effects.shadowMd);
+        root.style.setProperty('--shadow-lg', CONFIG.effects.shadowLg);
+    });
+    </script>
+    
+    <style>
+/* ============================================================
+   УНИВЕРСАЛЬНЫЙ ШАБЛОН ОТЧЁТА
+   ============================================================
+   
+   ОГЛАВЛЕНИЕ:
+   1. CSS Variables
+   2. Base Styles
+   3. Header
+   4. Title
+   5. Table of Contents
+   6. Sections
+   7. Metrics Grid
+   8. Tables
+   9. Charts
+   10. Alert Blocks
+   11. Lists
+   12. Citations & Sources
+   13. Back to Top
+   14. Responsive
+   15. Print
+   
+   ============================================================ */
+
+/* === 1. CSS VARIABLES === */
+:root {
+    /* КОРПОРАТИВНЫЕ ЦВЕТА — измените под свой бренд */
+    --corporate-color: #2563EB;
+    --corporate-light: #3B82F6;
+    --corporate-dark: #1D4ED8;
+    --corporate-subtle: #EEF2FF;
+    
+    /* Text */
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-muted: #6B7280;
+    --text-inverse: #FFFFFF;
+    
+    /* Backgrounds */
+    --bg-light: #F9FAFB;
+    --bg-card: #FFFFFF;
+    
+    /* Borders */
+    --border-color: #E5E7EB;
+    --border-light: #F3F4F6;
+    
+    /* Semantic */
+    --success: #059669;
+    --success-light: #D1FAE5;
+    --success-bg: #ECFDF5;
+    --warning: #D97706;
+    --warning-light: #FEF3C7;
+    --warning-bg: #FFFBEB;
+    --danger: #DC2626;
+    --danger-light: #FEE2E2;
+    --danger-bg: #FEF2F2;
+    --info: #0891B2;
+    --info-light: #CFFAFE;
+    --info-bg: #ECFEFF;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    
+    /* Radius */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+}
+
+/* === 2. BASE STYLES === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-primary);
+    background: linear-gradient(180deg, #FAFBFC 0%, #FFFFFF 100%);
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px 48px;
+    -webkit-font-smoothing: antialiased;
+}
+
+p {
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* === 3. HEADER === */
+/*
+<header class="report-header">
+    <div class="header-content">
+        <div class="logo-container">
+            <img src="logo.svg" alt="Logo" class="logo">
+            <span class="company-name">Company Name</span>
+        </div>
+        <div class="header-meta">
+            <span class="report-type">Тип отчёта</span>
+            <span class="report-date">21 января 2026</span>
+        </div>
+    </div>
+</header>
+*/
+.report-header {
+    background: linear-gradient(135deg, var(--corporate-color) 0%, var(--corporate-dark) 100%);
+    color: var(--text-inverse);
+    margin: 0 -40px 40px;
+    padding: 28px 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+.report-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.report-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: 10%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.logo {
+    height: 44px;
+    width: auto;
+}
+
+.company-name {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.header-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.report-type {
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.report-date {
+    font-size: 13px;
+    opacity: 0.75;
+}
+
+/* === 4. TITLE === */
+/*
+<div class="report-title">
+    <h1>Заголовок отчёта</h1>
+    <p class="subtitle">Подзаголовок с описанием</p>
+</div>
+*/
+.report-title {
+    text-align: center;
+    margin-bottom: 48px;
+    padding: 20px 0;
+}
+
+.report-title h1 {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    letter-spacing: -0.75px;
+    line-height: 1.2;
+}
+
+.report-title .subtitle {
+    font-size: 18px;
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* === 5. TABLE OF CONTENTS === */
+/*
+<nav class="toc">
+    <h2>Содержание</h2>
+    <ul>
+        <li><a href="#section-1">1. Раздел</a></li>
+    </ul>
+</nav>
+*/
+.toc {
+    background: var(--bg-card);
+    padding: 32px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 48px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-light);
+}
+
+.toc h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--corporate-color);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--corporate-color);
+}
+
+.toc ul {
+    list-style: none;
+    column-count: 2;
+    column-gap: 48px;
+    padding: 0;
+}
+
+.toc li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.toc a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 15px;
+    transition: color var(--transition-fast);
+}
+
+.toc a:hover {
+    color: var(--corporate-color);
+}
+
+/* === 6. SECTIONS === */
+/*
+<section id="section-1">
+    <h2>1. Название раздела</h2>
+    <h3>Подраздел</h3>
+    <h4>Под-подраздел</h4>
+</section>
+*/
+section {
+    margin-bottom: 56px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+section:last-of-type {
+    border-bottom: none;
+}
+
+section > h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--corporate-color);
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--corporate-color);
+}
+
+h3 {
+    font-size: 19px;
+    color: var(--text-primary);
+    margin: 32px 0 16px;
+    font-weight: 600;
+}
+
+h4 {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin: 24px 0 12px;
+    font-weight: 600;
+}
+
+/* === 7. METRICS GRID === */
+/*
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-value">$5.5B</div>
+        <div class="metric-label">Описание</div>
+    </div>
+</div>
+
+Модификаторы: .success, .warning, .danger, .info
+*/
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin: 32px 0;
+}
+
+.metric-card {
+    background: var(--bg-card);
+    padding: 24px 20px;
+    border-radius: var(--radius-md);
+    text-align: center;
+    border-top: 4px solid var(--corporate-color);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-normal);
+}
+
+.metric-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
+}
+
+.metric-card.success { border-top-color: var(--success); }
+.metric-card.warning { border-top-color: var(--warning); }
+.metric-card.danger { border-top-color: var(--danger); }
+.metric-card.info { border-top-color: var(--info); }
+
+.metric-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+}
+
+.metric-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+/* === 8. TABLES === */
+/*
+<table>
+    <thead>
+        <tr><th>Колонка</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Значение</td></tr>
+        <tr><td class="numeric">100</td></tr>
+    </tbody>
+</table>
+<p class="table-caption">Источник: данные</p>
+*/
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+thead th {
+    background: linear-gradient(180deg, var(--corporate-color) 0%, var(--corporate-dark) 100%);
+    color: white;
+    font-weight: 600;
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-secondary);
+}
+
+tbody tr:nth-child(even) {
+    background-color: var(--bg-light);
+}
+
+tbody tr:hover {
+    background-color: var(--corporate-subtle);
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+td.numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+.table-caption {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: -16px;
+    margin-bottom: 24px;
+    text-align: right;
+    font-style: italic;
+}
+
+/* --- Таблица сравнения / Comparison Table --- */
+/*
+<table class="table-comparison">
+    <thead>
+        <tr>
+            <th>Критерий</th>
+            <th>Вариант A</th>
+            <th>Вариант B</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Критерий 1</td>
+            <td class="cell-good">✓ Да</td>
+            <td class="cell-bad">✗ Нет</td>
+        </tr>
+    </tbody>
+</table>
+*/
+.table-comparison td:not(:first-child) {
+    text-align: center;
+    font-weight: 500;
+}
+
+.cell-good {
+    background: var(--success-bg) !important;
+    color: var(--success) !important;
+}
+
+.cell-bad {
+    background: var(--danger-bg) !important;
+    color: var(--danger) !important;
+}
+
+.cell-neutral {
+    background: var(--warning-bg) !important;
+    color: var(--warning) !important;
+}
+
+.cell-highlight {
+    background: var(--corporate-subtle) !important;
+    color: var(--corporate-color) !important;
+    font-weight: 600 !important;
+}
+
+/* --- Таблица с прогресс-баром / Progress Table --- */
+/*
+<table class="table-progress">
+    <tr>
+        <td>Показатель</td>
+        <td>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 75%"></div>
+                <span class="progress-label">75%</span>
+            </div>
+        </td>
+    </tr>
+</table>
+*/
+.table-progress td:last-child {
+    width: 60%;
+}
+
+.progress-bar {
+    background: var(--bg-light);
+    border-radius: 20px;
+    height: 24px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--corporate-color), var(--corporate-light));
+    border-radius: 20px;
+    transition: width 0.5s ease;
+}
+
+.progress-fill.success { background: linear-gradient(90deg, var(--success), #34D399); }
+.progress-fill.warning { background: linear-gradient(90deg, var(--warning), #FBBF24); }
+.progress-fill.danger { background: linear-gradient(90deg, var(--danger), #F87171); }
+
+.progress-label {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* --- Таблица с бейджами статуса / Status Table --- */
+/*
+<td><span class="status-badge status-active">Активен</span></td>
+<td><span class="status-badge status-pending">В процессе</span></td>
+<td><span class="status-badge status-inactive">Неактивен</span></td>
+<td><span class="status-badge status-completed">Завершён</span></td>
+*/
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.status-active {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.status-pending {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.status-inactive {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.status-completed {
+    background: var(--corporate-subtle);
+    color: var(--corporate-color);
+}
+
+/* --- Компактная таблица / Compact Table --- */
+/*
+<table class="table-compact">...</table>
+*/
+.table-compact {
+    font-size: 13px;
+}
+
+.table-compact thead th {
+    padding: 10px 12px;
+    font-size: 11px;
+}
+
+.table-compact tbody td {
+    padding: 8px 12px;
+}
+
+/* --- Таблица без границ / Borderless Table --- */
+/*
+<table class="table-borderless">...</table>
+*/
+.table-borderless {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
+
+.table-borderless thead th {
+    background: transparent;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border-color);
+    text-transform: none;
+    font-size: 14px;
+}
+
+.table-borderless tbody td {
+    border-bottom: 1px solid var(--border-light);
+}
+
+.table-borderless tbody tr:hover {
+    background: var(--bg-light);
+}
+
+/* === 9. CHARTS === */
+/*
+<div class="chart-container">
+    <h4 class="chart-title">Название</h4>
+    <div class="chart-wrapper" id="chart-1"></div>
+    <p class="chart-note">Примечание</p>
+</div>
+
+Модификаторы для .chart-wrapper: .small (300px), .large (500px)
+*/
+.chart-container {
+    background: var(--bg-card);
+    padding: 28px;
+    border-radius: var(--radius-lg);
+    margin: 32px 0;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-light);
+}
+
+.chart-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 20px;
+    text-align: center;
+}
+
+.chart-wrapper {
+    height: 400px;
+    border-radius: var(--radius-sm);
+}
+
+.chart-wrapper.small { height: 300px; }
+.chart-wrapper.large { height: 500px; }
+
+.chart-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 16px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+    font-style: italic;
+    text-align: center;
+}
+
+/* === 10. ALERT BLOCKS === */
+
+/* --- Ключевой вывод / Key Insight --- */
+/*
+<div class="block-insight">
+    <h4>Заголовок</h4>
+    <p>Текст вывода</p>
+</div>
+*/
+.block-insight {
+    background: linear-gradient(135deg, var(--corporate-subtle) 0%, #E0E7FF 100%);
+    border-left: 4px solid var(--corporate-color);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    padding: 24px 28px;
+    margin: 28px 0;
+}
+
+.block-insight h4 {
+    margin: 0 0 12px;
+    color: var(--corporate-color);
+    font-size: 16px;
+}
+
+.block-insight p:last-child {
+    margin-bottom: 0;
+}
+
+/* --- Приоритет / Priority --- */
+/*
+<div class="block-priority">
+    <h4>Приоритет</h4>
+    <p>Текст</p>
+</div>
+*/
+.block-priority {
+    background: linear-gradient(135deg, var(--info-bg) 0%, var(--info-light) 100%);
+    border: 2px solid var(--info);
+    border-radius: var(--radius-md);
+    padding: 24px 28px;
+    margin: 28px 0;
+}
+
+.block-priority h4 {
+    margin: 0 0 12px;
+    color: var(--info);
+    font-size: 16px;
+}
+
+.block-priority p:last-child {
+    margin-bottom: 0;
+}
+
+/* --- Критическая проблема / Critical --- */
+/*
+<div class="block-critical">
+    <h4>Критическая проблема</h4>
+    <p>Текст проблемы</p>
+</div>
+*/
+.block-critical {
+    background: linear-gradient(135deg, var(--danger-bg) 0%, var(--danger-light) 100%);
+    border-left: 4px solid var(--danger);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    padding: 24px 28px;
+    margin: 28px 0;
+}
+
+.block-critical h4 {
+    margin: 0 0 12px;
+    color: var(--danger);
+    font-size: 16px;
+}
+
+.block-critical p:last-child {
+    margin-bottom: 0;
+}
+
+/* --- Предупреждение / Warning --- */
+/*
+<div class="block-warning">
+    <h4>Предупреждение</h4>
+    <p>Текст</p>
+</div>
+*/
+.block-warning {
+    background: linear-gradient(135deg, var(--warning-bg) 0%, var(--warning-light) 100%);
+    border-left: 4px solid var(--warning);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    padding: 24px 28px;
+    margin: 28px 0;
+}
+
+.block-warning h4 {
+    margin: 0 0 12px;
+    color: var(--warning);
+    font-size: 16px;
+}
+
+.block-warning p:last-child {
+    margin-bottom: 0;
+}
+
+/* --- Успех / Success --- */
+/*
+<div class="block-success">
+    <h4>Успех</h4>
+    <p>Текст</p>
+</div>
+*/
+.block-success {
+    background: linear-gradient(135deg, var(--success-bg) 0%, var(--success-light) 100%);
+    border-left: 4px solid var(--success);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    padding: 24px 28px;
+    margin: 28px 0;
+}
+
+.block-success h4 {
+    margin: 0 0 12px;
+    color: var(--success);
+    font-size: 16px;
+}
+
+.block-success p:last-child {
+    margin-bottom: 0;
+}
+
+/* --- Информация / Info --- */
+/*
+<div class="block-info">
+    <h4>Информация</h4>
+    <p>Текст</p>
+</div>
+*/
+.block-info {
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 24px 28px;
+    margin: 28px 0;
+}
+
+.block-info h4 {
+    margin: 0 0 12px;
+    color: var(--text-secondary);
+    font-size: 16px;
+}
+
+.block-info p:last-child {
+    margin-bottom: 0;
+}
+
+/* --- Большая метрика в блоке --- */
+/*
+<div class="block-critical">
+    <div class="block-metric">28x</div>
+    <p>Описание метрики</p>
+</div>
+*/
+.block-metric {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -1px;
+}
+
+.block-critical .block-metric { color: var(--danger); }
+.block-warning .block-metric { color: var(--warning); }
+.block-success .block-metric { color: var(--success); }
+.block-insight .block-metric { color: var(--corporate-color); }
+.block-priority .block-metric { color: var(--info); }
+
+/* === 11. LISTS === */
+/*
+<ul class="list-check">
+    <li>Пункт</li>
+</ul>
+
+Варианты: .list-check, .list-cross, .list-arrow
+*/
+ul, ol {
+    margin: 16px 0;
+    padding-left: 24px;
+}
+
+li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.list-check,
+.list-cross,
+.list-arrow {
+    list-style: none;
+    padding-left: 0;
+}
+
+.list-check li,
+.list-cross li,
+.list-arrow li {
+    padding-left: 28px;
+    position: relative;
+}
+
+.list-check li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--success);
+    font-weight: 700;
+}
+
+.list-cross li::before {
+    content: '✗';
+    position: absolute;
+    left: 0;
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.list-arrow li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--corporate-color);
+    font-weight: 700;
+}
+
+/* === 12. CITATIONS & SOURCES === */
+/*
+В тексте: <a href="#ref-1" class="cite">[1]</a>
+
+<footer class="sources" id="sources">
+    <h2>Источники</h2>
+    <ol>
+        <li id="ref-1"><a href="url">Описание</a></li>
+    </ol>
+</footer>
+*/
+.cite {
+    color: var(--corporate-color);
+    text-decoration: none;
+    font-size: 0.8em;
+    vertical-align: super;
+    font-weight: 600;
+}
+
+.cite:hover {
+    text-decoration: underline;
+}
+
+.sources {
+    background: var(--bg-card);
+    padding: 32px;
+    border-radius: var(--radius-lg);
+    margin-top: 56px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-light);
+}
+
+.sources h2 {
+    font-size: 20px;
+    color: var(--corporate-color);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--corporate-color);
+}
+
+.sources ol {
+    padding-left: 24px;
+}
+
+.sources li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 14px;
+}
+
+.sources li:last-child {
+    border-bottom: none;
+}
+
+.sources a {
+    color: var(--text-muted);
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.sources a:hover {
+    color: var(--corporate-color);
+}
+
+/* === 13. BACK TO TOP === */
+#back-to-top {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 48px;
+    height: 48px;
+    background: var(--corporate-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-normal);
+    z-index: 1000;
+    box-shadow: var(--shadow-lg);
+}
+
+#back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#back-to-top:hover {
+    transform: translateY(-4px);
+    background: var(--corporate-dark);
+}
+
+/* === 14. RESPONSIVE === */
+@media (max-width: 768px) {
+    body {
+        padding: 0 20px 32px;
+    }
+    
+    .report-header {
+        margin: 0 -20px 32px;
+        padding: 24px 20px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .header-meta {
+        align-items: flex-start;
+    }
+    
+    .report-title h1 {
+        font-size: 28px;
+    }
+    
+    .toc ul {
+        column-count: 1;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .chart-wrapper {
+        height: 300px;
+    }
+    
+    #back-to-top {
+        bottom: 20px;
+        right: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .report-title h1 {
+        font-size: 24px;
+    }
+    
+    section > h2 {
+        font-size: 20px;
+    }
+}
+
+/* === 14. SPARKLINES === */
+.sparklines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.sparkline-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    box-shadow: var(--shadow-sm);
+}
+
+.sparkline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.sparkline-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.sparkline-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.sparkline-value.success { color: var(--success); }
+.sparkline-value.warning { color: var(--warning); }
+.sparkline-value.danger { color: var(--danger); }
+.sparkline-value.primary { color: var(--corporate-color); }
+
+.sparkline-chart {
+    height: 40px;
+    margin: 8px 0;
+}
+
+.sparkline-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.sparkline-change {
+    font-weight: 600;
+}
+.sparkline-change.success { color: var(--success); }
+.sparkline-change.danger { color: var(--danger); }
+
+.sparkline-period {
+    color: var(--text-muted);
+}
+
+/* === 15. TIMELINE === */
+.timeline {
+    position: relative;
+    padding-left: 40px;
+    margin: 32px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-color);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 32px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -34px;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 3px solid var(--border-color);
+    z-index: 1;
+}
+
+.timeline-marker.success {
+    border-color: var(--success);
+    background: var(--success-light);
+}
+
+.timeline-marker.warning {
+    border-color: var(--warning);
+    background: var(--warning-light);
+}
+
+.timeline-marker.danger {
+    border-color: var(--danger);
+    background: var(--danger-light);
+}
+
+.timeline-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.timeline-date {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--corporate-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.timeline-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.timeline-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.timeline-status {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+}
+
+.timeline-status.completed {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.timeline-status.in-progress {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.timeline-status.planned {
+    background: var(--bg-light);
+    color: var(--text-muted);
+}
+
+/* === 16. COMPARISON BEFORE/AFTER === */
+.comparison-container {
+    display: flex;
+    align-items: stretch;
+    gap: 24px;
+    margin: 32px 0;
+}
+
+.comparison-card {
+    flex: 1;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+}
+
+.comparison-card.before {
+    border: 2px solid var(--border-color);
+    opacity: 0.85;
+}
+
+.comparison-card.after {
+    border: 2px solid var(--success);
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--success-bg) 100%);
+}
+
+.comparison-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.comparison-card.before .comparison-label {
+    color: var(--text-muted);
+}
+
+.comparison-card.after .comparison-label {
+    color: var(--success);
+    border-color: var(--success);
+}
+
+.comparison-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--success);
+}
+
+.comparison-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.comparison-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.comparison-metric:last-child {
+    border-bottom: none;
+}
+
+.metric-name {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.metric-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.metric-value.success {
+    color: var(--success);
+}
+
+.metric-change {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+.metric-change.success {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+/* === 17. SCORECARD === */
+.scorecard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin: 32px 0;
+}
+
+.scorecard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+}
+
+.scorecard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.scorecard-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.scorecard-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+}
+
+.scorecard-badge.winner {
+    background: var(--success);
+    color: white;
+}
+
+.scorecard-score {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--corporate-color);
+    text-align: center;
+    margin: 16px 0;
+}
+
+.scorecard-score.muted {
+    color: var(--text-muted);
+}
+
+.scorecard-max {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.scorecard-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.score-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 40px;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.score-bar {
+    height: 8px;
+    background: var(--bg-light);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.score-fill {
+    height: 100%;
+    background: var(--corporate-color);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.score-fill.warning {
+    background: var(--warning);
+}
+
+.score-fill.danger {
+    background: var(--danger);
+}
+
+/* === 18. SWOT === */
+.swot-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin: 32px 0;
+}
+
+.swot-card {
+    border-radius: var(--radius-md);
+    padding: 24px;
+}
+
+.swot-card.strengths {
+    background: linear-gradient(135deg, var(--success-bg) 0%, var(--success-light) 100%);
+    border: 1px solid var(--success);
+}
+
+.swot-card.weaknesses {
+    background: linear-gradient(135deg, var(--danger-bg) 0%, var(--danger-light) 100%);
+    border: 1px solid var(--danger);
+}
+
+.swot-card.opportunities {
+    background: linear-gradient(135deg, var(--info-bg) 0%, var(--info-light) 100%);
+    border: 1px solid var(--info);
+}
+
+.swot-card.threats {
+    background: linear-gradient(135deg, var(--warning-bg) 0%, var(--warning-light) 100%);
+    border: 1px solid var(--warning);
+}
+
+.swot-header {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid currentColor;
+}
+
+.swot-card.strengths .swot-header { color: var(--success); }
+.swot-card.weaknesses .swot-header { color: var(--danger); }
+.swot-card.opportunities .swot-header { color: var(--info); }
+.swot-card.threats .swot-header { color: var(--warning); }
+
+.swot-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.swot-card li {
+    padding: 8px 0 8px 20px;
+    position: relative;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.swot-card li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+.swot-card.strengths li::before { color: var(--success); }
+.swot-card.weaknesses li::before { color: var(--danger); }
+.swot-card.opportunities li::before { color: var(--info); }
+.swot-card.threats li::before { color: var(--warning); }
+
+/* === 19. TABLE WITH SPARKLINES === */
+.table-sparklines .asset-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.asset-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+}
+
+.asset-icon.btc { background: #F7931A; }
+.asset-icon.eth { background: #627EEA; }
+.asset-icon.sol { background: #00FFA3; color: #000; }
+.asset-icon.ada { background: #0033AD; }
+
+.asset-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.asset-ticker {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+.table-spark {
+    width: 100px;
+    height: 32px;
+}
+
+/* === 20. SORTABLE TABLE === */
+.table-sortable thead th {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 24px;
+}
+
+.table-sortable thead th:hover {
+    background: var(--corporate-light);
+}
+
+.sort-icon::after {
+    content: '⇅';
+    position: absolute;
+    right: 8px;
+    opacity: 0.4;
+    font-size: 12px;
+}
+
+.table-sortable thead th.sort-asc .sort-icon::after {
+    content: '↑';
+    opacity: 1;
+}
+
+.table-sortable thead th.sort-desc .sort-icon::after {
+    content: '↓';
+    opacity: 1;
+}
+
+.rating-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.rating-badge.strong-buy {
+    background: var(--success);
+    color: white;
+}
+
+.rating-badge.buy {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.rating-badge.hold {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.rating-badge.sell {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.rating-badge.strong-sell {
+    background: var(--danger);
+    color: white;
+}
+
+/* === 21. RESPONSIVE UPDATES === */
+@media (max-width: 768px) {
+    .comparison-container {
+        flex-direction: column;
+    }
+    
+    .comparison-arrow {
+        transform: rotate(90deg);
+        justify-content: center;
+        margin: -8px 0;
+    }
+    
+    .swot-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .scorecard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeline {
+        padding-left: 30px;
+    }
+    
+    .timeline-marker {
+        left: -24px;
+        width: 12px;
+        height: 12px;
+    }
+}
+
+/* === 15. PRINT === */
+@media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    body {
+        padding: 20px;
+        background: white;
+        max-width: none;
+    }
+    
+    .report-header {
+        margin: 0 0 32px;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    section {
+        page-break-inside: avoid;
+    }
+    
+    .chart-wrapper {
+        height: 280px;
+    }
+    
+    #back-to-top {
+        display: none !important;
+    }
+    
+    .toc {
+        page-break-after: always;
+    }
+}
+    </style>
+</head>
+<body>
+
+<!-- ============================================================
+     ПРИМЕРЫ ВСЕХ БЛОКОВ
+     ============================================================ -->
+
+<!-- HEADER -->
+<header class="report-header">
+    <div class="header-content">
+        <div class="logo-container">
+            <svg class="logo" width="44" height="44" viewBox="0 0 44 44">
+                <circle cx="22" cy="22" r="20" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="2"/>
+                <text x="22" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="white">R</text>
+            </svg>
+            <span class="company-name">Company Name</span>
+        </div>
+        <div class="header-meta">
+            <span class="report-type">Аналитический отчёт</span>
+            <span class="report-date">21 января 2026</span>
+        </div>
+    </div>
+</header>
+
+<!-- TITLE -->
+<div class="report-title">
+    <h1>Название отчёта</h1>
+    <p class="subtitle">Краткое описание содержания и целей документа</p>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<nav class="toc">
+    <h2>Содержание</h2>
+    <ul>
+        <li><a href="#section-1">1. Метрики</a></li>
+        <li><a href="#section-2">2. Таблицы</a></li>
+        <li><a href="#section-3">3. Графики</a></li>
+        <li><a href="#section-3b">3B. Финансовые графики</a></li>
+        <li><a href="#section-3c">3C. Продвинутые графики</a></li>
+        <li><a href="#section-3d">3D. Timeline и Gantt</a></li>
+        <li><a href="#section-3e">3E. Сравнение и оценка</a></li>
+        <li><a href="#section-3f">3F. Таблицы с графиками</a></li>
+        <li><a href="#section-4">4. Информационные блоки</a></li>
+        <li><a href="#section-5">5. Списки</a></li>
+        <li><a href="#sources">Источники</a></li>
+    </ul>
+</nav>
+
+<!-- SECTION 1: METRICS -->
+<section id="section-1">
+    <h2>1. Метрики</h2>
+    
+    <p>Карточки метрик с цветовыми индикаторами:</p>
+    
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value">$5.5B</div>
+            <div class="metric-label">Стандартная метрика</div>
+        </div>
+        <div class="metric-card success">
+            <div class="metric-value">+45%</div>
+            <div class="metric-label">Позитивный рост</div>
+        </div>
+        <div class="metric-card warning">
+            <div class="metric-value">78%</div>
+            <div class="metric-label">Требует внимания</div>
+        </div>
+        <div class="metric-card danger">
+            <div class="metric-value">-12%</div>
+            <div class="metric-label">Негативный тренд</div>
+        </div>
+        <div class="metric-card info">
+            <div class="metric-value">156</div>
+            <div class="metric-label">Информационная</div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 2: TABLES -->
+<section id="section-2">
+    <h2>2. Таблицы</h2>
+    
+    <h3>2.1 Стандартная таблица</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Показатель A</th>
+                <th>Показатель B</th>
+                <th>Изменение</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Элемент 1</td>
+                <td class="numeric">1,234</td>
+                <td class="numeric">5,678</td>
+                <td class="numeric">+12%</td>
+            </tr>
+            <tr>
+                <td>Элемент 2</td>
+                <td class="numeric">2,345</td>
+                <td class="numeric">6,789</td>
+                <td class="numeric">+8%</td>
+            </tr>
+            <tr>
+                <td>Элемент 3</td>
+                <td class="numeric">3,456</td>
+                <td class="numeric">7,890</td>
+                <td class="numeric">-3%</td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="table-caption">Источник: внутренние данные компании</p>
+    
+    <h3>2.2 Таблица сравнения</h3>
+    <table class="table-comparison">
+        <thead>
+            <tr>
+                <th>Критерий</th>
+                <th>Вариант A</th>
+                <th>Вариант B</th>
+                <th>Вариант C</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Поддержка API</td>
+                <td class="cell-good">✓ Да</td>
+                <td class="cell-good">✓ Да</td>
+                <td class="cell-bad">✗ Нет</td>
+            </tr>
+            <tr>
+                <td>Мобильное приложение</td>
+                <td class="cell-good">✓ Да</td>
+                <td class="cell-bad">✗ Нет</td>
+                <td class="cell-good">✓ Да</td>
+            </tr>
+            <tr>
+                <td>Интеграция с CRM</td>
+                <td class="cell-neutral">~ Частично</td>
+                <td class="cell-good">✓ Да</td>
+                <td class="cell-bad">✗ Нет</td>
+            </tr>
+            <tr>
+                <td>Цена</td>
+                <td class="cell-highlight">$99/мес</td>
+                <td class="cell-neutral">$149/мес</td>
+                <td class="cell-good">$49/мес</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h3>2.3 Таблица с прогресс-барами</h3>
+    <table class="table-progress">
+        <thead>
+            <tr>
+                <th>Задача</th>
+                <th>Прогресс</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Разработка MVP</td>
+                <td>
+                    <div class="progress-bar">
+                        <div class="progress-fill success" style="width: 100%"></div>
+                        <span class="progress-label">100%</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>Интеграция платежей</td>
+                <td>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%"></div>
+                        <span class="progress-label">75%</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>Тестирование</td>
+                <td>
+                    <div class="progress-bar">
+                        <div class="progress-fill warning" style="width: 45%"></div>
+                        <span class="progress-label">45%</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>Документация</td>
+                <td>
+                    <div class="progress-bar">
+                        <div class="progress-fill danger" style="width: 20%"></div>
+                        <span class="progress-label">20%</span>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h3>2.4 Таблица со статусами</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Проект</th>
+                <th>Менеджер</th>
+                <th>Дедлайн</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Редизайн сайта</td>
+                <td>Иванов А.</td>
+                <td class="numeric">15.02.2026</td>
+                <td><span class="status-badge status-active">Активен</span></td>
+            </tr>
+            <tr>
+                <td>Мобильное приложение</td>
+                <td>Петрова М.</td>
+                <td class="numeric">01.03.2026</td>
+                <td><span class="status-badge status-pending">В процессе</span></td>
+            </tr>
+            <tr>
+                <td>API v2.0</td>
+                <td>Сидоров К.</td>
+                <td class="numeric">10.01.2026</td>
+                <td><span class="status-badge status-completed">Завершён</span></td>
+            </tr>
+            <tr>
+                <td>Legacy миграция</td>
+                <td>Козлова Е.</td>
+                <td class="numeric">—</td>
+                <td><span class="status-badge status-inactive">Приостановлен</span></td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h3>2.5 Компактная таблица</h3>
+    <table class="table-compact">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Категория</th>
+                <th>Значение</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>001</td><td>Альфа</td><td>Тип A</td><td class="numeric">1,234</td></tr>
+            <tr><td>002</td><td>Бета</td><td>Тип B</td><td class="numeric">2,345</td></tr>
+            <tr><td>003</td><td>Гамма</td><td>Тип A</td><td class="numeric">3,456</td></tr>
+            <tr><td>004</td><td>Дельта</td><td>Тип C</td><td class="numeric">4,567</td></tr>
+            <tr><td>005</td><td>Эпсилон</td><td>Тип B</td><td class="numeric">5,678</td></tr>
+        </tbody>
+    </table>
+    
+    <h3>2.6 Таблица без границ</h3>
+    <table class="table-borderless">
+        <thead>
+            <tr>
+                <th>Метрика</th>
+                <th>Текущее</th>
+                <th>Целевое</th>
+                <th>Разница</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Конверсия</td>
+                <td class="numeric">3.2%</td>
+                <td class="numeric">5.0%</td>
+                <td class="numeric" style="color: var(--danger)">-1.8%</td>
+            </tr>
+            <tr>
+                <td>Средний чек</td>
+                <td class="numeric">$85</td>
+                <td class="numeric">$100</td>
+                <td class="numeric" style="color: var(--danger)">-$15</td>
+            </tr>
+            <tr>
+                <td>Retention</td>
+                <td class="numeric">78%</td>
+                <td class="numeric">75%</td>
+                <td class="numeric" style="color: var(--success)">+3%</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- SECTION 3: CHARTS -->
+<section id="section-3">
+    <h2>3. Графики</h2>
+    
+    <h3>3.1 Линейный график (Line Chart)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Динамика выручки и прибыли за год</h4>
+        <div class="chart-wrapper" id="chart-line"></div>
+        <p class="chart-note">Данные в тысячах долларов. Источник: финансовая отчётность</p>
+    </div>
+    
+    <h3>3.2 Линейный с заливкой (Area Chart)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Рост пользовательской базы</h4>
+        <div class="chart-wrapper" id="chart-area"></div>
+        <p class="chart-note">Накопительный график активных пользователей</p>
+    </div>
+    
+    <h3>3.3 Столбчатая диаграмма (Bar Chart)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Продажи по регионам</h4>
+        <div class="chart-wrapper" id="chart-bar"></div>
+    </div>
+    
+    <h3>3.4 Горизонтальная столбчатая (Horizontal Bar)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Топ-5 источников трафика</h4>
+        <div class="chart-wrapper" id="chart-bar-h"></div>
+    </div>
+    
+    <h3>3.5 Сгруппированная столбчатая (Grouped Bar)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Сравнение показателей: План vs Факт</h4>
+        <div class="chart-wrapper" id="chart-bar-grouped"></div>
+    </div>
+    
+    <h3>3.6 Круговая диаграмма (Pie Chart)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Распределение расходов по категориям</h4>
+        <div class="chart-wrapper small" id="chart-pie"></div>
+    </div>
+    
+    <h3>3.7 Кольцевая диаграмма (Donut Chart)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Структура клиентской базы по сегментам</h4>
+        <div class="chart-wrapper small" id="chart-donut"></div>
+    </div>
+    
+    <h3>3.8 Radar-диаграмма (Radar Chart)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Сравнение компетенций: Мы vs Конкуренты</h4>
+        <div class="chart-wrapper" id="chart-radar"></div>
+    </div>
+    
+    <h3>3.9 Воронка (Funnel Chart)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Воронка продаж</h4>
+        <div class="chart-wrapper" id="chart-funnel"></div>
+    </div>
+    
+    <h3>3.10 Scatter Plot (Точечная диаграмма)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Корреляция: Бюджет маркетинга vs Продажи</h4>
+        <div class="chart-wrapper" id="chart-scatter"></div>
+    </div>
+    
+    <h3>3.11 Waterfall (Водопад)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Анализ изменения прибыли</h4>
+        <div class="chart-wrapper" id="chart-waterfall"></div>
+    </div>
+    
+    <h3>3.12 Gauge (Спидометр)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">NPS Score</h4>
+        <div class="chart-wrapper small" id="chart-gauge"></div>
+    </div>
+</section>
+
+<!-- SECTION 3B: FINANCIAL CHARTS -->
+<section id="section-3b">
+    <h2>3B. Финансовые графики</h2>
+    
+    <h3>3B.1 Candlestick (Японские свечи)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">AAPL — динамика акций за месяц</h4>
+        <div class="chart-wrapper" id="chart-candlestick"></div>
+        <p class="chart-note">Open-High-Low-Close данные. Зелёный — рост, красный — падение</p>
+    </div>
+    
+    <h3>3B.2 OHLC диаграмма</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">EUR/USD — валютная пара</h4>
+        <div class="chart-wrapper" id="chart-ohlc"></div>
+    </div>
+    
+    <h3>3B.3 Линейный график с объёмом</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">S&P 500 — индекс с объёмом торгов</h4>
+        <div class="chart-wrapper large" id="chart-price-volume"></div>
+    </div>
+    
+    <h3>3B.4 Сравнение активов</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Доходность портфеля: акции vs облигации vs золото</h4>
+        <div class="chart-wrapper" id="chart-assets"></div>
+        <p class="chart-note">Нормализованная доходность (база = 100)</p>
+    </div>
+    
+    <h3>3B.5 Распределение портфеля</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Аллокация инвестиционного портфеля</h4>
+        <div class="chart-wrapper small" id="chart-portfolio"></div>
+    </div>
+    
+    <h3>3B.6 Гистограмма доходности</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Распределение дневной доходности</h4>
+        <div class="chart-wrapper" id="chart-returns-hist"></div>
+        <p class="chart-note">Нормальное распределение с выбросами (fat tails)</p>
+    </div>
+    
+    <h3>3B.7 Drawdown от ATH</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Просадка от исторического максимума</h4>
+        <div class="chart-wrapper" id="chart-drawdown"></div>
+        <p class="chart-note">Текущий drawdown -25% в пределах нормы бычьего рынка. Медвежьи рынки: 2022 (-77%), 2018 (-84%), 2015 (-86%)</p>
+    </div>
+    
+    <h3>3B.8 График с 2 осями Y</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Цена BTC и корреляция с S&P 500</h4>
+        <div class="chart-wrapper" id="chart-dual-axis"></div>
+    </div>
+    
+    <h3>3B.9 График с 3 осями Y</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Макроэкономические индикаторы: ВВП, Инфляция, Ставка ФРС</h4>
+        <div class="chart-wrapper" id="chart-triple-axis"></div>
+    </div>
+    
+    <h3>3B.10 Сценарный прогноз</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Прогноз цены ETH: текущая цена + сценарии</h4>
+        <div class="chart-wrapper" id="chart-scenarios"></div>
+        <p class="chart-note">Вероятности сценариев на основе Monte Carlo симуляции (10,000 итераций)</p>
+    </div>
+</section>
+
+<!-- SECTION 3C: ADVANCED CHARTS -->
+<section id="section-3c">
+    <h2>3C. Продвинутые графики</h2>
+    
+    <h3>3C.1 Heatmap (Тепловая карта)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Корреляционная матрица активов</h4>
+        <div class="chart-wrapper" id="chart-heatmap"></div>
+    </div>
+    
+    <h3>3C.2 Treemap (Древовидная карта)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Структура расходов по департаментам</h4>
+        <div class="chart-wrapper" id="chart-treemap"></div>
+    </div>
+    
+    <h3>3C.3 Sankey (Диаграмма потоков)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Движение денежных потоков</h4>
+        <div class="chart-wrapper large" id="chart-sankey"></div>
+    </div>
+    
+    <h3>3C.4 Bullet Chart (Индикатор прогресса)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Выполнение KPI по направлениям</h4>
+        <div class="chart-wrapper" id="chart-bullet"></div>
+    </div>
+    
+    <h3>3C.5 Sparklines (Мини-графики)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">Ключевые метрики с трендами</h4>
+        <div class="sparklines-grid">
+            <div class="sparkline-card">
+                <div class="sparkline-header">
+                    <span class="sparkline-label">Выручка</span>
+                    <span class="sparkline-value success">$2.4M</span>
+                </div>
+                <div class="sparkline-chart" id="spark-revenue"></div>
+                <div class="sparkline-footer">
+                    <span class="sparkline-change success">+12.5%</span>
+                    <span class="sparkline-period">vs прошлый месяц</span>
+                </div>
+            </div>
+            <div class="sparkline-card">
+                <div class="sparkline-header">
+                    <span class="sparkline-label">Пользователи</span>
+                    <span class="sparkline-value primary">847K</span>
+                </div>
+                <div class="sparkline-chart" id="spark-users"></div>
+                <div class="sparkline-footer">
+                    <span class="sparkline-change success">+8.3%</span>
+                    <span class="sparkline-period">vs прошлый месяц</span>
+                </div>
+            </div>
+            <div class="sparkline-card">
+                <div class="sparkline-header">
+                    <span class="sparkline-label">Конверсия</span>
+                    <span class="sparkline-value warning">3.2%</span>
+                </div>
+                <div class="sparkline-chart" id="spark-conversion"></div>
+                <div class="sparkline-footer">
+                    <span class="sparkline-change danger">-0.4%</span>
+                    <span class="sparkline-period">vs прошлый месяц</span>
+                </div>
+            </div>
+            <div class="sparkline-card">
+                <div class="sparkline-header">
+                    <span class="sparkline-label">Churn Rate</span>
+                    <span class="sparkline-value danger">2.1%</span>
+                </div>
+                <div class="sparkline-chart" id="spark-churn"></div>
+                <div class="sparkline-footer">
+                    <span class="sparkline-change success">-0.3%</span>
+                    <span class="sparkline-period">vs прошлый месяц</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 3D: TIMELINE & GANTT -->
+<section id="section-3d">
+    <h2>3D. Timeline и Gantt</h2>
+    
+    <h3>3D.1 Timeline (Хронология)</h3>
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="timeline-marker success"></div>
+            <div class="timeline-content">
+                <div class="timeline-date">Q1 2024</div>
+                <div class="timeline-title">Запуск MVP</div>
+                <div class="timeline-desc">Выпущена первая версия продукта. Получено 500 первых пользователей.</div>
+                <div class="timeline-status completed">Завершено</div>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-marker success"></div>
+            <div class="timeline-content">
+                <div class="timeline-date">Q2 2024</div>
+                <div class="timeline-title">Раунд A — $5M</div>
+                <div class="timeline-desc">Закрыт раунд инвестиций. Расширение команды до 25 человек.</div>
+                <div class="timeline-status completed">Завершено</div>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-marker warning"></div>
+            <div class="timeline-content">
+                <div class="timeline-date">Q3 2024</div>
+                <div class="timeline-title">Масштабирование</div>
+                <div class="timeline-desc">Выход на 10,000 пользователей. Интеграция с ключевыми партнёрами.</div>
+                <div class="timeline-status in-progress">В процессе</div>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+                <div class="timeline-date">Q4 2024</div>
+                <div class="timeline-title">Выход на международный рынок</div>
+                <div class="timeline-desc">Запуск в EU и US. Локализация на 5 языков.</div>
+                <div class="timeline-status planned">Запланировано</div>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+                <div class="timeline-date">Q1 2025</div>
+                <div class="timeline-title">Раунд B — $20M</div>
+                <div class="timeline-desc">Цель: 100,000 пользователей, выручка $10M ARR.</div>
+                <div class="timeline-status planned">Запланировано</div>
+            </div>
+        </div>
+    </div>
+    
+    <h3>3D.2 Gantt Chart (Диаграмма Ганта)</h3>
+    <div class="chart-container">
+        <h4 class="chart-title">План проекта: Редизайн платформы</h4>
+        <div class="chart-wrapper large" id="chart-gantt"></div>
+    </div>
+</section>
+
+<!-- SECTION 3E: COMPARISON & SCORING -->
+<section id="section-3e">
+    <h2>3E. Сравнение и оценка</h2>
+    
+    <h3>3E.1 Before / After</h3>
+    <div class="comparison-container">
+        <div class="comparison-card before">
+            <div class="comparison-label">До внедрения</div>
+            <div class="comparison-metrics">
+                <div class="comparison-metric">
+                    <span class="metric-name">Время обработки заявки</span>
+                    <span class="metric-value">48 часов</span>
+                </div>
+                <div class="comparison-metric">
+                    <span class="metric-name">Ошибки в документах</span>
+                    <span class="metric-value">12%</span>
+                </div>
+                <div class="comparison-metric">
+                    <span class="metric-name">Удовлетворённость клиентов</span>
+                    <span class="metric-value">67%</span>
+                </div>
+                <div class="comparison-metric">
+                    <span class="metric-name">Стоимость обработки</span>
+                    <span class="metric-value">$45</span>
+                </div>
+            </div>
+        </div>
+        <div class="comparison-arrow">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+        </div>
+        <div class="comparison-card after">
+            <div class="comparison-label">После внедрения</div>
+            <div class="comparison-metrics">
+                <div class="comparison-metric">
+                    <span class="metric-name">Время обработки заявки</span>
+                    <span class="metric-value success">4 часа</span>
+                    <span class="metric-change success">-92%</span>
+                </div>
+                <div class="comparison-metric">
+                    <span class="metric-name">Ошибки в документах</span>
+                    <span class="metric-value success">0.5%</span>
+                    <span class="metric-change success">-96%</span>
+                </div>
+                <div class="comparison-metric">
+                    <span class="metric-name">Удовлетворённость клиентов</span>
+                    <span class="metric-value success">94%</span>
+                    <span class="metric-change success">+40%</span>
+                </div>
+                <div class="comparison-metric">
+                    <span class="metric-name">Стоимость обработки</span>
+                    <span class="metric-value success">$8</span>
+                    <span class="metric-change success">-82%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <h3>3E.2 Score Card</h3>
+    <div class="scorecard-grid">
+        <div class="scorecard">
+            <div class="scorecard-header">
+                <span class="scorecard-title">Продукт А</span>
+                <span class="scorecard-badge winner">Лидер</span>
+            </div>
+            <div class="scorecard-score">8.7<span class="scorecard-max">/10</span></div>
+            <div class="scorecard-breakdown">
+                <div class="score-row">
+                    <span>Функциональность</span>
+                    <div class="score-bar"><div class="score-fill" style="width: 90%"></div></div>
+                    <span>9.0</span>
+                </div>
+                <div class="score-row">
+                    <span>Удобство</span>
+                    <div class="score-bar"><div class="score-fill" style="width: 85%"></div></div>
+                    <span>8.5</span>
+                </div>
+                <div class="score-row">
+                    <span>Цена</span>
+                    <div class="score-bar"><div class="score-fill" style="width: 80%"></div></div>
+                    <span>8.0</span>
+                </div>
+                <div class="score-row">
+                    <span>Поддержка</span>
+                    <div class="score-bar"><div class="score-fill" style="width: 92%"></div></div>
+                    <span>9.2</span>
+                </div>
+            </div>
+        </div>
+        <div class="scorecard">
+            <div class="scorecard-header">
+                <span class="scorecard-title">Продукт Б</span>
+            </div>
+            <div class="scorecard-score muted">7.2<span class="scorecard-max">/10</span></div>
+            <div class="scorecard-breakdown">
+                <div class="score-row">
+                    <span>Функциональность</span>
+                    <div class="score-bar"><div class="score-fill warning" style="width: 75%"></div></div>
+                    <span>7.5</span>
+                </div>
+                <div class="score-row">
+                    <span>Удобство</span>
+                    <div class="score-bar"><div class="score-fill warning" style="width: 70%"></div></div>
+                    <span>7.0</span>
+                </div>
+                <div class="score-row">
+                    <span>Цена</span>
+                    <div class="score-bar"><div class="score-fill" style="width: 85%"></div></div>
+                    <span>8.5</span>
+                </div>
+                <div class="score-row">
+                    <span>Поддержка</span>
+                    <div class="score-bar"><div class="score-fill warning" style="width: 60%"></div></div>
+                    <span>6.0</span>
+                </div>
+            </div>
+        </div>
+        <div class="scorecard">
+            <div class="scorecard-header">
+                <span class="scorecard-title">Продукт В</span>
+            </div>
+            <div class="scorecard-score muted">6.8<span class="scorecard-max">/10</span></div>
+            <div class="scorecard-breakdown">
+                <div class="score-row">
+                    <span>Функциональность</span>
+                    <div class="score-bar"><div class="score-fill warning" style="width: 72%"></div></div>
+                    <span>7.2</span>
+                </div>
+                <div class="score-row">
+                    <span>Удобство</span>
+                    <div class="score-bar"><div class="score-fill danger" style="width: 55%"></div></div>
+                    <span>5.5</span>
+                </div>
+                <div class="score-row">
+                    <span>Цена</span>
+                    <div class="score-bar"><div class="score-fill" style="width: 90%"></div></div>
+                    <span>9.0</span>
+                </div>
+                <div class="score-row">
+                    <span>Поддержка</span>
+                    <div class="score-bar"><div class="score-fill warning" style="width: 65%"></div></div>
+                    <span>6.5</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <h3>3E.3 SWOT Analysis</h3>
+    <div class="swot-grid">
+        <div class="swot-card strengths">
+            <div class="swot-header">Сильные стороны</div>
+            <ul>
+                <li>Уникальная технология с патентной защитой</li>
+                <li>Сильная команда с опытом в индустрии</li>
+                <li>Высокий NPS (72) и retention (85%)</li>
+                <li>Низкая себестоимость производства</li>
+            </ul>
+        </div>
+        <div class="swot-card weaknesses">
+            <div class="swot-header">Слабые стороны</div>
+            <ul>
+                <li>Ограниченный маркетинговый бюджет</li>
+                <li>Зависимость от одного поставщика</li>
+                <li>Отсутствие мобильного приложения</li>
+                <li>Малая узнаваемость бренда</li>
+            </ul>
+        </div>
+        <div class="swot-card opportunities">
+            <div class="swot-header">Возможности</div>
+            <ul>
+                <li>Рост рынка на 25% ежегодно</li>
+                <li>Выход на международные рынки</li>
+                <li>Партнёрство с крупными игроками</li>
+                <li>Новые регуляторные требования в нашу пользу</li>
+            </ul>
+        </div>
+        <div class="swot-card threats">
+            <div class="swot-header">Угрозы</div>
+            <ul>
+                <li>Выход крупных конкурентов на рынок</li>
+                <li>Изменение законодательства</li>
+                <li>Экономическая нестабильность</li>
+                <li>Технологические disruption</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 3F: TABLES WITH SPARKLINES -->
+<section id="section-3f">
+    <h2>3F. Таблицы с графиками</h2>
+    
+    <h3>3F.1 Таблица с Sparklines</h3>
+    <table class="table-sparklines">
+        <thead>
+            <tr>
+                <th>Актив</th>
+                <th>Цена</th>
+                <th>Изм. 24ч</th>
+                <th>7 дней</th>
+                <th>Объём</th>
+                <th>Market Cap</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="asset-cell">
+                    <span class="asset-icon btc">₿</span>
+                    <span class="asset-name">Bitcoin</span>
+                    <span class="asset-ticker">BTC</span>
+                </td>
+                <td class="numeric">$67,245</td>
+                <td class="numeric success">+2.34%</td>
+                <td><div class="table-spark" id="spark-btc"></div></td>
+                <td class="numeric">$28.5B</td>
+                <td class="numeric">$1.32T</td>
+            </tr>
+            <tr>
+                <td class="asset-cell">
+                    <span class="asset-icon eth">Ξ</span>
+                    <span class="asset-name">Ethereum</span>
+                    <span class="asset-ticker">ETH</span>
+                </td>
+                <td class="numeric">$3,456</td>
+                <td class="numeric success">+1.87%</td>
+                <td><div class="table-spark" id="spark-eth"></div></td>
+                <td class="numeric">$15.2B</td>
+                <td class="numeric">$415B</td>
+            </tr>
+            <tr>
+                <td class="asset-cell">
+                    <span class="asset-icon sol">◎</span>
+                    <span class="asset-name">Solana</span>
+                    <span class="asset-ticker">SOL</span>
+                </td>
+                <td class="numeric">$142.50</td>
+                <td class="numeric danger">-0.92%</td>
+                <td><div class="table-spark" id="spark-sol"></div></td>
+                <td class="numeric">$2.8B</td>
+                <td class="numeric">$62B</td>
+            </tr>
+            <tr>
+                <td class="asset-cell">
+                    <span class="asset-icon ada">₳</span>
+                    <span class="asset-name">Cardano</span>
+                    <span class="asset-ticker">ADA</span>
+                </td>
+                <td class="numeric">$0.58</td>
+                <td class="numeric danger">-1.24%</td>
+                <td><div class="table-spark" id="spark-ada"></div></td>
+                <td class="numeric">$412M</td>
+                <td class="numeric">$20.5B</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h3>3F.2 Сортируемая таблица</h3>
+    <table class="table-sortable" id="sortable-table">
+        <thead>
+            <tr>
+                <th data-sort="string">Компания <span class="sort-icon"></span></th>
+                <th data-sort="number">Выручка (млн $) <span class="sort-icon"></span></th>
+                <th data-sort="number">Рост YoY <span class="sort-icon"></span></th>
+                <th data-sort="number">Маржа <span class="sort-icon"></span></th>
+                <th data-sort="number">P/E <span class="sort-icon"></span></th>
+                <th data-sort="string">Рейтинг <span class="sort-icon"></span></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Apple Inc.</td>
+                <td class="numeric" data-value="394328">394,328</td>
+                <td class="numeric success" data-value="8">+8%</td>
+                <td class="numeric" data-value="25.3">25.3%</td>
+                <td class="numeric" data-value="28.5">28.5</td>
+                <td><span class="rating-badge strong-buy">Strong Buy</span></td>
+            </tr>
+            <tr>
+                <td>Microsoft</td>
+                <td class="numeric" data-value="211915">211,915</td>
+                <td class="numeric success" data-value="12">+12%</td>
+                <td class="numeric" data-value="36.7">36.7%</td>
+                <td class="numeric" data-value="35.2">35.2</td>
+                <td><span class="rating-badge strong-buy">Strong Buy</span></td>
+            </tr>
+            <tr>
+                <td>Google</td>
+                <td class="numeric" data-value="307394">307,394</td>
+                <td class="numeric success" data-value="9">+9%</td>
+                <td class="numeric" data-value="27.5">27.5%</td>
+                <td class="numeric" data-value="24.8">24.8</td>
+                <td><span class="rating-badge buy">Buy</span></td>
+            </tr>
+            <tr>
+                <td>Amazon</td>
+                <td class="numeric" data-value="574785">574,785</td>
+                <td class="numeric success" data-value="11">+11%</td>
+                <td class="numeric" data-value="7.4">7.4%</td>
+                <td class="numeric" data-value="62.3">62.3</td>
+                <td><span class="rating-badge hold">Hold</span></td>
+            </tr>
+            <tr>
+                <td>Meta</td>
+                <td class="numeric" data-value="134902">134,902</td>
+                <td class="numeric success" data-value="16">+16%</td>
+                <td class="numeric" data-value="29.8">29.8%</td>
+                <td class="numeric" data-value="23.1">23.1</td>
+                <td><span class="rating-badge buy">Buy</span></td>
+            </tr>
+            <tr>
+                <td>Tesla</td>
+                <td class="numeric" data-value="96773">96,773</td>
+                <td class="numeric danger" data-value="-3">-3%</td>
+                <td class="numeric" data-value="11.2">11.2%</td>
+                <td class="numeric" data-value="48.7">48.7</td>
+                <td><span class="rating-badge sell">Sell</span></td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- SECTION 4: BLOCKS -->
+<section id="section-4">
+    <h2>4. Информационные блоки</h2>
+    
+    <h3>4.1 Ключевой вывод</h3>
+    <div class="block-insight">
+        <h4>Ключевой вывод</h4>
+        <p>Основной вывод из анализа данных. Используйте этот блок для выделения главных мыслей и результатов исследования.</p>
+    </div>
+    
+    <h3>4.2 Приоритет</h3>
+    <div class="block-priority">
+        <h4>Приоритетное направление</h4>
+        <p>Описание ключевого направления, требующего первоочередного внимания и ресурсов.</p>
+    </div>
+    
+    <h3>4.3 Критическая проблема</h3>
+    <div class="block-critical">
+        <h4>Критическая проблема</h4>
+        <div class="block-metric">28x</div>
+        <p>Критический разрыв между текущим состоянием и целевым показателем требует немедленных действий.</p>
+    </div>
+    
+    <h3>4.4 Предупреждение</h3>
+    <div class="block-warning">
+        <h4>Предупреждение</h4>
+        <p>Информация, требующая повышенного внимания. Возможны риски при игнорировании.</p>
+    </div>
+    
+    <h3>4.5 Успех</h3>
+    <div class="block-success">
+        <h4>Успешный результат</h4>
+        <div class="block-metric">+156%</div>
+        <p>Достигнуты запланированные показатели. Рост превысил ожидания.</p>
+    </div>
+    
+    <h3>4.6 Информация</h3>
+    <div class="block-info">
+        <h4>Дополнительная информация</h4>
+        <p>Нейтральный информационный блок для пояснений, примечаний и дополнительного контекста.</p>
+    </div>
+</section>
+
+<!-- SECTION 5: LISTS -->
+<section id="section-5">
+    <h2>5. Списки</h2>
+    
+    <h3>5.1 Стандартный список</h3>
+    <ul>
+        <li>Первый пункт списка</li>
+        <li>Второй пункт списка</li>
+        <li>Третий пункт списка</li>
+    </ul>
+    
+    <h3>5.2 Список с галочками</h3>
+    <ul class="list-check">
+        <li>Выполненная задача</li>
+        <li>Достигнутая цель</li>
+        <li>Подтверждённый факт</li>
+    </ul>
+    
+    <h3>5.3 Список с крестиками</h3>
+    <ul class="list-cross">
+        <li>Невыполненное требование</li>
+        <li>Отклонённый вариант</li>
+        <li>Выявленная проблема</li>
+    </ul>
+    
+    <h3>5.4 Список со стрелками</h3>
+    <ul class="list-arrow">
+        <li>Рекомендуемое действие</li>
+        <li>Следующий шаг</li>
+        <li>Направление развития</li>
+    </ul>
+    
+    <h3>5.5 Нумерованный список</h3>
+    <ol>
+        <li>Первый этап</li>
+        <li>Второй этап</li>
+        <li>Третий этап</li>
+    </ol>
+</section>
+
+<!-- SOURCES -->
+<footer class="sources" id="sources">
+    <h2>Источники</h2>
+    <ol>
+        <li id="ref-1"><a href="https://example.com">Название источника 1 — описание и ссылка</a></li>
+        <li id="ref-2"><a href="https://example.com">Название источника 2 — описание и ссылка</a></li>
+        <li id="ref-3"><a href="https://example.com">Название источника 3 — описание и ссылка</a></li>
+    </ol>
+</footer>
+
+<!-- BACK TO TOP -->
+<button id="back-to-top" aria-label="Наверх">↑</button>
+
+<!-- SCRIPTS -->
+<script>
+// Проверка загрузки Plotly
+if (typeof Plotly === 'undefined') {
+    document.querySelectorAll('.chart-wrapper').forEach(el => {
+        el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6B7280;font-size:14px;">Plotly не загружен. Проверьте подключение к интернету.</div>';
+    });
+} else {
+
+    // =============================================
+    // НАСТРОЙКИ ИЗ ГЛОБАЛЬНОГО CONFIG
+    // =============================================
+    
+    const COLORS = {
+        primary: CONFIG.brand.primary,
+        primaryLight: CONFIG.colors.successLight.replace('5, 150, 105', '37, 99, 235'), // Генерим из primary
+        ...CONFIG.colors,
+        text: CONFIG.text.secondary,
+        textMuted: CONFIG.text.muted,
+        grid: CONFIG.border.color,
+        background: 'transparent'
+    };
+    
+    const FONT = CONFIG.font.family;
+    const FSIZE = CONFIG.charts.fontSize;
+
+    // === БАЗОВЫЙ LAYOUT ===
+    const DEFAULT_LAYOUT = {
+        font: { family: FONT, color: COLORS.text, size: FSIZE.axis },
+        paper_bgcolor: COLORS.background,
+        plot_bgcolor: COLORS.background,
+        margin: { l: 60, r: 40, t: 30, b: 60 },
+        showlegend: true,
+        legend: { 
+            orientation: 'h', 
+            y: -0.18, 
+            x: 0.5, 
+            xanchor: 'center',
+            font: { size: FSIZE.legend }
+        },
+        hoverlabel: { 
+            bgcolor: '#1F2937', 
+            font: { color: 'white', size: FSIZE.axis, family: FONT } 
+        }
+    };
+
+    const AXIS_STYLE = {
+        gridcolor: COLORS.grid,
+        linecolor: COLORS.grid,
+        tickfont: { size: FSIZE.tick, family: FONT },
+        titlefont: { size: FSIZE.axis, family: FONT }
+    };
+    
+    const CHART_CONFIG = CONFIG.charts;
+
+    // === 3.1 ЛИНЕЙНЫЙ ГРАФИК ===
+    Plotly.newPlot('chart-line', [
+        {
+            x: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+            y: [120, 135, 142, 158, 175, 183, 195, 210, 228, 245, 267, 290],
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Выручка',
+            line: { color: COLORS.primary, width: 3, shape: 'spline' },
+            marker: { size: 8, color: COLORS.primary }
+        },
+        {
+            x: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+            y: [24, 28, 31, 38, 45, 52, 58, 67, 78, 89, 102, 118],
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Прибыль',
+            line: { color: COLORS.success, width: 3, shape: 'spline' },
+            marker: { size: 8, color: COLORS.success }
+        }
+    ], {
+        ...DEFAULT_LAYOUT,
+        xaxis: { ...AXIS_STYLE, title: 'Месяц' },
+        yaxis: { ...AXIS_STYLE, title: 'Тыс. $' }
+    }, { responsive: true });
+
+    // === 3.2 AREA CHART ===
+    Plotly.newPlot('chart-area', [
+        {
+            x: ['Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024', 'Q1 2025', 'Q2 2025'],
+            y: [15000, 28000, 52000, 89000, 145000, 234000],
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Пользователи',
+            fill: 'tozeroy',
+            fillcolor: COLORS.primaryLight,
+            line: { color: COLORS.primary, width: 3, shape: 'spline' }
+        }
+    ], {
+        ...DEFAULT_LAYOUT,
+        showlegend: false,
+        xaxis: { ...AXIS_STYLE },
+        yaxis: { ...AXIS_STYLE, title: 'Кол-во пользователей' },
+        annotations: [{
+            x: 'Q2 2025',
+            y: 234000,
+            text: '+1460% рост',
+            showarrow: true,
+            arrowhead: 2,
+            ax: -50,
+            ay: -40,
+            font: { color: COLORS.primary, size: 12 }
+        }]
+    }, { responsive: true });
+
+    // === 3.3 СТОЛБЧАТАЯ ДИАГРАММА ===
+    Plotly.newPlot('chart-bar', [{
+        x: ['Москва', 'Санкт-Петербург', 'Казань', 'Новосибирск', 'Екатеринбург', 'Краснодар'],
+        y: [4500, 2800, 1200, 980, 850, 720],
+        type: 'bar',
+        marker: {
+            color: [COLORS.primary, COLORS.primary, COLORS.success, COLORS.success, COLORS.warning, COLORS.warning]
+        },
+        text: ['$4.5M', '$2.8M', '$1.2M', '$980K', '$850K', '$720K'],
+        textposition: 'outside'
+    }], {
+        ...DEFAULT_LAYOUT,
+        showlegend: false,
+        xaxis: { ...AXIS_STYLE },
+        yaxis: { ...AXIS_STYLE, title: 'Продажи (тыс. $)' }
+    }, { responsive: true });
+
+    // === 3.4 ГОРИЗОНТАЛЬНАЯ СТОЛБЧАТАЯ ===
+    Plotly.newPlot('chart-bar-h', [{
+        y: ['Органический поиск', 'Прямой трафик', 'Реферальный', 'Социальные сети', 'Email-рассылки'],
+        x: [45200, 28100, 15600, 12400, 8700],
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+            color: [COLORS.success, COLORS.primary, COLORS.info, COLORS.purple, COLORS.warning]
+        },
+        text: ['45.2K', '28.1K', '15.6K', '12.4K', '8.7K'],
+        textposition: 'outside'
+    }], {
+        ...DEFAULT_LAYOUT,
+        showlegend: false,
+        xaxis: { ...AXIS_STYLE, title: 'Посещения' },
+        yaxis: { ...AXIS_STYLE, automargin: true },
+        margin: { l: 140, r: 60, t: 20, b: 60 }
+    }, { responsive: true });
+
+    // === 3.5 СГРУППИРОВАННАЯ СТОЛБЧАТАЯ ===
+    Plotly.newPlot('chart-bar-grouped', [
+        {
+            x: ['Q1', 'Q2', 'Q3', 'Q4'],
+            y: [100, 120, 140, 160],
+            name: 'План',
+            type: 'bar',
+            marker: { color: COLORS.gray }
+        },
+        {
+            x: ['Q1', 'Q2', 'Q3', 'Q4'],
+            y: [95, 135, 128, 175],
+            name: 'Факт',
+            type: 'bar',
+            marker: { color: COLORS.primary }
+        }
+    ], {
+        ...DEFAULT_LAYOUT,
+        barmode: 'group',
+        xaxis: { ...AXIS_STYLE, title: 'Квартал' },
+        yaxis: { ...AXIS_STYLE, title: 'Продажи (млн руб.)' }
+    }, { responsive: true });
+
+    // === 3.6 КРУГОВАЯ ДИАГРАММА ===
+    Plotly.newPlot('chart-pie', [{
+        labels: ['Маркетинг', 'Разработка', 'Операции', 'Продажи', 'Администрация'],
+        values: [280, 450, 320, 180, 120],
+        type: 'pie',
+        marker: {
+            colors: [COLORS.primary, COLORS.success, COLORS.warning, COLORS.purple, COLORS.gray]
+        },
+        textinfo: 'label+percent',
+        textposition: 'outside',
+        hole: 0
+    }], {
+        ...DEFAULT_LAYOUT,
+        showlegend: false
+    }, { responsive: true });
+
+    // === 3.7 КОЛЬЦЕВАЯ ДИАГРАММА ===
+    Plotly.newPlot('chart-donut', [{
+        labels: ['Enterprise', 'SMB', 'Startup', 'Individual'],
+        values: [42, 28, 18, 12],
+        type: 'pie',
+        hole: 0.5,
+        marker: {
+            colors: [COLORS.primary, COLORS.success, COLORS.warning, COLORS.info]
+        },
+        textinfo: 'percent',
+        textposition: 'inside',
+        textfont: { size: 14, color: 'white' }
+    }], {
+        ...DEFAULT_LAYOUT,
+        annotations: [{
+            text: '1,247<br>клиентов',
+            x: 0.5, y: 0.5,
+            font: { size: 16, color: COLORS.primary },
+            showarrow: false
+        }]
+    }, { responsive: true });
+
+    // === 3.8 RADAR ДИАГРАММА ===
+    Plotly.newPlot('chart-radar', [{
+        type: 'scatterpolar',
+        r: [9, 7, 8, 6, 8, 9, 9],
+        theta: ['Продукт', 'Маркетинг', 'Продажи', 'Поддержка', 'Технологии', 'Цена', 'Продукт'],
+        fill: 'toself',
+        name: 'Наша компания',
+        fillcolor: COLORS.primaryLight,
+        line: { color: COLORS.primary, width: 2 }
+    }, {
+        type: 'scatterpolar',
+        r: [7, 9, 7, 8, 6, 6, 7],
+        theta: ['Продукт', 'Маркетинг', 'Продажи', 'Поддержка', 'Технологии', 'Цена', 'Продукт'],
+        fill: 'toself',
+        name: 'Конкурент A',
+        fillcolor: COLORS.dangerLight,
+        line: { color: COLORS.danger, width: 2 }
+    }, {
+        type: 'scatterpolar',
+        r: [6, 6, 9, 7, 8, 8, 6],
+        theta: ['Продукт', 'Маркетинг', 'Продажи', 'Поддержка', 'Технологии', 'Цена', 'Продукт'],
+        fill: 'toself',
+        name: 'Конкурент B',
+        fillcolor: COLORS.successLight,
+        line: { color: COLORS.success, width: 2 }
+    }], {
+        ...DEFAULT_LAYOUT,
+        polar: {
+            radialaxis: { visible: true, range: [0, 10], tickvals: [2, 4, 6, 8, 10] }
+        }
+    }, { responsive: true });
+
+    // === 3.9 ВОРОНКА ===
+    Plotly.newPlot('chart-funnel', [{
+        type: 'funnel',
+        y: ['Посетители сайта', 'Лиды', 'Квалифицированные лиды', 'Предложения', 'Закрытые сделки'],
+        x: [15000, 4500, 1800, 720, 234],
+        textinfo: 'value+percent initial',
+        textposition: 'inside',
+        marker: {
+            color: [COLORS.primary, COLORS.info, COLORS.warning, COLORS.orange, COLORS.success]
+        },
+        connector: { line: { color: '#E5E7EB', width: 2 } }
+    }], {
+        ...DEFAULT_LAYOUT,
+        showlegend: false,
+        margin: { l: 150, r: 40, t: 20, b: 40 }
+    }, { responsive: true });
+
+    // === 3.10 SCATTER PLOT ===
+    Plotly.newPlot('chart-scatter', [{
+        x: [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60],
+        y: [120, 180, 210, 290, 350, 420, 480, 510, 590, 680, 750],
+        mode: 'markers',
+        type: 'scatter',
+        name: 'Данные',
+        marker: {
+            size: 14,
+            color: COLORS.primary,
+            opacity: 0.7,
+            line: { color: COLORS.primary, width: 2 }
+        }
+    }, {
+        x: [10, 60],
+        y: [100, 780],
+        mode: 'lines',
+        type: 'scatter',
+        name: 'Тренд',
+        line: { color: COLORS.danger, width: 2, dash: 'dash' }
+    }], {
+        ...DEFAULT_LAYOUT,
+        xaxis: { ...AXIS_STYLE, title: 'Бюджет маркетинга (тыс. $)' },
+        yaxis: { ...AXIS_STYLE, title: 'Продажи (тыс. $)' },
+        annotations: [{
+            x: 55,
+            y: 680,
+            text: 'R2 = 0.94',
+            showarrow: false,
+            font: { size: 12, color: COLORS.danger }
+        }]
+    }, { responsive: true });
+
+    // === 3.11 WATERFALL ===
+    Plotly.newPlot('chart-waterfall', [{
+        type: 'waterfall',
+        orientation: 'v',
+        x: ['Начало года', 'Продажи', 'Услуги', 'Себестоимость', 'Маркетинг', 'Операции', 'Налоги', 'Итого'],
+        y: [100, 85, 35, -45, -25, -30, -15, 0],
+        measure: ['absolute', 'relative', 'relative', 'relative', 'relative', 'relative', 'relative', 'total'],
+        text: ['$100K', '+$85K', '+$35K', '-$45K', '-$25K', '-$30K', '-$15K', '$105K'],
+        textposition: 'outside',
+        connector: { line: { color: '#E5E7EB' } },
+        increasing: { marker: { color: COLORS.success } },
+        decreasing: { marker: { color: COLORS.danger } },
+        totals: { marker: { color: COLORS.primary } }
+    }], {
+        ...DEFAULT_LAYOUT,
+        showlegend: false,
+        xaxis: { ...AXIS_STYLE },
+        yaxis: { ...AXIS_STYLE, title: 'Тыс. $' }
+    }, { responsive: true });
+
+    // === 3.12 GAUGE ===
+    Plotly.newPlot('chart-gauge', [{
+        type: 'indicator',
+        mode: 'gauge+number+delta',
+        value: 72,
+        delta: { reference: 65, increasing: { color: COLORS.success } },
+        title: { text: 'NPS Score', font: { size: 18, color: '#374151' } },
+        gauge: {
+            axis: { range: [-100, 100], tickwidth: 1, tickcolor: '#E5E7EB' },
+            bar: { color: COLORS.primary, thickness: 0.75 },
+            bgcolor: 'white',
+            borderwidth: 2,
+            bordercolor: '#E5E7EB',
+            steps: [
+                { range: [-100, 0], color: COLORS.dangerLight },
+                { range: [0, 50], color: COLORS.warningLight },
+                { range: [50, 100], color: COLORS.successLight }
+            ],
+            threshold: {
+                line: { color: COLORS.success, width: 4 },
+                thickness: 0.75,
+                value: 70
+            }
+        }
+    }], {
+        ...DEFAULT_LAYOUT,
+        margin: { l: 30, r: 30, t: 60, b: 30 }
+    }, { responsive: true });
+
+    // =============================================
+    // ФИНАНСОВЫЕ ГРАФИКИ
+    // =============================================
+
+    // Генерация дат для финансовых данных
+    const financeDates = [];
+    const startDate = new Date('2025-12-01');
+    for (let i = 0; i < 22; i++) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
+        if (d.getDay() !== 0 && d.getDay() !== 6) { // Пропускаем выходные
+            financeDates.push(d.toISOString().split('T')[0]);
+        }
+    }
+
+    // === 3B.1 CANDLESTICK ===
+    const candleData = {
+        open:  [178.5, 179.2, 181.0, 180.5, 182.3, 183.1, 181.8, 184.2, 185.0, 183.5, 186.2, 187.0, 185.5, 188.2, 189.5, 188.0],
+        high:  [180.2, 182.5, 183.2, 183.8, 184.5, 185.0, 184.8, 186.5, 187.2, 187.8, 188.5, 189.2, 189.0, 191.5, 192.0, 190.5],
+        low:   [177.8, 178.5, 180.2, 179.5, 181.5, 182.0, 180.5, 183.5, 183.8, 182.5, 185.0, 185.8, 184.2, 187.5, 188.2, 186.5],
+        close: [179.2, 181.0, 180.5, 182.3, 183.1, 181.8, 184.2, 185.0, 183.5, 186.2, 187.0, 185.5, 188.2, 189.5, 188.0, 189.8]
+    };
+
+    Plotly.newPlot('chart-candlestick', [{
+        type: 'candlestick',
+        x: financeDates.slice(0, 16),
+        open: candleData.open,
+        high: candleData.high,
+        low: candleData.low,
+        close: candleData.close,
+        increasing: { line: { color: COLORS.success }, fillcolor: COLORS.success },
+        decreasing: { line: { color: COLORS.danger }, fillcolor: COLORS.danger }
+    }], {
+        ...DEFAULT_LAYOUT,
+        showlegend: false,
+        xaxis: { ...AXIS_STYLE, title: 'Дата', rangeslider: { visible: false } },
+        yaxis: { ...AXIS_STYLE, title: 'Цена ($)' }
+    }, { responsive: true });
+
+    // === 3B.2 OHLC ===
+    const ohlcData = {
+        open:  [1.0850, 1.0865, 1.0878, 1.0862, 1.0890, 1.0905, 1.0888, 1.0920, 1.0935, 1.0918, 1.0945, 1.0960, 1.0942, 1.0975, 1.0990, 1.0968],
+        high:  [1.0872, 1.0890, 1.0895, 1.0898, 1.0915, 1.0922, 1.0928, 1.0945, 1.0955, 1.0958, 1.0972, 1.0985, 1.0980, 1.1005, 1.1012, 1.0995],
+        low:   [1.0842, 1.0855, 1.0860, 1.0848, 1.0878, 1.0885, 1.0875, 1.0908, 1.0912, 1.0905, 1.0932, 1.0940, 1.0928, 1.0962, 1.0965, 1.0952],
+        close: [1.0865, 1.0878, 1.0862, 1.0890, 1.0905, 1.0888, 1.0920, 1.0935, 1.0918, 1.0945, 1.0960, 1.0942, 1.0975, 1.0990, 1.0968, 1.0985]
+    };
+
+    Plotly.newPlot('chart-ohlc', [{
+        type: 'ohlc',
+        x: financeDates.slice(0, 16),
+        open: ohlcData.open,
+        high: ohlcData.high,
+        low: ohlcData.low,
+        close: ohlcData.close,
+        increasing: { line: { color: COLORS.success } },
+        decreasing: { line: { color: COLORS.danger } }
+    }], {
+        ...DEFAULT_LAYOUT,
+        showlegend: false,
+        xaxis: { ...AXIS_STYLE, title: 'Дата', rangeslider: { visible: false } },
+        yaxis: { ...AXIS_STYLE, title: 'EUR/USD' }
+    }, { responsive: true });
+
+    // === 3B.3 PRICE + VOLUME ===
+    const priceData = [4750, 4768, 4782, 4755, 4790, 4812, 4798, 4835, 4856, 4842, 4878, 4895, 4865, 4910, 4932, 4918];
+    const volumeData = [3.2, 2.8, 3.5, 4.1, 2.9, 3.8, 3.1, 4.5, 3.9, 3.2, 4.8, 4.2, 3.6, 5.1, 4.7, 3.8];
+
+    Plotly.newPlot('chart-price-volume', [{
+        x: financeDates.slice(0, 16),
+        y: priceData,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'S&P 500',
+        line: { color: COLORS.primary, width: 2 },
+        yaxis: 'y2'
+    }, {
+        x: financeDates.slice(0, 16),
+        y: volumeData,
+        type: 'bar',
+        name: 'Объём (млрд)',
+        marker: { color: COLORS.gray, opacity: 0.4 },
+        yaxis: 'y'
+    }], {
+        ...DEFAULT_LAYOUT,
+        xaxis: { ...AXIS_STYLE, title: 'Дата', domain: [0, 1] },
+        yaxis: { 
+            ...AXIS_STYLE, 
+            title: 'Объём (млрд $)', 
+            side: 'right',
+            range: [0, 18],
+            showgrid: false,
+            tickfont: { size: 10, color: COLORS.gray }
+        },
+        yaxis2: { 
+            ...AXIS_STYLE,
+            title: 'Индекс', 
+            side: 'left',
+            overlaying: 'y',
+            showgrid: true
+        },
+        legend: { orientation: 'h', y: 1.08, x: 0.5, xanchor: 'center' }
+    }, { responsive: true });
+
+    // === 3B.4 СРАВНЕНИЕ АКТИВОВ ===
+    const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+    const stocks = [100, 103, 98, 105, 112, 108, 115, 122, 118, 125, 132, 138];
+    const bonds = [100, 100.5, 101, 101.2, 101.8, 102, 102.5, 103, 103.2, 103.8, 104, 104.5];
+    const gold = [100, 102, 105, 103, 108, 112, 110, 115, 118, 116, 120, 124];
+
+    Plotly.newPlot('chart-assets', [{
+        x: months,
+        y: stocks,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Акции (SPY)',
+        line: { color: COLORS.primary, width: 2 },
+        marker: { size: 6 }
+    }, {
+        x: months,
+        y: bonds,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Облигации (BND)',
+        line: { color: COLORS.info, width: 2 },
+        marker: { size: 6 }
+    }, {
+        x: months,
+        y: gold,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Золото (GLD)',
+        line: { color: COLORS.warning, width: 2 },
+        marker: { size: 6 }
+    }], {
+        ...DEFAULT_LAYOUT,
+        xaxis: { ...AXIS_STYLE },
+        yaxis: { ...AXIS_STYLE, title: 'Доходность (база=100)' },
+        shapes: [{
+            type: 'line',
+            x0: months[0], x1: months[11],
+            y0: 100, y1: 100,
+            line: { color: '#9CA3AF', width: 1, dash: 'dash' }
+        }]
+    }, { responsive: true });
+
+    // === 3B.5 ПОРТФЕЛЬ ===
+    Plotly.newPlot('chart-portfolio', [{
+        labels: ['Акции США', 'Акции развив. рынков', 'Облигации', 'Недвижимость (REIT)', 'Золото', 'Денежные средства'],
+        values: [40, 15, 25, 10, 5, 5],
+        type: 'pie',
+        hole: 0.4,
+        marker: {
+            colors: [COLORS.primary, COLORS.purple, COLORS.info, COLORS.success, COLORS.warning, COLORS.gray]
+        },
+        textinfo: 'label+percent',
+        textposition: 'outside',
+        textfont: { size: 11 }
+    }], {
+        ...DEFAULT_LAYOUT,
+        showlegend: false,
+        annotations: [{
+            text: '$1.2M<br>портфель',
+            x: 0.5, y: 0.5,
+            font: { size: 14, color: COLORS.primary },
+            showarrow: false
+        }]
+    }, { responsive: true });
+
+    // === 3B.6 ГИСТОГРАММА ДОХОДНОСТИ ===
+    // Генерируем данные с "толстыми хвостами"
+    const returns = [];
+    for (let i = 0; i < 252; i++) {
+        let r = (Math.random() - 0.5) * 2; // базовое распределение
+        if (Math.random() < 0.05) r *= 3; // выбросы 5% времени
+        returns.push(r);
+    }
+
+    Plotly.newPlot('chart-returns-hist', [{
+        x: returns,
+        type: 'histogram',
+        nbinsx: 30,
+        marker: { 
+            color: COLORS.primary,
+            line: { color: COLORS.primaryLight, width: 1 }
+        },
+        name: 'Дневная доходность'
+    }], {
+        ...DEFAULT_LAYOUT,
+        showlegend: false,
+        xaxis: { ...AXIS_STYLE, title: 'Доходность (%)' },
+        yaxis: { ...AXIS_STYLE, title: 'Частота' },
+        shapes: [{
+            type: 'line',
+            x0: 0, x1: 0,
+            y0: 0, y1: 50,
+            line: { color: COLORS.danger, width: 2, dash: 'dash' }
+        }],
+        annotations: [{
+            x: -2.5,
+            y: 35,
+            text: 'Fat tail',
+            showarrow: true,
+            arrowhead: 2,
+            ax: 30,
+            ay: -20,
+            font: { size: 11, color: COLORS.danger }
+        }]
+    }, { responsive: true });
+
+    // === 3B.7 DRAWDOWN ===
+    const ddDates = ['Jan 2022', 'Jul 2022', 'Jan 2023', 'Jul 2023', 'Jan 2024', 'Jul 2024', 'Jan 2025', 'Jul 2025', 'Jan 2026'];
+    const ddValues = [-48, -72, -77, -65, -38, -28, -18, -8, -25];
+
+    Plotly.newPlot('chart-drawdown', [{
+        x: ddDates,
+        y: ddValues,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Drawdown %',
+        line: { color: COLORS.danger, width: CHART_CONFIG.lineWidth.normal },
+        marker: { size: CHART_CONFIG.markerSize.normal, color: COLORS.danger },
+        fill: 'tozeroy',
+        fillcolor: COLORS.dangerLight
+    }], {
+        ...DEFAULT_LAYOUT,
+        showlegend: true,
+        legend: { x: 0, y: -0.2, font: { size: FSIZE.legend } },
+        xaxis: { ...AXIS_STYLE, title: 'Date' },
+        yaxis: { ...AXIS_STYLE, title: 'Drawdown (%)', range: [-100, 5] },
+        shapes: [{
+            type: 'line',
+            x0: ddDates[0], x1: ddDates[ddDates.length - 1],
+            y0: -30, y1: -30,
+            line: { color: COLORS.warning, width: CHART_CONFIG.lineWidth.normal, dash: 'dash' }
+        }, {
+            type: 'line',
+            x0: ddDates[0], x1: ddDates[ddDates.length - 1],
+            y0: -75, y1: -75,
+            line: { color: COLORS.warning, width: CHART_CONFIG.lineWidth.normal, dash: 'dash' }
+        }],
+        annotations: [{
+            x: 'Jan 2023',
+            y: -77,
+            text: '2022 Bear: -77%',
+            showarrow: true,
+            arrowhead: 2,
+            ax: 40,
+            ay: 30,
+            font: { size: FSIZE.annotation, color: COLORS.danger }
+        }, {
+            x: 'Jan 2026',
+            y: -25,
+            text: 'Current: -25%',
+            showarrow: true,
+            arrowhead: 2,
+            ax: -40,
+            ay: -30,
+            font: { size: FSIZE.annotation, color: COLORS.danger }
+        }]
+    }, { responsive: true });
+
+    // === 3B.8 DUAL AXIS (2 оси Y) ===
+    const dualMonths = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+    const btcPrice = [42000, 45000, 52000, 58000, 62000, 55000, 48000, 52000, 58000, 65000, 72000, 68000];
+    const correlation = [0.45, 0.52, 0.68, 0.72, 0.65, 0.48, 0.35, 0.42, 0.55, 0.62, 0.58, 0.52];
+
+    Plotly.newPlot('chart-dual-axis', [{
+        x: dualMonths,
+        y: btcPrice,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'BTC Price ($)',
+        line: { color: COLORS.warning, width: CHART_CONFIG.lineWidth.thick },
+        marker: { size: CHART_CONFIG.markerSize.large },
+        yaxis: 'y'
+    }, {
+        x: dualMonths,
+        y: correlation,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Корреляция с S&P',
+        line: { color: COLORS.info, width: CHART_CONFIG.lineWidth.normal, dash: 'dot' },
+        marker: { size: CHART_CONFIG.markerSize.small },
+        yaxis: 'y2'
+    }], {
+        ...DEFAULT_LAYOUT,
+        xaxis: { ...AXIS_STYLE },
+        yaxis: { 
+            ...AXIS_STYLE, 
+            title: 'BTC Price ($)', 
+            titlefont: { color: COLORS.warning, size: FSIZE.axis },
+            tickfont: { color: COLORS.warning, size: FSIZE.tick },
+            side: 'left'
+        },
+        yaxis2: { 
+            ...AXIS_STYLE,
+            title: 'Корреляция', 
+            titlefont: { color: COLORS.info, size: FSIZE.axis },
+            tickfont: { color: COLORS.info, size: FSIZE.tick },
+            overlaying: 'y',
+            side: 'right',
+            range: [0, 1]
+        },
+        legend: { orientation: 'h', y: 1.08, x: 0.5, xanchor: 'center', font: { size: FSIZE.legend } }
+    }, { responsive: true });
+
+    // === 3B.9 TRIPLE AXIS (3 оси Y) ===
+    const quarters = ['Q1 22', 'Q2 22', 'Q3 22', 'Q4 22', 'Q1 23', 'Q2 23', 'Q3 23', 'Q4 23', 'Q1 24', 'Q2 24', 'Q3 24', 'Q4 24'];
+    const gdpGrowth = [3.5, 2.8, 1.9, 0.5, -0.2, 0.8, 1.5, 2.1, 2.8, 3.2, 2.9, 2.5];
+    const inflation = [7.5, 8.6, 8.3, 7.1, 6.4, 5.0, 3.7, 3.4, 3.2, 3.3, 2.9, 2.7];
+    const fedRate = [0.25, 1.0, 2.5, 4.0, 4.75, 5.0, 5.25, 5.5, 5.5, 5.5, 5.25, 5.0];
+
+    Plotly.newPlot('chart-triple-axis', [{
+        x: quarters,
+        y: gdpGrowth,
+        type: 'bar',
+        name: 'ВВП YoY (%)',
+        marker: { color: COLORS.success, opacity: 0.7 },
+        yaxis: 'y'
+    }, {
+        x: quarters,
+        y: inflation,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Инфляция CPI (%)',
+        line: { color: COLORS.danger, width: CHART_CONFIG.lineWidth.thick },
+        marker: { size: CHART_CONFIG.markerSize.normal },
+        yaxis: 'y2'
+    }, {
+        x: quarters,
+        y: fedRate,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Ставка ФРС (%)',
+        line: { color: COLORS.primary, width: CHART_CONFIG.lineWidth.normal, dash: 'dash' },
+        marker: { size: CHART_CONFIG.markerSize.small, symbol: 'square' },
+        yaxis: 'y3'
+    }], {
+        ...DEFAULT_LAYOUT,
+        margin: { l: 55, r: 100, t: 40, b: 60 },
+        xaxis: { ...AXIS_STYLE },
+        yaxis: { 
+            ...AXIS_STYLE, 
+            title: 'ВВП (%)', 
+            titlefont: { color: COLORS.success, size: FSIZE.axis },
+            tickfont: { color: COLORS.success, size: FSIZE.tick },
+            side: 'left',
+            range: [-1, 5],
+            showgrid: true
+        },
+        yaxis2: { 
+            ...AXIS_STYLE,
+            title: 'Инфляция (%)', 
+            titlefont: { color: COLORS.danger, size: FSIZE.axis },
+            tickfont: { color: COLORS.danger, size: FSIZE.tick },
+            overlaying: 'y',
+            side: 'right',
+            range: [0, 10],
+            showgrid: false,
+            position: 0.88
+        },
+        yaxis3: { 
+            ...AXIS_STYLE,
+            title: 'Ставка ФРС (%)', 
+            titlefont: { color: COLORS.primary, size: FSIZE.axis },
+            tickfont: { color: COLORS.primary, size: FSIZE.tick },
+            overlaying: 'y',
+            side: 'right',
+            anchor: 'free',
+            position: 1,
+            range: [0, 6],
+            showgrid: false
+        },
+        legend: { orientation: 'h', y: 1.12, x: 0.5, xanchor: 'center', font: { size: FSIZE.legend } }
+    }, { responsive: true });
+
+    // === 3B.10 СЦЕНАРНЫЙ ПРОГНОЗ ===
+    const allDates = ['Сен', 'Окт', 'Ноя', 'Дек', 'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'];
+    
+    // Историческая цена
+    const historicalPrice = [2400, 2650, 2800, 3100, 3250, null, null, null, null, null];
+    
+    // Bull сценарий (диапазон)
+    const bullUpper = [null, null, null, null, 3250, 3700, 4300, 5100, 5700, 6400];
+    const bullLower = [null, null, null, null, 3250, 3500, 3900, 4500, 5000, 5400];
+    
+    // Base сценарий (диапазон)
+    const baseUpper = [null, null, null, null, 3250, 3500, 3750, 4000, 4200, 4400];
+    const baseLower = [null, null, null, null, 3250, 3300, 3450, 3600, 3700, 3800];
+    
+    // Bear сценарий (диапазон)  
+    const bearUpper = [null, null, null, null, 3250, 3100, 2900, 2600, 2400, 2200];
+    const bearLower = [null, null, null, null, 3250, 2900, 2500, 2100, 1900, 1700];
+
+    Plotly.newPlot('chart-scenarios', [
+        // Bull диапазон (заливка)
+        {
+            x: allDates.concat(allDates.slice().reverse()),
+            y: bullUpper.concat(bullLower.slice().reverse()),
+            fill: 'toself',
+            fillcolor: COLORS.successLight,
+            line: { color: 'transparent' },
+            name: 'Bull (25%)',
+            showlegend: true,
+            hoverinfo: 'skip'
+        },
+        // Base диапазон (заливка)
+        {
+            x: allDates.concat(allDates.slice().reverse()),
+            y: baseUpper.concat(baseLower.slice().reverse()),
+            fill: 'toself',
+            fillcolor: COLORS.warningLight,
+            line: { color: 'transparent' },
+            name: 'Base (50%)',
+            showlegend: true,
+            hoverinfo: 'skip'
+        },
+        // Bear диапазон (заливка)
+        {
+            x: allDates.concat(allDates.slice().reverse()),
+            y: bearUpper.concat(bearLower.slice().reverse()),
+            fill: 'toself',
+            fillcolor: COLORS.dangerLight,
+            line: { color: 'transparent' },
+            name: 'Bear (25%)',
+            showlegend: true,
+            hoverinfo: 'skip'
+        },
+        // Bull границы
+        {
+            x: allDates,
+            y: bullUpper,
+            type: 'scatter',
+            mode: 'lines',
+            line: { color: COLORS.success, width: CHART_CONFIG.lineWidth.normal, dash: 'dot' },
+            showlegend: false,
+            hoverinfo: 'skip'
+        },
+        {
+            x: allDates,
+            y: bullLower,
+            type: 'scatter',
+            mode: 'lines',
+            line: { color: COLORS.success, width: CHART_CONFIG.lineWidth.normal, dash: 'dot' },
+            showlegend: false,
+            hoverinfo: 'skip'
+        },
+        // Base границы
+        {
+            x: allDates,
+            y: baseUpper,
+            type: 'scatter',
+            mode: 'lines',
+            line: { color: COLORS.warning, width: CHART_CONFIG.lineWidth.normal },
+            showlegend: false,
+            hoverinfo: 'skip'
+        },
+        {
+            x: allDates,
+            y: baseLower,
+            type: 'scatter',
+            mode: 'lines',
+            line: { color: COLORS.warning, width: CHART_CONFIG.lineWidth.normal },
+            showlegend: false,
+            hoverinfo: 'skip'
+        },
+        // Bear границы
+        {
+            x: allDates,
+            y: bearUpper,
+            type: 'scatter',
+            mode: 'lines',
+            line: { color: COLORS.danger, width: CHART_CONFIG.lineWidth.normal, dash: 'dot' },
+            showlegend: false,
+            hoverinfo: 'skip'
+        },
+        {
+            x: allDates,
+            y: bearLower,
+            type: 'scatter',
+            mode: 'lines',
+            line: { color: COLORS.danger, width: CHART_CONFIG.lineWidth.normal, dash: 'dot' },
+            showlegend: false,
+            hoverinfo: 'skip'
+        },
+        // Историческая цена
+        {
+            x: allDates,
+            y: historicalPrice,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Факт',
+            line: { color: COLORS.primary, width: CHART_CONFIG.lineWidth.thick },
+            marker: { size: CHART_CONFIG.markerSize.large }
+        }
+    ], {
+        ...DEFAULT_LAYOUT,
+        xaxis: { ...AXIS_STYLE },
+        yaxis: { ...AXIS_STYLE, title: 'Цена ETH ($)', range: [1500, 7000] },
+        legend: { orientation: 'h', y: -0.18, x: 0.5, xanchor: 'center', font: { size: FSIZE.legend } },
+        shapes: [{
+            type: 'line',
+            x0: 'Янв', x1: 'Янв',
+            y0: 1500, y1: 7000,
+            line: { color: COLORS.gray, width: 1, dash: 'dot' }
+        }],
+        annotations: [
+            // Текущая цена
+            {
+                x: 'Дек',
+                y: 3250,
+                text: 'Сейчас: $3,250',
+                showarrow: true,
+                arrowhead: 2,
+                ax: -50,
+                ay: -25,
+                font: { size: FSIZE.annotation, color: COLORS.primary }
+            },
+            // Bull цены
+            {
+                x: 'Июн',
+                y: 6400,
+                text: '$6,400',
+                showarrow: false,
+                xanchor: 'left',
+                xshift: 5,
+                font: { size: FSIZE.annotation, color: COLORS.success }
+            },
+            {
+                x: 'Июн',
+                y: 5400,
+                text: '$5,400',
+                showarrow: false,
+                xanchor: 'left',
+                xshift: 5,
+                font: { size: FSIZE.annotation, color: COLORS.success }
+            },
+            // Bull вероятность внутри
+            {
+                x: 'Апр',
+                y: 4800,
+                text: '25%',
+                showarrow: false,
+                font: { size: 13, color: COLORS.success, family: FONT }
+            },
+            // Base цены
+            {
+                x: 'Июн',
+                y: 4400,
+                text: '$4,400',
+                showarrow: false,
+                xanchor: 'left',
+                xshift: 5,
+                font: { size: FSIZE.annotation, color: COLORS.warning }
+            },
+            {
+                x: 'Июн',
+                y: 3800,
+                text: '$3,800',
+                showarrow: false,
+                xanchor: 'left',
+                xshift: 5,
+                font: { size: FSIZE.annotation, color: COLORS.warning }
+            },
+            // Base вероятность внутри
+            {
+                x: 'Апр',
+                y: 3800,
+                text: '50%',
+                showarrow: false,
+                font: { size: 13, color: COLORS.warning, family: FONT }
+            },
+            // Bear цены
+            {
+                x: 'Июн',
+                y: 2200,
+                text: '$2,200',
+                showarrow: false,
+                xanchor: 'left',
+                xshift: 5,
+                font: { size: FSIZE.annotation, color: COLORS.danger }
+            },
+            {
+                x: 'Июн',
+                y: 1700,
+                text: '$1,700',
+                showarrow: false,
+                xanchor: 'left',
+                xshift: 5,
+                font: { size: FSIZE.annotation, color: COLORS.danger }
+            },
+            // Bear вероятность внутри
+            {
+                x: 'Апр',
+                y: 2350,
+                text: '25%',
+                showarrow: false,
+                font: { size: 13, color: COLORS.danger, family: FONT }
+            }
+        ]
+    }, { responsive: true });
+
+    // =============================================
+    // ПРОДВИНУТЫЕ ГРАФИКИ (3C)
+    // =============================================
+
+    // === 3C.1 HEATMAP ===
+    const heatmapAssets = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA', 'AVAX', 'DOT'];
+    const correlationMatrix = [
+        [1.00, 0.85, 0.72, 0.68, 0.45, 0.52, 0.65, 0.58],
+        [0.85, 1.00, 0.78, 0.72, 0.48, 0.55, 0.70, 0.62],
+        [0.72, 0.78, 1.00, 0.65, 0.42, 0.48, 0.75, 0.68],
+        [0.68, 0.72, 0.65, 1.00, 0.55, 0.58, 0.60, 0.52],
+        [0.45, 0.48, 0.42, 0.55, 1.00, 0.62, 0.38, 0.35],
+        [0.52, 0.55, 0.48, 0.58, 0.62, 1.00, 0.45, 0.48],
+        [0.65, 0.70, 0.75, 0.60, 0.38, 0.45, 1.00, 0.72],
+        [0.58, 0.62, 0.68, 0.52, 0.35, 0.48, 0.72, 1.00]
+    ];
+
+    Plotly.newPlot('chart-heatmap', [{
+        z: correlationMatrix,
+        x: heatmapAssets,
+        y: heatmapAssets,
+        type: 'heatmap',
+        colorscale: [
+            [0, COLORS.danger],
+            [0.5, '#FEFCE8'],
+            [1, COLORS.success]
+        ],
+        showscale: true,
+        text: correlationMatrix.map(row => row.map(v => v.toFixed(2))),
+        texttemplate: '%{text}',
+        textfont: { size: FSIZE.tick },
+        hoverongaps: false
+    }], {
+        ...DEFAULT_LAYOUT,
+        xaxis: { ...AXIS_STYLE, side: 'bottom' },
+        yaxis: { ...AXIS_STYLE, autorange: 'reversed' },
+        margin: { l: 60, r: 80, t: 20, b: 60 }
+    }, { responsive: true });
+
+    // === 3C.2 TREEMAP ===
+    Plotly.newPlot('chart-treemap', [{
+        type: 'treemap',
+        labels: [
+            'Расходы', 
+            'Разработка', 'Маркетинг', 'Операции', 'Админ',
+            'Frontend', 'Backend', 'DevOps', 'QA',
+            'Performance', 'Content', 'Paid Ads', 'Events',
+            'Поддержка', 'Инфра', 'Логистика',
+            'HR', 'Legal', 'Finance'
+        ],
+        parents: [
+            '',
+            'Расходы', 'Расходы', 'Расходы', 'Расходы',
+            'Разработка', 'Разработка', 'Разработка', 'Разработка',
+            'Маркетинг', 'Маркетинг', 'Маркетинг', 'Маркетинг',
+            'Операции', 'Операции', 'Операции',
+            'Админ', 'Админ', 'Админ'
+        ],
+        values: [
+            0,
+            0, 0, 0, 0,
+            180, 220, 85, 65,
+            45, 60, 120, 55,
+            95, 75, 50,
+            65, 45, 40
+        ],
+        marker: {
+            colors: [
+                COLORS.gray,
+                COLORS.primary, COLORS.success, COLORS.warning, COLORS.info,
+                '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE',
+                '#10B981', '#34D399', '#6EE7B7', '#A7F3D0',
+                '#F59E0B', '#FBBF24', '#FCD34D',
+                '#06B6D4', '#22D3EE', '#67E8F9'
+            ],
+            line: { width: 1, color: 'white' }
+        },
+        textinfo: 'label+value',
+        texttemplate: '%{label}<br>$%{value}K',
+        textfont: { size: FSIZE.axis, color: 'white' },
+        hovertemplate: '%{label}: $%{value}K<extra></extra>',
+        tiling: { pad: 3 }
+    }], {
+        ...DEFAULT_LAYOUT,
+        margin: { l: 10, r: 10, t: 10, b: 10 }
+    }, { responsive: true });
+
+    // === 3C.3 SANKEY ===
+    Plotly.newPlot('chart-sankey', [{
+        type: 'sankey',
+        orientation: 'h',
+        node: {
+            pad: 20,
+            thickness: 20,
+            line: { color: 'white', width: 1 },
+            label: [
+                'Выручка',           // 0
+                'Продукт A',         // 1
+                'Продукт B',         // 2
+                'Услуги',            // 3
+                'Валовая прибыль',   // 4
+                'Себестоимость',     // 5
+                'Операционная прибыль', // 6
+                'Маркетинг',         // 7
+                'R&D',               // 8
+                'G&A',               // 9
+                'Чистая прибыль',    // 10
+                'Налоги'             // 11
+            ],
+            color: [
+                COLORS.primary,      // Выручка
+                COLORS.primary,      // Продукт A
+                COLORS.primary,      // Продукт B
+                COLORS.primary,      // Услуги
+                COLORS.success,      // Валовая прибыль
+                COLORS.danger,       // Себестоимость
+                COLORS.success,      // Операционная прибыль
+                COLORS.warning,      // Маркетинг
+                COLORS.info,         // R&D
+                COLORS.purple,       // G&A
+                COLORS.success,      // Чистая прибыль
+                COLORS.danger        // Налоги
+            ]
+        },
+        link: {
+            source: [0, 0, 0,    1, 2, 3,    4, 4, 4, 4, 4,    6, 6],
+            target: [1, 2, 3,    4, 4, 4,    5, 7, 8, 9, 6,    10, 11],
+            value:  [450, 280, 170,  450, 280, 170,  270, 120, 80, 60, 370,  290, 80],
+            color: [
+                COLORS.primaryLight, COLORS.primaryLight, COLORS.primaryLight,
+                COLORS.successLight, COLORS.successLight, COLORS.successLight,
+                COLORS.dangerLight, COLORS.warningLight, COLORS.infoLight, COLORS.purpleLight, COLORS.successLight,
+                COLORS.successLight, COLORS.dangerLight
+            ]
+        }
+    }], {
+        ...DEFAULT_LAYOUT,
+        font: { size: FSIZE.axis, family: FONT, color: COLORS.text },
+        margin: { l: 20, r: 20, t: 20, b: 20 }
+    }, { responsive: true });
+
+    // === 3C.4 BULLET CHART ===
+    const bulletData = [
+        { name: 'Выручка', actual: 275, target: 300, ranges: [150, 225, 300] },
+        { name: 'Прибыль', actual: 85, target: 100, ranges: [50, 75, 100] },
+        { name: 'NPS', actual: 72, target: 70, ranges: [30, 50, 70] },
+        { name: 'Retention', actual: 82, target: 85, ranges: [60, 75, 90] }
+    ];
+
+    const bulletTraces = [];
+    bulletData.forEach((item, i) => {
+        // Ranges (background bars)
+        bulletTraces.push({
+            type: 'bar',
+            y: [item.name],
+            x: [item.ranges[2]],
+            orientation: 'h',
+            marker: { color: COLORS.grayLight },
+            showlegend: false,
+            hoverinfo: 'skip'
+        });
+        bulletTraces.push({
+            type: 'bar',
+            y: [item.name],
+            x: [item.ranges[1]],
+            orientation: 'h',
+            marker: { color: 'rgba(156, 163, 175, 0.4)' },
+            showlegend: false,
+            hoverinfo: 'skip'
+        });
+        bulletTraces.push({
+            type: 'bar',
+            y: [item.name],
+            x: [item.ranges[0]],
+            orientation: 'h',
+            marker: { color: 'rgba(156, 163, 175, 0.6)' },
+            showlegend: false,
+            hoverinfo: 'skip'
+        });
+        // Actual value
+        bulletTraces.push({
+            type: 'bar',
+            y: [item.name],
+            x: [item.actual],
+            orientation: 'h',
+            marker: { color: item.actual >= item.target ? COLORS.success : COLORS.warning },
+            width: 0.3,
+            showlegend: false,
+            hovertemplate: `${item.name}: ${item.actual}<extra></extra>`
+        });
+    });
+
+    Plotly.newPlot('chart-bullet', bulletTraces, {
+        ...DEFAULT_LAYOUT,
+        barmode: 'overlay',
+        xaxis: { ...AXIS_STYLE, title: 'Значение' },
+        yaxis: { ...AXIS_STYLE },
+        margin: { l: 80, r: 40, t: 20, b: 50 },
+        annotations: bulletData.map(item => ({
+            x: item.target,
+            y: item.name,
+            text: '|',
+            showarrow: false,
+            font: { size: 24, color: COLORS.danger }
+        }))
+    }, { responsive: true });
+
+    // === 3C.5 SPARKLINES ===
+    const sparkConfig = { responsive: true, displayModeBar: false };
+    const sparkLayout = {
+        margin: { l: 0, r: 0, t: 0, b: 0 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        xaxis: { visible: false },
+        yaxis: { visible: false },
+        showlegend: false
+    };
+
+    // Revenue sparkline
+    Plotly.newPlot('spark-revenue', [{
+        y: [1.8, 1.9, 2.0, 1.95, 2.1, 2.2, 2.15, 2.3, 2.4],
+        type: 'scatter',
+        mode: 'lines',
+        fill: 'tozeroy',
+        fillcolor: COLORS.successLight,
+        line: { color: COLORS.success, width: 2 }
+    }], sparkLayout, sparkConfig);
+
+    // Users sparkline
+    Plotly.newPlot('spark-users', [{
+        y: [720, 745, 760, 778, 795, 810, 825, 838, 847],
+        type: 'scatter',
+        mode: 'lines',
+        fill: 'tozeroy',
+        fillcolor: COLORS.primaryLight,
+        line: { color: COLORS.primary, width: 2 }
+    }], sparkLayout, sparkConfig);
+
+    // Conversion sparkline
+    Plotly.newPlot('spark-conversion', [{
+        y: [3.5, 3.4, 3.6, 3.3, 3.4, 3.2, 3.3, 3.1, 3.2],
+        type: 'scatter',
+        mode: 'lines',
+        fill: 'tozeroy',
+        fillcolor: COLORS.warningLight,
+        line: { color: COLORS.warning, width: 2 }
+    }], sparkLayout, sparkConfig);
+
+    // Churn sparkline
+    Plotly.newPlot('spark-churn', [{
+        y: [2.8, 2.6, 2.5, 2.4, 2.3, 2.2, 2.3, 2.2, 2.1],
+        type: 'scatter',
+        mode: 'lines',
+        fill: 'tozeroy',
+        fillcolor: COLORS.dangerLight,
+        line: { color: COLORS.danger, width: 2 }
+    }], sparkLayout, sparkConfig);
+
+    // === 3D.2 GANTT CHART ===
+    const ganttTasks = [
+        { task: 'Исследование', start: 0, duration: 21, progress: 100 },
+        { task: 'Дизайн', start: 14, duration: 31, progress: 100 },
+        { task: 'Прототип', start: 31, duration: 28, progress: 85 },
+        { task: 'Frontend', start: 45, duration: 60, progress: 60 },
+        { task: 'Backend', start: 50, duration: 70, progress: 45 },
+        { task: 'Интеграция', start: 90, duration: 45, progress: 20 },
+        { task: 'Тестирование', start: 120, duration: 31, progress: 0 },
+        { task: 'Деплой', start: 151, duration: 14, progress: 0 }
+    ];
+
+    const today = 55; // дней с начала проекта
+
+    const ganttTraces = [];
+    
+    // Background bars (full duration)
+    ganttTasks.forEach((t, i) => {
+        ganttTraces.push({
+            type: 'bar',
+            y: [t.task],
+            x: [t.duration],
+            base: [t.start],
+            orientation: 'h',
+            marker: { 
+                color: t.progress === 100 ? COLORS.success : 
+                       t.progress > 0 ? COLORS.primary : COLORS.gray,
+                opacity: t.progress === 100 ? 0.8 : 0.5
+            },
+            showlegend: false,
+            text: [t.progress > 0 ? `${t.progress}%` : ''],
+            textposition: 'inside',
+            textfont: { color: 'white', size: FSIZE.tick },
+            hovertemplate: `${t.task}<br>День ${t.start} - ${t.start + t.duration}<br>Прогресс: ${t.progress}%<extra></extra>`
+        });
+    });
+
+    Plotly.newPlot('chart-gantt', ganttTraces, {
+        ...DEFAULT_LAYOUT,
+        barmode: 'overlay',
+        xaxis: { 
+            ...AXIS_STYLE, 
+            title: 'Дни проекта',
+            range: [0, 180],
+            dtick: 30
+        },
+        yaxis: { ...AXIS_STYLE, autorange: 'reversed' },
+        margin: { l: 120, r: 40, t: 20, b: 60 },
+        showlegend: false,
+        shapes: [{
+            type: 'line',
+            x0: today,
+            x1: today,
+            y0: -0.5,
+            y1: ganttTasks.length - 0.5,
+            line: { color: COLORS.danger, width: 2, dash: 'dash' }
+        }],
+        annotations: [{
+            x: today,
+            y: -0.7,
+            text: 'Сегодня',
+            showarrow: false,
+            font: { size: FSIZE.tick, color: COLORS.danger }
+        }]
+    }, { responsive: true });
+
+    // === TABLE SPARKLINES ===
+    const tableSparkLayout = {
+        margin: { l: 0, r: 0, t: 0, b: 0 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        xaxis: { visible: false },
+        yaxis: { visible: false },
+        showlegend: false
+    };
+
+    Plotly.newPlot('spark-btc', [{
+        y: [62, 64, 63, 65, 68, 66, 67],
+        type: 'scatter',
+        mode: 'lines',
+        line: { color: COLORS.success, width: 1.5 }
+    }], tableSparkLayout, sparkConfig);
+
+    Plotly.newPlot('spark-eth', [{
+        y: [3.2, 3.3, 3.4, 3.35, 3.4, 3.45, 3.46],
+        type: 'scatter',
+        mode: 'lines',
+        line: { color: COLORS.success, width: 1.5 }
+    }], tableSparkLayout, sparkConfig);
+
+    Plotly.newPlot('spark-sol', [{
+        y: [148, 145, 142, 140, 143, 141, 142],
+        type: 'scatter',
+        mode: 'lines',
+        line: { color: COLORS.danger, width: 1.5 }
+    }], tableSparkLayout, sparkConfig);
+
+    Plotly.newPlot('spark-ada', [{
+        y: [0.62, 0.60, 0.59, 0.58, 0.57, 0.58, 0.58],
+        type: 'scatter',
+        mode: 'lines',
+        line: { color: COLORS.danger, width: 1.5 }
+    }], tableSparkLayout, sparkConfig);
+
+    // === SORTABLE TABLE ===
+    document.querySelectorAll('.table-sortable thead th').forEach((th, index) => {
+        th.addEventListener('click', () => {
+            const table = th.closest('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const sortType = th.dataset.sort;
+            const isAsc = th.classList.contains('sort-asc');
+            
+            // Reset all headers
+            table.querySelectorAll('th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aVal = a.cells[index].dataset.value || a.cells[index].textContent;
+                let bVal = b.cells[index].dataset.value || b.cells[index].textContent;
+                
+                if (sortType === 'number') {
+                    aVal = parseFloat(aVal) || 0;
+                    bVal = parseFloat(bVal) || 0;
+                }
+                
+                if (isAsc) {
+                    return aVal > bVal ? -1 : 1;
+                } else {
+                    return aVal > bVal ? 1 : -1;
+                }
+            });
+            
+            // Update classes
+            th.classList.add(isAsc ? 'sort-desc' : 'sort-asc');
+            
+            // Re-append rows
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    });
+
+} // end if Plotly
+
+    // === BACK TO TOP ===
+    const backToTop = document.getElementById('back-to-top');
+    window.addEventListener('scroll', () => {
+        backToTop.classList.toggle('visible', window.scrollY > 500);
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+</script>
+
+</body>
+</html>

@@ -9,6 +9,8 @@ Evaluate question importance, filter low-priority questions, calculate coverage.
 - `questions/overview_questions.json`
 - `questions/data_questions.json`
 - `questions/research_questions.json`
+- `questions/literature_questions.json`
+- `questions/fact_check_questions.json`
 - `results/*.json` (all results)
 
 ## Process
