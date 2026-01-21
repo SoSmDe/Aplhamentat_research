@@ -9,8 +9,10 @@ This phase only runs for `deep_dive` depth.
 ## Input
 - `output/report.html` (generated report)
 - `state/story.json` (narrative structure and themes)
+- `state/brief.json` (for tone preferences and audience)
 - `state/aggregation.json` (source data for fact-checking)
 - `state/charts_analyzed.json` (if exists — for chart narrative verification)
+- `state/citations.json` (for citation accuracy checks)
 
 ## Process
 
@@ -182,6 +184,13 @@ Create `state/editor_log.json`:
   "phase": "complete",
   "updated_at": "ISO timestamp"
 }
+```
+
+## Signal Completion
+
+After saving editor_log.json and updating report.html, output:
+```
+<promise>COMPLETE</promise>
 ```
 
 ## Rules

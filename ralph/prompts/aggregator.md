@@ -387,9 +387,21 @@ For each scope item from Brief:
 
 ## Update session.json
 
+**Next phase depends on depth:**
+
+```
+if session.preferences.depth == "deep_dive":
+    if results/series/ directory exists:
+        phase = "chart_analysis"
+    else:
+        phase = "story_lining"
+else:
+    phase = "reporting"
+```
+
 ```json
 {
-  "phase": "reporting",
+  "phase": "chart_analysis|story_lining|reporting",
   "updated_at": "ISO"
 }
 ```

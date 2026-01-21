@@ -502,6 +502,8 @@ backBtn.addEventListener('click', () => {
 - `state/citations.json` (source references)
 - `state/glossary.json` (term definitions)
 - `state/chart_data.json` (chart configurations)
+- **`state/story.json`** *(deep_dive only — narrative structure, themes, chart placements)*
+- **`state/charts_analyzed.json`** *(deep_dive only, if exists — chart analysis and narrative options)*
 - **`results/series/*.json`** (time series data files)
 - **`ralph/references/warp_market_overview_cache.yaml`** (style rules — USE THIS, not PDF!)
 - **`ralph/templates/{Company}/`** (company-specific templates, e.g., `Warp/base.html`)
@@ -883,8 +885,10 @@ Use `CITATION` snippet from templates for styling.
 ### Phase 1: Planning
 - Read preferences from brief.json (output_format, style, depth, components)
 - Load chart_data.json, citations.json, glossary.json
+- **For deep_dive:** Load `story.json` for narrative structure and `charts_analyzed.json` for chart insights
 - Generate Table of Contents structure
 - Determine which charts to include
+- **For deep_dive:** Use `story.json → section_order` and `chart_placements` to determine structure
 
 ### Phase 2: Front Matter
 - Title page with research query and date
@@ -893,6 +897,13 @@ Use `CITATION` snippet from templates for styling.
 - Key Insights box (top 5 with confidence indicators)
 
 ### Phase 3: Body Sections
+
+**For deep_dive:** Follow `story.json → narrative_arc` structure:
+- Use `hook` for opening paragraph
+- Use `development.beats` for section ordering and emphasis
+- Place charts according to `chart_placements` with specified `callout` text
+- Use `charts_analyzed.json → narrative_options` matching `chart_narrative` from story.json
+
 For each section from aggregation.json:
 - Section header with anchor ID
 - Summary box (2-3 sentences, highlighted)
@@ -973,19 +984,30 @@ Save to `output/` and metadata to `state/report_config.json` with: session_id, g
 
 ## Update session.json
 
+**Next phase depends on depth:**
+
+```
+if session.preferences.depth == "deep_dive":
+    phase = "editing"
+else:
+    phase = "complete"
+```
+
 ```json
 {
-  "phase": "complete",
+  "phase": "editing|complete",
   "updated_at": "ISO"
 }
 ```
 
 ## Signal Completion
 
-After saving all reports, output:
+**Only for NON-deep_dive reports** — after saving all reports, output:
 ```
 <promise>COMPLETE</promise>
 ```
+
+For `deep_dive` depth → proceed to `editing` phase (no completion signal yet).
 
 ## Rules
 - Language = Brief language

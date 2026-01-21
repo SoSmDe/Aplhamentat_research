@@ -26,11 +26,20 @@ If no series files exist → skip to next phase (story_lining).
 
 **CRITICAL: Use CLI to render charts — do NOT copy large arrays manually.**
 
+Run from the research folder (e.g., `research_20260120_btc/`):
+
 ```bash
-python cli/render_charts.py \
+# From research folder:
+python ../cli/render_charts.py \
   --chart-data state/chart_data.json \
   --series-dir results/series/ \
   --output-dir output/charts/
+
+# Or from ralph/ folder:
+python cli/render_charts.py \
+  --chart-data research_XXXXX/state/chart_data.json \
+  --series-dir research_XXXXX/results/series/ \
+  --output-dir research_XXXXX/output/charts/
 ```
 
 CLI script will:

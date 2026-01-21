@@ -220,6 +220,15 @@ else:
 
   "phase": "execution",
 
+  "preferences": {
+    "output_format": "html",
+    "style": "default|warp|warp+reference",
+    "depth": "executive|standard|comprehensive|deep_dive",
+    "audience": "analyst|c_level|committee|general",
+    "tone": "neutral_business|advisory|promotional|critical",
+    "components": ["full_report"]
+  },
+
   "execution": {
     "iteration": 2,
     "max_iterations": 5,
@@ -241,6 +250,8 @@ else:
   "updated_at": "ISO timestamp"
 }
 ```
+
+**Note:** `preferences` is copied from `brief.json` during `brief_builder` phase for easy access.
 
 ---
 
