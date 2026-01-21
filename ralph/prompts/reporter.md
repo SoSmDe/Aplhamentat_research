@@ -504,6 +504,7 @@ backBtn.addEventListener('click', () => {
 - `state/chart_data.json` (chart configurations)
 - **`state/story.json`** *(deep_dive only — narrative structure, themes, chart placements)*
 - **`state/charts_analyzed.json`** *(deep_dive only, if exists — chart analysis and narrative options)*
+- **`output/charts/*.html`** *(deep_dive only — pre-rendered Plotly charts, EMBED via iframe!)*
 - **`results/series/*.json`** (time series data files)
 - **`ralph/references/warp_market_overview_cache.yaml`** (style rules — USE THIS, not PDF!)
 - **`ralph/templates/{Company}/`** (company-specific templates, e.g., `Warp/base.html`)
@@ -549,6 +550,65 @@ backBtn.addEventListener('click', () => {
 
 ## Chart Generation Strategy
 
+### 🚨 CRITICAL: Use Pre-Rendered Charts (deep_dive mode)
+
+**В deep_dive режиме chart_analyzer уже создал графики в `output/charts/`. ИСПОЛЬЗУЙ ИХ!**
+
+```yaml
+priority_order:
+  1. Check if output/charts/*.html files exist
+  2. If YES → embed via iframe (pre-rendered with REAL data)
+  3. If NO → generate inline Plotly (fallback for standard mode)
+
+# ❌ WRONG - reporter генерирует свои упрощённые графики
+output/charts/: 12 pre-rendered charts with real data
+report.html: inline Plotly.newPlot() with mock 6-point arrays  # ИГНОРИРУЕТ готовые!
+
+# ✅ CORRECT - reporter использует pre-rendered charts
+output/charts/: 12 pre-rendered charts with real data
+report.html: 12 <iframe src="charts/c1_xxx.html">  # EMBED готовые!
+```
+
+**Как embed'ить pre-rendered charts:**
+```html
+<!-- Chart container with iframe -->
+<div class="chart-container" role="figure" aria-label="LTH Supply chart">
+  <div class="chart-title">LTH Supply + BTC Price</div>
+  <iframe
+    src="charts/c1_lth_supply_lth_supply_+_btc_price.html"
+    class="chart-iframe"
+    style="width: 100%; height: 450px; border: none;"
+    loading="lazy"
+    title="LTH Supply + BTC Price chart"
+  ></iframe>
+  <p class="chart-note">Источник: Glassnode [10]</p>
+</div>
+```
+
+**CSS для iframe charts (добавь в <style>):**
+```css
+.chart-iframe {
+  width: 100%;
+  height: 450px;
+  border: none;
+  border-radius: 8px;
+  background: #1a1a2e;
+}
+```
+
+**Workflow для deep_dive:**
+1. Glob `output/charts/*.html` → получи список файлов
+2. Для каждого chart_id из chart_data.json:
+   - Найди соответствующий файл в output/charts/
+   - Embed через iframe
+3. Используй `charts_analyzed.json` для chart notes и insights
+
+**Когда генерировать inline Plotly:**
+- Только если output/charts/ пуст (standard mode без chart_analyzer)
+- Или для простых статических charts (bar charts с <10 точками)
+
+---
+
 ### 🚨 CRITICAL: Render ALL Charts from chart_data.json
 
 **Каждый график из `chart_data.json` ДОЛЖЕН быть в отчёте. Без исключений.**
@@ -556,23 +616,29 @@ backBtn.addEventListener('click', () => {
 ```yaml
 validation_rule:
   input: chart_data.json → charts[] array
-  output: report.html → Plotly.newPlot() calls
-  requirement: charts.length == plotly_calls.length
+  output: report.html → <iframe> OR Plotly.newPlot() calls
+  requirement: charts.length == (iframes.length OR plotly_calls.length)
 
 # ❌ WRONG - потеряны графики
 chart_data.json: 12 charts
-report.html: 8 Plotly calls  # 4 графика потеряны!
+report.html: 8 chart embeds  # 4 графика потеряны!
 
-# ✅ CORRECT - все графики на месте
+# ✅ CORRECT (deep_dive with pre-rendered)
+output/charts/: 12 .html files
 chart_data.json: 12 charts
-report.html: 12 Plotly calls
+report.html: 12 <iframe src="charts/...">
+
+# ✅ CORRECT (standard mode, inline Plotly)
+chart_data.json: 12 charts
+report.html: 12 Plotly.newPlot() calls
 ```
 
 **Checklist перед финализацией отчёта:**
 1. Подсчитай количество объектов в `chart_data.json → charts[]`
-2. Подсчитай количество `Plotly.newPlot()` вызовов в HTML
-3. Числа ДОЛЖНЫ совпадать
-4. Каждый `chart_id` из JSON должен иметь соответствующий `<div id="chart-{id}">` в HTML
+2. Проверь `output/charts/` — есть ли pre-rendered charts?
+3. Если есть → подсчитай `<iframe src="charts/...">` в HTML
+4. Если нет → подсчитай `Plotly.newPlot()` вызовов в HTML
+5. Числа ДОЛЖНЫ совпадать
 
 **Если график не вписывается в секцию:**
 - Создай дополнительную секцию "Дополнительные визуализации"
