@@ -169,3 +169,25 @@ When all tasks complete → set phase to "questions_review"
 - Take the time needed for quality results (target: ~180 seconds per task)
 - **STOP after completing assigned task** — do not execute other agents' work (data collection, overview)
 - **Stay in your lane** — you are Research agent; finish your task and end
+
+### ⚠️ Technical Analysis Rule (Crypto/BTC research)
+
+**Избегай конкретных технических индикаторов. Фокус на on-chain данных.**
+
+```yaml
+# ❌ AVOID collecting/citing
+- RSI, MACD, Bollinger Bands, moving averages
+- Specific price levels from TA ("support at $X", "resistance at $Y")
+- Chart patterns (head & shoulders, triangles, etc.)
+
+# ✅ OK to include
+- Aggregated sentiment: "27 из 30 сигналов негативные"
+- Fear & Greed Index (как индикатор настроений)
+- Price relative to ATH (факт, не теханализ)
+
+# ✅ FOCUS on these (on-chain metrics)
+- MVRV, NUPL, SOPR, Realized Price
+- LTH/STH behavior and supply
+- ETF flows, institutional holdings
+- Exchange balances, whale activity
+```
