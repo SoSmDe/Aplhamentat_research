@@ -222,6 +222,10 @@ def render_chart(chart_spec: Dict, series_data: Dict[str, Dict], output_dir: str
             filename = sf.split("/")[-1] if "/" in sf else sf
             series_refs.append({"file": filename, "label": filename.replace(".json", "").replace("_", " ")})
 
+    # Handle Chart.js inline data format (data.datasets)
+    inline_data = chart_spec.get("data", {})
+    has_inline_data = "datasets" in inline_data and "labels" in inline_data
+
     # Create figure
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -270,6 +274,52 @@ def render_chart(chart_spec: Dict, series_data: Dict[str, Dict], output_dir: str
         analysis["file"] = series_file
         series_analyses.append(analysis)
 
+    # Handle Chart.js inline data format (bar charts with inline data)
+    # Use inline data if: 1) no series_refs at all, OR 2) series_refs existed but no traces were added
+    if has_inline_data and (not series_refs or not fig.data):
+        labels = inline_data.get("labels", [])
+        for i, dataset in enumerate(inline_data.get("datasets", [])):
+            values = dataset.get("data", [])
+            label = dataset.get("label", f"Dataset {i}")
+            bg_colors = dataset.get("backgroundColor", colors[:len(values)])
+
+            # Determine trace type based on chart_type
+            if chart_type in ["bar", "horizontalBar"]:
+                fig.add_trace(
+                    go.Bar(
+                        x=labels,
+                        y=values,
+                        name=label,
+                        marker=dict(color=bg_colors),
+                        hovertemplate="%{x}: %{y}<extra></extra>"
+                    )
+                )
+            else:
+                fig.add_trace(
+                    go.Scatter(
+                        x=labels,
+                        y=values,
+                        name=label,
+                        mode="lines+markers",
+                        line=dict(color=bg_colors[0] if isinstance(bg_colors, list) else bg_colors, width=2),
+                        hovertemplate="%{y:.2f}<extra>%{fullData.name}</extra>"
+                    )
+                )
+
+            # Create simple analysis for inline data
+            series_analyses.append({
+                "series": label,
+                "file": "inline",
+                "count": len(values),
+                "min": min(values) if values else 0,
+                "max": max(values) if values else 0,
+                "pattern": "inline_data"
+            })
+
+    # Check if chart has any data
+    if not fig.data:
+        raise ValueError(f"Chart {chart_id} has no data to render. Check source_files or data.datasets.")
+
     # Update layout
     fig.update_layout(
         title=dict(text=title, font=dict(size=16)),
@@ -285,8 +335,12 @@ def render_chart(chart_spec: Dict, series_data: Dict[str, Dict], output_dir: str
     if any(s.get("secondary_y") for s in series_refs):
         fig.update_yaxes(title_text=chart_spec.get("y_axis_secondary_label", ""), secondary_y=True)
 
-    # Save chart
-    output_path = os.path.join(output_dir, f"{chart_id}_{title.lower().replace(' ', '_')[:30]}.html")
+    # Save chart - sanitize filename for Windows compatibility
+    safe_title = title.lower().replace(' ', '_')
+    # Remove Windows-invalid characters: : ? * < > | " / \
+    for char in ':?*<>|"\\/':
+        safe_title = safe_title.replace(char, '')
+    output_path = os.path.join(output_dir, f"{chart_id}_{safe_title[:30]}.html")
     fig.write_html(output_path, include_plotlyjs="cdn")
 
     # Generate visual summary
