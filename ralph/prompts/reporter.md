@@ -146,6 +146,32 @@ ralph/templates/Warp/
 - "При этом имеется ряд тревожных сигналов..."
 - "Наиболее вероятным [X] выступает диапазон..."
 
+### ⚠️ Anglicisms Rule (Russian reports)
+
+**Избегай ненужных англицизмов. Используй русские термины где возможно.**
+
+```yaml
+# ❌ WRONG - unnecessary anglicisms
+- "basis trade unwind" → "закрытие базисных сделок"
+- "breakeven" → "точка безубыточности"
+- "fee arbitrage" → "арбитраж комиссий"
+- "cost basis" → "себестоимость"
+- "outflow/inflow" → "отток/приток"
+- "rally" → "рост", "подъём"
+- "dump" → "обвал", "падение"
+- "supply squeeze" → "сжатие предложения"
+
+# ✅ OK - established crypto terms (keep in English)
+- MVRV, NUPL, SOPR, LTH/STH  # on-chain метрики
+- ETF, AUM, NAV, mNAV        # финансовые аббревиатуры
+- ATH, ATL                    # устоявшиеся термины
+- Realized Price              # специфичный термин
+
+# Rule of thumb:
+# Если есть нормальный русский эквивалент → используй его
+# Если термин специфичен для крипто/финансов → можно оставить
+```
+
 **DO NOT (in Warp style):**
 - Use generic marketing language
 - Skip numerical evidence
