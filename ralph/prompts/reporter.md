@@ -609,36 +609,43 @@ report.html: 12 <iframe src="charts/c1_xxx.html">  # EMBED готовые!
 
 ---
 
-### 🚨 CRITICAL: Render ALL Charts from chart_data.json
+### 🚨 CRITICAL: Chart Selection by Mode
 
-**Каждый график из `chart_data.json` ДОЛЖЕН быть в отчёте. Без исключений.**
+**Какие графики включать зависит от режима:**
 
 ```yaml
-validation_rule:
-  input: chart_data.json → charts[] array
-  output: report.html → <iframe> OR Plotly.newPlot() calls
-  requirement: charts.length == (iframes.length OR plotly_calls.length)
+# deep_dive mode (has story.json)
+chart_source: story.json → chart_placements[]
+logic: story_liner ВЫБИРАЕТ какие графики нужны для narrative
 
-# ❌ WRONG - потеряны графики
+# standard mode (no story.json)
+chart_source: chart_data.json → charts[]
+logic: включить ВСЕ графики из chart_data.json
+```
+
+**Validation rules:**
+
+```yaml
+# deep_dive mode
+# ✅ CORRECT - только выбранные story_liner'ом
+story.json → chart_placements: 7 charts
+report.html: 7 <iframe> embeds
+
+# ❌ WRONG - игнорирует story_liner
 chart_data.json: 12 charts
-report.html: 8 chart embeds  # 4 графика потеряны!
+report.html: 12 embeds  # story_liner выбрал только 7!
 
-# ✅ CORRECT (deep_dive with pre-rendered)
-output/charts/: 12 .html files
-chart_data.json: 12 charts
-report.html: 12 <iframe src="charts/...">
-
-# ✅ CORRECT (standard mode, inline Plotly)
+# standard mode
+# ✅ CORRECT - все графики
 chart_data.json: 12 charts
 report.html: 12 Plotly.newPlot() calls
 ```
 
 **Checklist перед финализацией отчёта:**
-1. Подсчитай количество объектов в `chart_data.json → charts[]`
-2. Проверь `output/charts/` — есть ли pre-rendered charts?
-3. Если есть → подсчитай `<iframe src="charts/...">` в HTML
-4. Если нет → подсчитай `Plotly.newPlot()` вызовов в HTML
-5. Числа ДОЛЖНЫ совпадать
+1. Есть `story.json`? → используй `chart_placements[]` (deep_dive)
+2. Нет `story.json`? → используй все из `chart_data.json` (standard)
+3. Проверь `output/charts/` — embed через iframe если есть
+4. Количество embed'ов = количество chart_placements (deep_dive) или charts (standard)
 
 **Если график не вписывается в секцию:**
 - Создай дополнительную секцию "Дополнительные визуализации"
