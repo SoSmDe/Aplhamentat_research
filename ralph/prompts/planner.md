@@ -115,31 +115,129 @@ warp_style_implications:
 
 **⚠️ The `style_reference` points to a YAML file like `warp_market_overview_cache.yaml`, NOT a PDF!**
 
-**Add style-specific tasks:**
+**⚠️ ONLY IF `style` == `warp` or `warp+reference`, add these tasks:**
 ```yaml
 warp_style_tasks:
-  - id: "d_onchain"
-    description: "BTC on-chain metrics for cycle analysis"
-    data_spec:
-      api_source: "blocklens"
-      metrics: ["mvrv", "nupl", "sopr", "lth_sth_supply"]
+  # These tasks are ONLY for Warp Capital style reports!
+  # Do NOT add for other styles (default, minimal, academic)
+  condition: preferences.style in ["warp", "warp+reference"]
 
-  - id: "r_scenarios"
-    description: "Scenario analysis: extreme bottom, most likely, extreme top"
-    type: "research"
+  tasks:
+    - id: "d_onchain"
+      description: "BTC on-chain metrics for cycle analysis"
+      data_spec:
+        api_source: "blocklens"
+        metrics: ["mvrv", "nupl", "sopr", "lth_sth_supply"]
+
+    - id: "r_scenarios"
+      description: "Scenario analysis: extreme bottom, most likely, extreme top"
+      type: "research"
+```
+
+**For non-Warp styles**: Do NOT automatically add on-chain tasks or scenario analysis.
+Use domain-specific data sources instead (see 1.6).
+
+---
+
+### 1.6. Check Domain Settings
+
+Get `domain` from brief.json and apply domain-specific task patterns:
+
+```yaml
+domain_task_patterns:
+  crypto:
+    data_sources: ["blocklens", "coingecko", "defillama", "l2beat"]
+    typical_tasks:
+      - "On-chain metrics analysis"
+      - "Price and market data"
+      - "DeFi protocol comparison"
+    chart_types: ["line (time series)", "bar (comparison)"]
+
+  finance:
+    data_sources: ["yfinance", "fred", "sec", "fmp"]
+    typical_tasks:
+      - "Financial statements analysis"
+      - "Valuation metrics"
+      - "Peer comparison"
+    chart_types: ["line (price)", "bar (metrics comparison)"]
+
+  business:
+    data_sources: ["serper", "wikipedia", "wikidata"]
+    typical_tasks:
+      - "Company profile research"
+      - "Market size estimation"
+      - "Competitive landscape"
+    chart_types: ["bar (comparison)", "pie (market share)"]
+
+  science:
+    data_sources: ["arxiv", "pubmed", "serper_scholar", "wikipedia"]
+    typical_tasks:
+      - "Literature review"
+      - "Key findings synthesis"
+      - "Methodology analysis"
+    chart_types: ["bar (comparison)", "timeline"]
+
+  technology:
+    data_sources: ["serper", "wikipedia", "github_api"]
+    typical_tasks:
+      - "Technology comparison"
+      - "Trend analysis"
+      - "Architecture review"
+    chart_types: ["bar (comparison)", "timeline"]
+
+  general:
+    data_sources: ["serper", "wikipedia", "wikidata"]
+    typical_tasks:
+      - "Topic overview"
+      - "Fact gathering"
+      - "Source synthesis"
+    chart_types: ["varies by content"]
 ```
 
 ---
 
 ### 2. Analyze Scope
 - Read each scope item from brief.json
-- Determine type: overview, data, research, or combination
+- Determine type: overview, data, research, literature_review, fact_check, or combination
 - Apply tasks_per_scope multiplier
-- **If Warp style** — ensure on-chain data and scenario analysis tasks are included
+- **Select data sources based on domain** (see 1.6)
+- **If Warp style** — add warp-specific tasks (on-chain data, scenario analysis)
 
 ### 3. Generate Tasks
 
-For each scope item create appropriate tasks:
+For each scope item create appropriate tasks.
+
+**⚠️ Data source selection by domain:**
+```yaml
+data_task_api_selection:
+  # Read domain from brief.json
+  domain: brief.domain
+
+  # Select primary APIs based on domain
+  crypto:
+    primary_apis: ["blocklens", "coingecko", "defillama"]
+    secondary_apis: ["l2beat", "etherscan", "dune"]
+  finance:
+    primary_apis: ["yfinance", "fred", "fmp"]
+    secondary_apis: ["sec", "finnhub"]
+  science:
+    primary_apis: ["arxiv", "pubmed"]
+    secondary_apis: ["serper_scholar", "wikipedia"]
+  business:
+    primary_apis: ["serper", "wikipedia", "wikidata"]
+    secondary_apis: []
+  technology:
+    primary_apis: ["serper", "wikipedia"]
+    secondary_apis: ["arxiv", "wikidata"]
+  general:
+    primary_apis: ["serper", "wikipedia"]
+    secondary_apis: ["wikidata"]
+
+  # IMPORTANT: Do NOT add crypto-specific APIs (blocklens, coingecko)
+  # for non-crypto domains unless explicitly needed
+```
+
+---
 
 **Overview tasks** (o1, o2, ...):
 - Deep research topic via Deep Research skill
@@ -159,11 +257,11 @@ For each scope item create appropriate tasks:
     id: "d1"
     description: "What data to collect"
     data_spec:
-      type: "prices|tvl|metrics|fundamentals|on-chain"
-      assets: ["BTC", "ETH", "SPY"]      # Specific assets
-      timeframe: "2020-01-01 to now"     # Date range
-      frequency: "daily|hourly|weekly"   # Data granularity
-      api_source: "coingecko|yfinance|defillama|blocklens"  # Which API (blocklens for BTC on-chain)
+      type: "prices|tvl|metrics|fundamentals|on-chain|literature|facts"
+      assets: ["BTC", "ETH", "SPY"]      # Specific assets (if applicable)
+      timeframe: "2020-01-01 to now"     # Date range (if applicable)
+      frequency: "daily|hourly|weekly"   # Data granularity (if applicable)
+      api_source: "..."                  # ⚠️ SELECT BASED ON DOMAIN (see data_task_api_selection above)
     calculations:                         # If analysis needed
       - "drawdown_series"
       - "correlation_matrix"
@@ -193,6 +291,17 @@ For each scope item create appropriate tasks:
 - Focus area
 - Suggested search queries
 - Use for analysis, opinions, risks
+
+**Literature review tasks** (l1, l2, ...) — for `science` domain:
+- Academic paper search on topic
+- Key findings synthesis
+- Methodology comparison
+- Use arxiv, pubmed, serper_scholar APIs
+
+**Fact-check tasks** (f1, f2, ...) — for `general` domain:
+- Claim verification
+- Source triangulation
+- Use wikipedia, wikidata, serper APIs
 
 ### 4. Prioritize
 - Critical for goal → first
@@ -252,6 +361,26 @@ Save to `state/plan.json`:
       "priority": "high|medium|low"
     }
   ],
+  "literature_tasks": [
+    {
+      "id": "l1",
+      "scope_item_id": "s3",
+      "description": "Literature review on topic",
+      "search_queries": ["arxiv query", "pubmed query"],
+      "api_sources": ["arxiv", "pubmed"],
+      "priority": "high|medium|low"
+    }
+  ],
+  "fact_check_tasks": [
+    {
+      "id": "f1",
+      "scope_item_id": "s4",
+      "description": "Verify claim X",
+      "sources_to_check": ["wikipedia", "wikidata"],
+      "priority": "medium"
+    }
+  ],
+  "domain": "from brief.json",
   "total_tasks": 10,
   "created_at": "ISO timestamp"
 }
@@ -263,10 +392,11 @@ Apply depth-based settings:
 ```json
 {
   "phase": "execution",
+  "domain": "from brief.json",
   "execution": {
     "iteration": 1,
     "max_iterations": 2,
-    "tasks_pending": ["o1", "d1", "d2", "r1", "r2"],
+    "tasks_pending": ["o1", "d1", "d2", "r1", "r2", "l1", "f1"],
     "tasks_completed": []
   },
   "coverage": {
