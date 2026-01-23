@@ -33,8 +33,18 @@ cd ralph/
 ## State Machine
 
 ```
-initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → reporting → complete
+ALL depths:
+initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → story_lining → visual_design → reporting → complete
+
+Deep Dive additions (depth: deep_dive):
+... → aggregation → [chart_analysis] → story_lining → visual_design → reporting → editing → complete
 ```
+
+**Notes:**
+- `story_lining` runs for ALL depths (creates layout blueprint)
+- `visual_design` runs for ALL depths (creates custom infographics)
+- `chart_analysis` runs only for deep_dive (when results/series/ exists)
+- `editing` runs only for deep_dive (final quality pass)
 
 ## Key Concepts
 
@@ -56,7 +66,7 @@ Single source of truth. Contains:
 
 ## Agent Prompts
 
-All in `../src/prompts/`:
+All in `prompts/`:
 
 | Agent | File | Purpose |
 |-------|------|---------|
@@ -64,11 +74,38 @@ All in `../src/prompts/`:
 | Brief Builder | `brief_builder.md` | Auto-generate Brief |
 | Planner | `planner.md` | Decompose into tasks |
 | Overview | `overview.md` | Deep Research (9 phases) |
-| Data | `data.md` | Structured data |
+| Data | `data.md` | Structured data via CLI |
 | Research | `research.md` | Qualitative analysis |
+| Literature | `literature.md` | Academic papers (science domain) |
+| Fact Check | `fact_check.md` | Verification (general domain) |
 | Questions | `questions_planner.md` | Filter + coverage |
 | Aggregator | `aggregator.md` | Synthesize findings |
-| Reporter | `reporter.md` | Generate reports |
+| Story Liner | `story_liner.md` | Report layout planning |
+| Visual Designer | `visual_designer.md` | Custom infographics (SWOT, timelines) |
+| Chart Analyzer | `chart_analyzer.md` | Time series analysis (deep_dive) |
+| Reporter | `reporter.md` | Generate HTML reports |
+| Editor | `editor.md` | Final polish (deep_dive) |
+
+## Data Fetch CLI
+
+```bash
+# Available modules
+python cli/fetch.py --list-modules
+
+# Crypto
+python cli/fetch.py coingecko get_price '["bitcoin"]'
+python cli/fetch.py blocklens get_market_cycle_indicators
+
+# Stocks
+python cli/fetch.py yfinance get_price_history '{"symbol":"AAPL","start":"2024-01-01"}'
+
+# Research
+python cli/fetch.py serper search '{"query":"AI trends 2024"}'
+python cli/fetch.py arxiv search '{"query":"machine learning"}'
+
+# Analytics
+python cli/fetch.py analytics basic_stats '{"file":"results/series/BTC_price.json"}'
+```
 
 ## Completion
 

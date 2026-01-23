@@ -251,3 +251,181 @@ new Chart(document.getElementById('{{CHART_ID}}'), {
     </g>
 </svg>
 <!--/SNIPPET-->
+
+
+<!-- ============================================ -->
+<!-- VISUAL COMPONENTS (Custom Infographics) -->
+<!-- ============================================ -->
+
+<!--SNIPPET:VISUAL_CONTAINER-->
+<div class="visual-container" role="figure" aria-label="{{VISUAL_ARIA_LABEL}}">
+    <div class="visual-title">{{VISUAL_TITLE}}</div>
+    <div class="visual-wrapper">
+        {{VISUAL_CONTENT}}
+    </div>
+    <p class="visual-callout">{{VISUAL_CALLOUT}}</p>
+</div>
+<!--/SNIPPET-->
+
+
+<!--SNIPPET:SWOT_MATRIX-->
+<div class="swot-grid">
+    <div class="swot-cell strengths">
+        <h4>Strengths</h4>
+        <ul>{{STRENGTHS_LIST}}</ul>
+    </div>
+    <div class="swot-cell weaknesses">
+        <h4>Weaknesses</h4>
+        <ul>{{WEAKNESSES_LIST}}</ul>
+    </div>
+    <div class="swot-cell opportunities">
+        <h4>Opportunities</h4>
+        <ul>{{OPPORTUNITIES_LIST}}</ul>
+    </div>
+    <div class="swot-cell threats">
+        <h4>Threats</h4>
+        <ul>{{THREATS_LIST}}</ul>
+    </div>
+</div>
+<!--/SNIPPET-->
+
+
+<!--SNIPPET:COMPARISON_MATRIX-->
+<div class="comparison-matrix">
+    <table>
+        <thead>
+            <tr>{{MATRIX_HEADERS}}</tr>
+        </thead>
+        <tbody>
+            {{MATRIX_ROWS}}
+        </tbody>
+    </table>
+</div>
+<!--/SNIPPET-->
+
+<!--SNIPPET:COMPARISON_MATRIX_HEADER-->
+<th>{{HEADER_TEXT}}</th>
+<!--/SNIPPET-->
+
+<!--SNIPPET:COMPARISON_MATRIX_HEADER_HIGHLIGHT-->
+<th class="highlight">{{HEADER_TEXT}}</th>
+<!--/SNIPPET-->
+
+<!--SNIPPET:COMPARISON_MATRIX_ROW-->
+<tr>
+    <td class="param-cell"><span class="icon">{{ICON}}</span>{{PARAM_NAME}}</td>
+    {{CELLS}}
+</tr>
+<!--/SNIPPET-->
+
+<!--SNIPPET:COMPARISON_MATRIX_CELL_GOOD-->
+<td class="good">{{VALUE}}</td>
+<!--/SNIPPET-->
+
+<!--SNIPPET:COMPARISON_MATRIX_CELL_BAD-->
+<td class="bad">{{VALUE}}</td>
+<!--/SNIPPET-->
+
+<!--SNIPPET:COMPARISON_MATRIX_CELL_NEUTRAL-->
+<td class="neutral">{{VALUE}}</td>
+<!--/SNIPPET-->
+
+
+<!--SNIPPET:TIMELINE_HORIZONTAL-->
+<div class="timeline-container">
+    <div class="timeline-line"></div>
+    <div class="timeline-events">
+        {{TIMELINE_EVENTS}}
+    </div>
+</div>
+<!--/SNIPPET-->
+
+<!--SNIPPET:TIMELINE_EVENT-->
+<div class="timeline-event">
+    <div class="timeline-dot {{CATEGORY_CLASS}}"></div>
+    <div class="timeline-date">{{DATE}}</div>
+    <div class="timeline-title">{{TITLE}}</div>
+    <div class="timeline-category">{{CATEGORY}}</div>
+</div>
+<!--/SNIPPET-->
+
+
+<!--SNIPPET:QUADRANT_CHART-->
+<div class="quadrant-container">
+    <div class="quadrant-axis-label y-axis">{{Y_AXIS_LABEL}}</div>
+    <div class="quadrant-axis-label x-axis">{{X_AXIS_LABEL}}</div>
+    <div class="quadrant-grid">
+        <div class="quadrant-label top-left">{{LABEL_TOP_LEFT}}</div>
+        <div class="quadrant-label top-right">{{LABEL_TOP_RIGHT}}</div>
+        <div class="quadrant-label bottom-left">{{LABEL_BOTTOM_LEFT}}</div>
+        <div class="quadrant-label bottom-right">{{LABEL_BOTTOM_RIGHT}}</div>
+    </div>
+    {{ENTITIES}}
+</div>
+<!--/SNIPPET-->
+
+<!--SNIPPET:QUADRANT_ENTITY-->
+<div class="quadrant-entity {{SIZE_CLASS}} {{HIGHLIGHT_CLASS}}" style="left: {{X_POS}}%; top: {{Y_POS}}%;">{{NAME}}</div>
+<!--/SNIPPET-->
+
+
+<!--SNIPPET:KPI_GRID-->
+<div class="kpi-grid">
+    {{KPI_CARDS}}
+</div>
+<!--/SNIPPET-->
+
+<!--SNIPPET:KPI_CARD-->
+<div class="kpi-card {{STATUS_CLASS}}">
+    <div class="kpi-icon">{{ICON}}</div>
+    <div class="kpi-value">{{VALUE}}</div>
+    <div class="kpi-label">{{LABEL}}</div>
+</div>
+<!--/SNIPPET-->
+
+
+<!--SNIPPET:FUNNEL_DIAGRAM-->
+<div class="funnel-container">
+    {{FUNNEL_STAGES}}
+</div>
+<!--/SNIPPET-->
+
+<!--SNIPPET:FUNNEL_STAGE-->
+<div class="funnel-stage">
+    <div class="funnel-label">
+        <div class="funnel-name">{{NAME}}</div>
+        <div class="funnel-value">{{VALUE}}</div>
+    </div>
+</div>
+<!--/SNIPPET-->
+
+
+<!--SNIPPET:CHECKLIST_TABLE-->
+<table class="checklist-table">
+    <thead>
+        <tr>{{CHECKLIST_HEADERS}}</tr>
+    </thead>
+    <tbody>
+        {{CHECKLIST_ROWS}}
+    </tbody>
+</table>
+<!--/SNIPPET-->
+
+<!--SNIPPET:CHECKLIST_ROW-->
+<tr>
+    <td>{{FEATURE_NAME}}</td>
+    {{CHECKLIST_CELLS}}
+</tr>
+<!--/SNIPPET-->
+
+<!--SNIPPET:CHECKLIST_CELL_YES-->
+<td><span class="check-yes"></span></td>
+<!--/SNIPPET-->
+
+<!--SNIPPET:CHECKLIST_CELL_NO-->
+<td><span class="check-no"></span></td>
+<!--/SNIPPET-->
+
+<!--SNIPPET:CHECKLIST_CELL_PARTIAL-->
+<td><span class="check-partial"></span></td>
+<!--/SNIPPET-->

@@ -65,8 +65,9 @@ WebSearch("L2 TVL comparison")    # NO! Use defillama
 **Available modules:**
 - **Crypto:** `coingecko`, `blocklens`, `defillama`, `l2beat`, `etherscan`, `thegraph`, `dune`
 - **Stocks:** `yfinance`, `finnhub`, `fred`, `sec`, `fmp`
-- **Research:** `worldbank`, `imf`, `wikipedia`, `arxiv`, `serper`, `pubmed`
+- **Research:** `worldbank`, `imf`, `wikipedia`, `arxiv`, `serper`, `pubmed`, `crunchbase`, `sec_edgar`, `google_scholar`, `news_aggregator`
 - **General:** `wikidata`
+- **Analytics:** `analytics` (statistical analysis for time series data)
 
 ---
 
@@ -417,6 +418,14 @@ error_handling:
 | Entity data | `wikidata` | `get_entity(id)` | Structured facts |
 | Company facts | `wikidata` | `get_company_info(name)` | Founding date, CEO, etc. |
 | Person facts | `wikidata` | `get_person_info(name)` | Biography, occupation |
+| Company funding | `crunchbase` | `get_organization(name)` | Funding rounds, investors |
+| Startup search | `crunchbase` | `search_organizations(query)` | Company discovery |
+| SEC filings | `sec_edgar` | `get_company_filings(ticker)` | 10-K, 10-Q, 8-K reports |
+| SEC financials | `sec_edgar` | `get_company_facts(ticker)` | XBRL financial data |
+| Academic papers | `google_scholar` | `search_papers(query)` | Citations, h-index |
+| Author profile | `google_scholar` | `get_author_profile(name)` | Publications, metrics |
+| Crypto news | `news_aggregator` | `get_crypto_news()` | Multi-source news |
+| Market sentiment | `news_aggregator` | `get_market_sentiment(topic)` | Sentiment analysis |
 
 ### ⚠️ HOW TO CALL APIs (CRITICAL)
 
@@ -600,6 +609,46 @@ snapped_at,price,market_cap,total_volume
 
 **Web search** → ONLY for news, sentiment, qualitative data (NOT prices!)
 
+### API Source Quality Tiers
+
+**Классифицируй источники данных по уровню достоверности:**
+
+```yaml
+api_source_tiers:
+  tier_1_primary:
+    description: "Первичные источники данных"
+    examples:
+      - "blocklens" # On-chain data direct
+      - "etherscan" # On-chain data direct
+      - "sec_edgar" # Official SEC filings
+      - "fred" # Federal Reserve official data
+    auto_tier: "tier_1"
+
+  tier_2_authoritative:
+    description: "Авторитетные агрегаторы"
+    examples:
+      - "coingecko" # Industry standard aggregator
+      - "defillama" # DeFi standard aggregator
+      - "l2beat" # L2 standard aggregator
+      - "yfinance" # Yahoo Finance
+    auto_tier: "tier_2"
+
+  tier_3_credible:
+    description: "Проверенные вторичные источники"
+    examples:
+      - "thegraph" # Protocol subgraphs
+      - "dune" # Community queries
+      - "crunchbase" # Business data
+    auto_tier: "tier_3"
+
+  assignment_rules:
+    - "Direct on-chain APIs → tier_1"
+    - "Official regulatory data → tier_1"
+    - "Industry-standard aggregators → tier_2"
+    - "Third-party computed metrics → tier_3"
+    - "Web-scraped data → tier_4"
+```
+
 ### API Availability
 
 | API | Requires Key | Notes |
@@ -616,6 +665,10 @@ snapped_at,price,market_cap,total_volume
 | pubmed | No | Free, fair use |
 | serper | **Required** | Set `SERPER_API_KEY` |
 | wikidata | No | Free, fair use |
+| crunchbase | **Required** | Set `CRUNCHBASE_API_KEY` |
+| sec_edgar | No | Free, User-Agent required |
+| google_scholar | No | Uses scholarly library (rate limited) |
+| news_aggregator | Optional | `NEWSAPI_KEY`, `CRYPTOPANIC_KEY` for extra sources |
 
 ---
 
@@ -699,6 +752,122 @@ python cli/fetch.py blocklens get_market_cycle_indicators
 | BTC market cycle | **BlockLens** |
 | SOPR analysis | **BlockLens** |
 | UTXO age analysis | **BlockLens** |
+
+---
+
+## Analytics Module (Series Analysis)
+
+**Location**: `ralph/integrations/analytics/series_analyzer.py`
+
+**USE FOR:** Statistical analysis of time series data from any API (BlockLens, CoinGecko, yfinance, etc.)
+
+### Why Use Analytics?
+- **Calculate** statistics from raw data instead of searching for pre-calculated values
+- **Detect** trends, anomalies, and regime changes automatically
+- **Compare** multiple time series (correlations, divergences, lead/lag)
+- **Prepare** data for Chart Analyzer with statistical context
+
+### CLI Usage (via Bash)
+
+```bash
+# Basic statistics (mean, std, percentiles, etc.)
+python cli/fetch.py analytics basic_stats '{"file":"results/series/BTC_price.json"}'
+
+# Trend detection (returns "up", "down", or "sideways")
+python cli/fetch.py analytics trend_direction '{"file":"results/series/BTC_price.json","window":30}'
+
+# Trend strength (0-1 scale)
+python cli/fetch.py analytics trend_strength '{"file":"results/series/BTC_MVRV.json","window":30}'
+
+# Correlation between two series
+python cli/fetch.py analytics correlation '{"file1":"results/series/BTC_price.json","file2":"results/series/BTC_MVRV.json"}'
+
+# Detect anomalies (z-score threshold)
+python cli/fetch.py analytics detect_anomalies '{"file":"results/series/BTC_price.json","column":"value","z_threshold":2.5}'
+
+# Volatility regime (returns "low", "normal", "high", "extreme")
+python cli/fetch.py analytics volatility_regime '{"file":"results/series/BTC_price.json","column":"value"}'
+
+# Distance from ATH
+python cli/fetch.py analytics distance_from_ath '{"file":"results/series/BTC_price.json","column":"value"}'
+
+# Current percentile (where is current value vs. history)
+python cli/fetch.py analytics current_percentile '{"file":"results/series/BTC_MVRV.json","column":"value"}'
+
+# Detect breakout
+python cli/fetch.py analytics detect_breakout '{"file":"results/series/BTC_price.json","column":"value","lookback":90}'
+```
+
+### Function Categories
+
+| Category | Functions | Use Case |
+|----------|-----------|----------|
+| **Basic Stats** | `basic_stats`, `mean`, `std`, `percentile`, `current_percentile` | Quick statistical summary |
+| **Extremes** | `find_max`, `find_min`, `distance_from_ath`, `distance_from_atl`, `calculate_range` | Find highs, lows, drawdowns |
+| **Trends** | `trend_direction`, `trend_strength`, `moving_average`, `ema`, `momentum`, `acceleration` | Trend analysis |
+| **Volatility** | `volatility`, `atr`, `bollinger_position`, `volatility_regime` | Volatility assessment |
+| **Correlations** | `correlation`, `rolling_correlation`, `correlation_matrix`, `lead_lag` | Multi-series analysis |
+| **Comparisons** | `compare_periods`, `compare_to_history`, `yoy_change`, `mom_change` | Period comparisons |
+| **Anomalies** | `detect_anomalies`, `detect_regime_change`, `find_divergence`, `detect_breakout` | Pattern detection |
+| **Distribution** | `distribution_stats`, `value_at_risk`, `probability_above`, `expected_range` | Probabilistic analysis |
+| **Crypto** | `mvrv_zscore`, `supply_distribution`, `funding_rate_signal` | Crypto-specific metrics |
+| **Meta** | `summarize_signals`, `find_contradictions` | Multi-metric synthesis |
+
+### Example: Analyzing MVRV Data
+
+**Step 1: Fetch data and save to series file**
+```bash
+python cli/fetch.py blocklens get_holder_valuation '{"start_date":"2024-01-01","limit":800}'
+# → Save to results/series/BTC_LTH_MVRV.json
+```
+
+**Step 2: Analyze with analytics module**
+```bash
+# Basic stats
+python cli/fetch.py analytics basic_stats '{"file":"results/series/BTC_LTH_MVRV.json"}'
+# Returns: {"mean": 2.1, "std": 0.3, "min": 1.5, "max": 2.8, "current": 2.42, "percentile_10": 1.7, ...}
+
+# Trend direction
+python cli/fetch.py analytics trend_direction '{"file":"results/series/BTC_LTH_MVRV.json","window":30}'
+# Returns: {"direction": "up", "slope": 0.012, "confidence": 0.85}
+
+# Current percentile
+python cli/fetch.py analytics current_percentile '{"file":"results/series/BTC_LTH_MVRV.json","column":"value"}'
+# Returns: {"percentile": 87, "interpretation": "Current value is higher than 87% of historical values"}
+
+# Detect regime changes
+python cli/fetch.py analytics detect_regime_change '{"file":"results/series/BTC_LTH_MVRV.json","column":"value"}'
+# Returns: [{"date": "2024-03-15", "type": "bull_to_caution", "value_before": 2.1, "value_after": 2.8}]
+```
+
+### Expected Input Format
+
+Series files should follow this format:
+```json
+{
+  "asset": "BTC",
+  "metric": "LTH_MVRV",
+  "unit": "ratio",
+  "frequency": "daily",
+  "source": "blocklens",
+  "labels": ["2024-01-01", "2024-01-02", ...],
+  "values": [1.82, 1.85, ...]
+}
+```
+
+Alternative formats also supported:
+- `{"data": [{"date": "2024-01-01", "value": 42000}, ...]}`
+- Raw array: `[{"date": "2024-01-01", "value": 42000}, ...]`
+
+### When to Use Analytics
+
+| Situation | Action |
+|-----------|--------|
+| Need drawdown calculation | `analytics distance_from_ath` → NOT web search |
+| Need correlation | `analytics correlation` → NOT search "BTC ETH correlation" |
+| Need trend detection | `analytics trend_direction` → NOT subjective assessment |
+| Need anomaly detection | `analytics detect_anomalies` → NOT manual inspection |
+| Need volatility regime | `analytics volatility_regime` → NOT search "is BTC volatile" |
 
 ---
 
@@ -923,6 +1092,8 @@ Save to `results/data_{N}.json`:
         "unit": "string|null",
         "period": "string|null",
         "as_of_date": "ISO date",
+        "confidence": "high|medium|low",
+        "confidence_indicator": "●●●|●●○|●○○",
         "citation_id": "c1"
       }
     },
@@ -960,7 +1131,15 @@ Save to `results/data_{N}.json`:
     "source": "string",
     "source_url": "https://...",
     "timestamp": "ISO datetime",
-    "data_freshness": "real-time|daily|weekly|monthly|quarterly|annual"
+    "source_tier": "tier_1|tier_2|tier_3|tier_4|tier_5",
+    "tier_reason": "API primary source|Aggregator data|etc.",
+    "freshness": {
+      "data_date": "ISO date",
+      "freshness_tier": "fresh|recent|dated|stale|outdated",
+      "freshness_indicator": "🟢|🟡|🟠|🔴|⚫",
+      "data_context": "fast_moving|moderate|slow_changing",
+      "update_frequency": "real-time|hourly|daily|weekly|monthly"
+    }
   },
   "errors": [
     {

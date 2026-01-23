@@ -71,6 +71,128 @@ why_full_urls:
    - What topics need more research?
    - What contradictions need resolution?
 
+---
+
+## Source Quality Tiers (Academic)
+
+**Классифицируй академические источники по уровню достоверности:**
+
+```yaml
+academic_source_tiers:
+  tier_1_primary:
+    description: "Рецензируемые публикации высшего уровня"
+    examples:
+      - "Nature, Science, NEJM, Lancet"
+      - "Top-tier CS conferences (NeurIPS, ICML, CVPR)"
+      - "Systematic reviews and meta-analyses"
+      - "Cochrane reviews"
+    weight: 1.0
+    auto_confidence: "high"
+
+  tier_2_authoritative:
+    description: "Качественные рецензируемые источники"
+    examples:
+      - "IEEE/ACM journals"
+      - "Q1 journals by impact factor"
+      - "Major conferences (AAAI, IJCAI, ACL)"
+      - "Highly cited arxiv preprints (>100 citations)"
+    weight: 0.8
+    auto_confidence: "high|medium"
+
+  tier_3_credible:
+    description: "Стандартные академические источники"
+    examples:
+      - "Q2-Q3 journals"
+      - "Workshop papers"
+      - "Recent arxiv preprints (< 50 citations)"
+      - "Technical reports from universities"
+    weight: 0.6
+    auto_confidence: "medium"
+
+  tier_4_secondary:
+    description: "Вспомогательные источники"
+    examples:
+      - "Whitepapers (non-peer-reviewed)"
+      - "Blog posts from researchers"
+      - "Conference extended abstracts"
+      - "Low-citation preprints"
+    weight: 0.4
+    auto_confidence: "medium|low"
+
+  tier_5_unverified:
+    description: "Непроверенные источники"
+    examples:
+      - "Non-academic whitepapers"
+      - "Unverified preprints"
+      - "Self-published research"
+    weight: 0.2
+    auto_confidence: "low"
+
+  citation_boost:
+    rule: "High citations can boost tier"
+    thresholds:
+      ">500 citations": "+1 tier (max tier_1)"
+      ">100 citations": "+0.5 tier weight"
+      ">50 citations": "no change"
+      "<10 citations": "-0.1 weight (new paper exception: <1 year)"
+```
+
+---
+
+## Data Freshness (Academic)
+
+**Актуальность академических источников:**
+
+```yaml
+academic_freshness:
+  # Академические источники устаревают медленнее
+  data_context: "slow_changing"
+
+  freshness_tiers:
+    fresh:
+      age: "< 1 year"
+      indicator: "🟢"
+      confidence_modifier: 1.0
+      note: "Current research"
+
+    recent:
+      age: "1-3 years"
+      indicator: "🟡"
+      confidence_modifier: 0.95
+      note: "Recent, still relevant"
+
+    dated:
+      age: "3-5 years"
+      indicator: "🟠"
+      confidence_modifier: 0.85
+      note: "Check for newer work"
+
+    stale:
+      age: "5-10 years"
+      indicator: "🔴"
+      confidence_modifier: 0.7
+      note: "Use for historical context"
+
+    outdated:
+      age: "> 10 years"
+      indicator: "⚫"
+      confidence_modifier: 0.5
+      note: "Foundational/historical only"
+
+  exceptions:
+    seminal_papers:
+      rule: "Foundational papers never considered stale"
+      examples: ["Attention Is All You Need", "Bitcoin whitepaper"]
+      override: "Always tier_1 regardless of age"
+
+    fast_moving_fields:
+      examples: ["AI/ML", "Crypto", "COVID research"]
+      multiplier: 2.0  # Age faster than normal academic
+      note: "1 year → effectively 2 years old"
+```
+
+---
+
 ## Output
 
 Save to `results/literature_{N}.json`:
@@ -87,6 +209,7 @@ Save to `results/literature_{N}.json`:
         "finding": "Main finding from literature",
         "type": "consensus|emerging|contested",
         "confidence": "high|medium|low",
+        "confidence_indicator": "●●●|●●○|●○○",
         "citation_ids": ["c1", "c2", "c3"]
       }
     ],
@@ -137,6 +260,15 @@ Save to `results/literature_{N}.json`:
       "date": "ISO date",
       "credibility": "high|medium|low",
       "citation_count": 150,
+      "source_tier": "tier_1|tier_2|tier_3|tier_4|tier_5",
+      "tier_reason": "Nature publication|Top-tier conference|etc.",
+      "freshness": {
+        "publication_date": "ISO date",
+        "freshness_tier": "fresh|recent|dated|stale|outdated",
+        "freshness_indicator": "🟢|🟡|🟠|🔴|⚫",
+        "is_seminal": false,
+        "field_context": "slow_changing|fast_moving"
+      },
       "accessed_at": "ISO timestamp"
     }
   ],
@@ -220,3 +352,19 @@ from integrations.research import serper
 # Academic search
 results = serper.search("machine learning healthcare", search_type="scholar")
 ```
+
+### Google Scholar
+```python
+from integrations.research import google_scholar
+
+# Search for papers
+papers = google_scholar.search_papers("blockchain tokenization", num_results=20)
+
+# Get author profile with h-index
+author = google_scholar.get_author_profile("Vitalik Buterin")
+
+# Get highly cited papers on a topic
+cited = google_scholar.get_highly_cited("DeFi", min_citations=100)
+```
+
+**Note:** Uses `scholarly` library (optional dependency). Rate limited — use with delays.

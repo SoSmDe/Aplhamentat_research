@@ -63,6 +63,105 @@ when_saving_citation:
    - What needs verification?
    - What adjacent topics matter?
 
+---
+
+## Source Quality Tiers
+
+**Классифицируй каждый источник по уровню достоверности.**
+
+```yaml
+source_quality_tiers:
+  tier_1_primary:
+    description: "Первичные официальные источники"
+    examples:
+      - "SEC filings, regulatory documents"
+      - "Company official press releases"
+      - "Government publications"
+      - "Academic peer-reviewed papers"
+    weight: 1.0
+
+  tier_2_authoritative:
+    description: "Авторитетные вторичные источники"
+    examples:
+      - "Major news (Bloomberg, Reuters, FT)"
+      - "Research reports (McKinsey, Gartner)"
+      - "Industry publications (CoinDesk, The Block)"
+    weight: 0.8
+
+  tier_3_credible:
+    description: "Проверенные источники"
+    examples:
+      - "Expert blogs with track record"
+      - "Trade publications"
+      - "Verified social media"
+    weight: 0.6
+
+  tier_4_secondary:
+    description: "Вторичные перепубликации"
+    examples:
+      - "News citing other sources"
+      - "Aggregator articles"
+      - "Wikipedia"
+    weight: 0.4
+
+  tier_5_unverified:
+    description: "Непроверенные источники"
+    examples:
+      - "Anonymous reports"
+      - "Forum posts"
+      - "Promotional content"
+    weight: 0.2
+
+  mapping_from_type:
+    filing: "tier_1"
+    academic: "tier_1"
+    report: "tier_2"
+    news: "tier_2 or tier_3"
+    website: "tier_3 or tier_4"
+    other: "tier_4 or tier_5"
+```
+
+---
+
+## Data Freshness Tracking
+
+**Оценивай актуальность данных.**
+
+```yaml
+freshness_tiers:
+  fresh:
+    age: "< 30 days"
+    indicator: "🟢"
+    confidence_modifier: 1.0
+
+  recent:
+    age: "30-90 days"
+    indicator: "🟡"
+    confidence_modifier: 0.9
+
+  dated:
+    age: "90-180 days"
+    indicator: "🟠"
+    confidence_modifier: 0.7
+
+  stale:
+    age: "180-365 days"
+    indicator: "🔴"
+    confidence_modifier: 0.5
+
+  outdated:
+    age: "> 365 days"
+    indicator: "⚫"
+    confidence_modifier: 0.3
+
+context_adjustments:
+  fast_moving: 2.0  # crypto, markets
+  moderate: 1.0     # business, companies
+  slow_changing: 0.5  # regulations, academic
+```
+
+---
+
 ## Output
 
 Save to `results/overview_{N}.json`:
@@ -79,6 +178,7 @@ Save to `results/overview_{N}.json`:
     {
       "finding": "Key finding text",
       "confidence": "high|medium|low",
+      "confidence_indicator": "●●●|●●○|●○○",
       "citation_ids": ["c1", "c2"]
     }
   ],
@@ -99,6 +199,15 @@ Save to `results/overview_{N}.json`:
       "url": "https://...",
       "type": "news|report|website|filing|academic|other",
       "credibility": "high|medium|low",
+      "source_tier": "tier_1|tier_2|tier_3|tier_4|tier_5",
+      "tier_reason": "Why this classification",
+      "freshness": {
+        "publication_date": "ISO date",
+        "freshness_tier": "fresh|recent|dated|stale|outdated",
+        "freshness_indicator": "🟢|🟡|🟠|🔴|⚫",
+        "data_context": "fast_moving|moderate|slow_changing",
+        "confidence_modifier": 0.9
+      },
       "accessed_at": "ISO timestamp"
     }
   ],

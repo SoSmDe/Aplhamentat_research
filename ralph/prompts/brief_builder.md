@@ -169,7 +169,7 @@ auto_answer_logic:
 - `executive_one_pager` — 1-page key findings
 - `full_report` — Complete report
 - `glossary` — Terms dictionary
-- `methodology` — Research methodology section
+- ~~`methodology`~~ — **REMOVED** (internal pipeline details should not be in report)
 - `data_pack` — Excel with all data (OPTIONAL, resource-intensive)
 
 ```yaml
@@ -178,8 +178,7 @@ auto_answer_logic:
     - "full_report"
 
   conditional:
-    methodology:
-      if_depth: ["comprehensive", "deep_dive"]
+    # methodology: REMOVED (internal details should not be in report)
     glossary:
       if_audience: ["general"]
     executive_one_pager:

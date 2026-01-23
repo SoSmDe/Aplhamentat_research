@@ -1,6 +1,3 @@
-# Research data (per-research folders)
-ralph/research_*/
-
 # Python
 *.pyc
 __pycache__/

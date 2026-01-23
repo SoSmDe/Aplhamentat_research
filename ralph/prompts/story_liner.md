@@ -109,16 +109,19 @@ layout_simple:
     subtitle: "Research query"
     date: "Current date"
 
-  hero_metrics:  # Top metrics grid
+  hero_metrics:  # Top metrics grid — MUST include citation_id!
     - value: "$5.5B"
       label: "Total Value"
       status: "default"  # or success/warning/danger/info
+      citation_id: 1     # ← ОБЯЗАТЕЛЬНО! Ссылка на источник
     - value: "+45%"
       label: "Growth"
       status: "success"
+      citation_id: 3
     - value: "78%"
       label: "Coverage"
       status: "warning"
+      citation_id: 5
 
   toc:
     items: ["Section 1", "Section 2", "Conclusion"]
@@ -177,6 +180,17 @@ layout_narrative:
 
 ### 4. Assign Chart Placements
 
+**Выбери и размести charts из chart_data.json (созданные Aggregator).**
+
+```yaml
+pipeline_note:
+  input: "chart_data.json (все возможные charts от Aggregator)"
+  task: "Выбрать ЛУЧШИЕ charts и определить ГДЕ их показать"
+  output: "story.json → chart_placements (только выбранные)"
+
+  # Не все charts будут показаны — выбирай по релевантности к narrative
+```
+
 For each chart in chart_data.json:
 
 ```yaml
@@ -233,13 +247,13 @@ audience_adjustments:
 
   committee:
     - "Balance of context and recommendation"
-    - "Include methodology briefly"
     - "Highlight risks prominently"
+    - "Include source quality grades"
 
   analyst:
-    - "Full methodology section"
     - "All supporting data"
     - "Detailed charts analysis"
+    - "Full citations with source quality"
 
   general:
     - "Simple language"
@@ -272,10 +286,10 @@ audience_adjustments:
     },
 
     "hero_metrics": [
-      {"value": "$5.5B", "label": "Market Size", "status": "default"},
-      {"value": "+45%", "label": "YoY Growth", "status": "success"},
-      {"value": "78%", "label": "Market Share", "status": "info"},
-      {"value": "-12%", "label": "Risk Factor", "status": "danger"}
+      {"value": "$5.5B", "label": "Market Size", "status": "default", "citation_id": 1},
+      {"value": "+45%", "label": "YoY Growth", "status": "success", "citation_id": 3},
+      {"value": "78%", "label": "Market Share", "status": "info", "citation_id": 5},
+      {"value": "-12%", "label": "Risk Factor", "status": "danger", "citation_id": 7}
     ],
 
     "toc": {
@@ -409,7 +423,7 @@ audience_adjustments:
 
 ```json
 {
-  "phase": "reporting",
+  "phase": "visual_design",
   "updated_at": "ISO timestamp"
 }
 ```
@@ -425,6 +439,7 @@ audience_adjustments:
 - **Metrics tell the story** — choose hero metrics wisely
 - **Audience shapes tone** — c_level ≠ analyst
 - **Reporter follows your structure** — be explicit about layout
+- **Hero metrics MUST have citation_id** — every metric needs a source reference
 
 ---
 

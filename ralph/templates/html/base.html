@@ -1144,6 +1144,487 @@ li {
     background: var(--corporate-dark);
 }
 
+/* === 13.5 VISUAL COMPONENTS (Custom Infographics) === */
+
+/* Visual Container - wrapper for all infographics */
+.visual-container {
+    margin: 32px 0;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.visual-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-light);
+}
+
+.visual-wrapper {
+    padding: 24px;
+}
+
+.visual-callout {
+    font-size: 14px;
+    color: var(--text-muted);
+    padding: 16px 24px;
+    background: linear-gradient(135deg, var(--corporate-subtle) 0%, var(--bg-light) 100%);
+    border-top: 1px solid var(--border-light);
+    margin: 0;
+    font-style: italic;
+}
+
+.visual-callout::before {
+    content: "💡 ";
+}
+
+/* SWOT Matrix */
+.swot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.swot-cell {
+    padding: 20px;
+    border-radius: var(--radius-md);
+    min-height: 120px;
+}
+
+.swot-cell h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.swot-cell ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.swot-cell li {
+    margin-bottom: 6px;
+}
+
+.swot-cell.strengths {
+    background: linear-gradient(135deg, #DCFCE7 0%, #F0FDF4 100%);
+    border: 1px solid #BBF7D0;
+}
+
+.swot-cell.strengths h4 {
+    color: #166534;
+}
+
+.swot-cell.weaknesses {
+    background: linear-gradient(135deg, #FEE2E2 0%, #FEF2F2 100%);
+    border: 1px solid #FECACA;
+}
+
+.swot-cell.weaknesses h4 {
+    color: #991B1B;
+}
+
+.swot-cell.opportunities {
+    background: linear-gradient(135deg, #DBEAFE 0%, #EFF6FF 100%);
+    border: 1px solid #BFDBFE;
+}
+
+.swot-cell.opportunities h4 {
+    color: #1E40AF;
+}
+
+.swot-cell.threats {
+    background: linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%);
+    border: 1px solid #FDE68A;
+}
+
+.swot-cell.threats h4 {
+    color: #92400E;
+}
+
+/* Comparison Matrix */
+.comparison-matrix {
+    overflow-x: auto;
+}
+
+.comparison-matrix table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.comparison-matrix th,
+.comparison-matrix td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.comparison-matrix thead th {
+    background: linear-gradient(180deg, var(--corporate-color) 0%, var(--corporate-dark) 100%);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.comparison-matrix thead th.highlight {
+    background: linear-gradient(180deg, var(--success) 0%, #047857 100%);
+}
+
+.comparison-matrix tbody tr:nth-child(even) {
+    background: var(--bg-light);
+}
+
+.comparison-matrix tbody tr:hover {
+    background: var(--corporate-subtle);
+}
+
+.comparison-matrix .good {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.comparison-matrix .bad {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.comparison-matrix .neutral {
+    color: var(--text-muted);
+}
+
+.comparison-matrix .icon {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.comparison-matrix .param-cell {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Timeline Horizontal */
+.timeline-container {
+    position: relative;
+    padding: 40px 20px;
+    overflow-x: auto;
+}
+
+.timeline-line {
+    position: absolute;
+    top: 50%;
+    left: 40px;
+    right: 40px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--border-color) 0%, var(--corporate-color) 50%, var(--border-color) 100%);
+    border-radius: 2px;
+}
+
+.timeline-events {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    min-width: 600px;
+}
+
+.timeline-event {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    max-width: 200px;
+}
+
+.timeline-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--corporate-color);
+    border: 4px solid white;
+    box-shadow: var(--shadow-md);
+    z-index: 1;
+    margin-bottom: 12px;
+}
+
+.timeline-dot.eu { background: #3B82F6; }
+.timeline-dot.usa { background: #EF4444; }
+.timeline-dot.uae { background: #10B981; }
+.timeline-dot.apac { background: #8B5CF6; }
+
+.timeline-date {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.timeline-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.timeline-category {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 2px 8px;
+    background: var(--bg-light);
+    border-radius: 4px;
+}
+
+/* Positioning Quadrant */
+.quadrant-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    background: var(--bg-light);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.quadrant-grid {
+    position: absolute;
+    inset: 50px;
+    border: 2px solid var(--border-color);
+}
+
+.quadrant-grid::before,
+.quadrant-grid::after {
+    content: '';
+    position: absolute;
+    background: var(--border-color);
+}
+
+.quadrant-grid::before {
+    /* Vertical center line */
+    width: 1px;
+    height: 100%;
+    left: 50%;
+}
+
+.quadrant-grid::after {
+    /* Horizontal center line */
+    width: 100%;
+    height: 1px;
+    top: 50%;
+}
+
+.quadrant-label {
+    position: absolute;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.quadrant-label.top-left { top: 55px; left: 55px; }
+.quadrant-label.top-right { top: 55px; right: 55px; }
+.quadrant-label.bottom-left { bottom: 55px; left: 55px; }
+.quadrant-label.bottom-right { bottom: 55px; right: 55px; }
+
+.quadrant-axis-label {
+    position: absolute;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.quadrant-axis-label.x-axis {
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.quadrant-axis-label.y-axis {
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    white-space: nowrap;
+}
+
+.quadrant-entity {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: var(--corporate-color);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: var(--shadow-md);
+    z-index: 2;
+}
+
+.quadrant-entity.highlight {
+    background: var(--danger);
+    border: 3px solid white;
+    box-shadow: var(--shadow-lg), 0 0 0 3px var(--danger-light);
+}
+
+.quadrant-entity.large { padding: 8px 16px; font-size: 14px; }
+.quadrant-entity.small { padding: 4px 8px; font-size: 11px; }
+
+/* KPI Cards Grid */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.kpi-card {
+    background: white;
+    padding: 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    text-align: center;
+    transition: all var(--transition-normal);
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.kpi-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.kpi-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.kpi-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.kpi-card.success { border-top: 4px solid var(--success); }
+.kpi-card.success .kpi-value { color: var(--success); }
+
+.kpi-card.warning { border-top: 4px solid var(--warning); }
+.kpi-card.warning .kpi-value { color: var(--warning); }
+
+.kpi-card.danger { border-top: 4px solid var(--danger); }
+.kpi-card.danger .kpi-value { color: var(--danger); }
+
+.kpi-card.info { border-top: 4px solid var(--info); }
+.kpi-card.info .kpi-value { color: var(--info); }
+
+/* Funnel Diagram */
+.funnel-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 20px;
+}
+
+.funnel-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 24px;
+    background: var(--corporate-color);
+    color: white;
+    font-weight: 600;
+    position: relative;
+    clip-path: polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%);
+}
+
+.funnel-stage:nth-child(1) { width: 100%; background: #3B82F6; }
+.funnel-stage:nth-child(2) { width: 85%; background: #6366F1; }
+.funnel-stage:nth-child(3) { width: 70%; background: #8B5CF6; }
+.funnel-stage:nth-child(4) { width: 55%; background: #A855F7; }
+.funnel-stage:nth-child(5) { width: 40%; background: #C026D3; }
+
+.funnel-label {
+    text-align: center;
+}
+
+.funnel-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.funnel-value {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* Checklist Grid */
+.checklist-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.checklist-table th,
+.checklist-table td {
+    padding: 12px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.checklist-table th:first-child,
+.checklist-table td:first-child {
+    text-align: left;
+}
+
+.checklist-table thead th {
+    background: var(--bg-light);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.check-yes {
+    color: var(--success);
+    font-size: 18px;
+}
+
+.check-yes::before {
+    content: "✓";
+}
+
+.check-no {
+    color: var(--danger);
+    font-size: 18px;
+}
+
+.check-no::before {
+    content: "✗";
+}
+
+.check-partial {
+    color: var(--warning);
+    font-size: 18px;
+}
+
+.check-partial::before {
+    content: "◐";
+}
+
 /* === 14. RESPONSIVE === */
 @media (max-width: 768px) {
     body {

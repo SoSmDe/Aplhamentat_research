@@ -2,10 +2,9 @@
 
 ## Архитектура проекта
 
-Проект Alphamentat Research Bot с разделением:
-- `ralph/` — Core движок (Claude Code native, State Machine)
-- `src/` — Общие ресурсы (промпты, шаблоны)
-- Placeholders для будущих интеграций
+Проект Alphamentat Research Bot — Claude Code native State Machine.
+- `ralph/` — Core движок (промпты, интеграции, CLI, шаблоны)
+- Placeholders для будущих интеграций (frontend, telegram, api)
 
 ---
 
@@ -15,11 +14,78 @@
 Alphamentat_research_bot/
 │
 ├── ralph/                           # Core движок
-│   ├── PROMPT.md                    # State Machine definition
+│   ├── PROMPT.md                    # State Machine definition (12 фаз)
 │   ├── loop.sh                      # Runner script с Progress Tracker
 │   ├── CLAUDE.md                    # Инструкции для Claude Code
 │   ├── AGENTS.md                    # Краткая справка
 │   ├── PROJECT_MAP.md               # Этот файл
+│   │
+│   ├── prompts/                     # 15 промптов агентов
+│   │   ├── initial_research.md      # + Tags & Entities extraction
+│   │   ├── brief_builder.md         # Auto-mode генерация Brief
+│   │   ├── planner.md               # Декомпозиция Brief в tasks
+│   │   ├── overview.md              # Deep Research skill (9 фаз)
+│   │   ├── data.md                  # Структурированные данные via CLI
+│   │   ├── research.md              # Качественный анализ
+│   │   ├── literature.md            # Академические статьи (science domain)
+│   │   ├── fact_check.md            # Верификация фактов (general domain)
+│   │   ├── questions_planner.md     # Фильтрация + Coverage check
+│   │   ├── aggregator.md            # Синтез и рекомендации
+│   │   ├── story_liner.md           # Планирование layout отчета
+│   │   ├── visual_designer.md       # Кастомная инфографика
+│   │   ├── chart_analyzer.md        # Анализ временных рядов (deep_dive)
+│   │   ├── reporter.md              # Генерация HTML отчетов
+│   │   └── editor.md                # Финальная редактура (deep_dive)
+│   │
+│   ├── templates/                   # Шаблоны отчетов
+│   │   ├── default.html             # Стандартный шаблон
+│   │   └── warp.html                # Альтернативный стиль
+│   │
+│   ├── cli/                         # CLI утилиты
+│   │   ├── fetch.py                 # Data Fetch CLI
+│   │   └── render_charts.py         # Plotly chart renderer
+│   │
+│   ├── integrations/                # API интеграции
+│   │   ├── core/                    # Resource tracking
+│   │   │   ├── tracker.py           # API/LLM metrics tracker
+│   │   │   ├── pricing.py           # Cost calculation
+│   │   │   ├── http_wrapper.py      # HTTP request patching
+│   │   │   ├── llm_estimator.py     # Token estimation
+│   │   │   └── metrics_aggregator.py # Summary generation
+│   │   │
+│   │   ├── crypto/                  # Crypto APIs
+│   │   │   ├── coingecko.py
+│   │   │   ├── blocklens.py
+│   │   │   ├── defillama.py
+│   │   │   ├── l2beat.py
+│   │   │   ├── etherscan.py
+│   │   │   ├── thegraph.py
+│   │   │   └── dune.py
+│   │   │
+│   │   ├── stocks/                  # Stock market APIs
+│   │   │   ├── yfinance_client.py
+│   │   │   ├── finnhub.py
+│   │   │   ├── fred.py
+│   │   │   ├── sec_edgar.py
+│   │   │   └── fmp.py
+│   │   │
+│   │   ├── research/                # Research APIs
+│   │   │   ├── serper.py            # Web search
+│   │   │   ├── arxiv.py             # Academic papers
+│   │   │   ├── pubmed.py            # Medical research
+│   │   │   ├── wikipedia.py
+│   │   │   ├── worldbank.py
+│   │   │   ├── imf.py
+│   │   │   ├── crunchbase.py        # Startup/company data
+│   │   │   ├── sec_edgar.py         # SEC filings
+│   │   │   ├── google_scholar.py    # Academic search
+│   │   │   └── news_aggregator.py   # News APIs
+│   │   │
+│   │   ├── general/                 # General purpose
+│   │   │   └── wikidata.py
+│   │   │
+│   │   └── analytics/               # Data analysis
+│   │       └── series_analyzer.py   # Time series analysis
 │   │
 │   └── research_YYYYMMDD_HHMMSS_*/  # Per-research folders (gitignored)
 │       ├── state/
@@ -29,30 +95,22 @@ Alphamentat_research_bot/
 │       │   ├── plan.json
 │       │   ├── coverage.json
 │       │   ├── questions_plan.json
-│       │   └── aggregation.json
+│       │   ├── aggregation.json
+│       │   ├── citations.json       # Источники
+│       │   ├── glossary.json        # Глоссарий
+│       │   ├── chart_data.json      # Данные для чартов
+│       │   ├── charts_analyzed.json # (deep_dive only)
+│       │   ├── story.json           # Layout blueprint
+│       │   ├── visuals.json         # Спецификации инфографики
+│       │   ├── editor_log.json      # (deep_dive only)
+│       │   └── metrics.json         # Resource tracking
 │       ├── results/                 # Agent outputs
+│       │   └── series/              # Time series data
 │       ├── questions/               # Generated questions
-│       └── output/                  # Final reports
-│
-├── src/                             # Общие ресурсы
-│   ├── prompts/                     # 9 промптов агентов
-│   │   ├── initial_research.md      # + Tags & Entities extraction
-│   │   ├── brief_builder.md         # Auto-mode (no user dialog)
-│   │   ├── planner.md
-│   │   ├── overview.md              # Deep Research skill (9 фаз)
-│   │   ├── data.md
-│   │   ├── research.md
-│   │   ├── questions_planner.md     # Фильтрация + Coverage check
-│   │   ├── aggregator.md
-│   │   └── reporter.md
-│   │
-│   └── templates/
-│       ├── pdf/
-│       │   └── report.html
-│       ├── excel/
-│       │   └── README.md
-│       └── pptx/
-│           └── README.md
+│       └── output/
+│           ├── report.html          # Primary output
+│           ├── charts/              # Plotly charts (deep_dive)
+│           └── visuals/             # Custom infographics
 │
 ├── frontend/                        # Placeholder для React
 │   └── .gitkeep
@@ -63,9 +121,7 @@ Alphamentat_research_bot/
 ├── api/                             # Placeholder для API layer
 │   └── .gitkeep
 │
-├── .gitignore
-├── Task1.md                         # State Machine refactoring task
-└── Task2.md                         # Progress Tracker & Search task
+└── .gitignore
 ```
 
 ---
@@ -76,13 +132,13 @@ Alphamentat_research_bot/
 
 | Файл | Описание |
 |------|----------|
-| `PROMPT.md` | State Machine с 8 фазами |
+| `PROMPT.md` | State Machine с 12 фазами |
 | `loop.sh` | Runner с Progress Tracker и Search |
 | `CLAUDE.md` | Инструкции для Claude Code |
 | `AGENTS.md` | Краткая справка по запуску |
 | `PROJECT_MAP.md` | Карта проекта |
 
-### src/prompts/ — Системные промпты (9 файлов)
+### prompts/ — Системные промпты (15 файлов)
 
 Каждый промпт содержит стандартные секции:
 - **Input** — что читать
@@ -96,26 +152,39 @@ Alphamentat_research_bot/
 | `brief_builder.md` | Auto-mode генерация Brief |
 | `planner.md` | Декомпозиция Brief в tasks |
 | `overview.md` | Deep Research skill (9 фаз) |
-| `data.md` | Сбор структурированных данных |
+| `data.md` | Сбор структурированных данных via CLI |
 | `research.md` | Качественный анализ |
+| `literature.md` | Академические статьи (arxiv, pubmed) |
+| `fact_check.md` | Верификация фактов |
 | `questions_planner.md` | Фильтрация вопросов + Coverage |
-| `aggregator.md` | Синтез и рекомендации |
-| `reporter.md` | Генерация отчетов |
+| `aggregator.md` | Синтез, триангуляция, рекомендации |
+| `story_liner.md` | Планирование layout отчета |
+| `visual_designer.md` | Кастомная инфографика (SWOT, timelines) |
+| `chart_analyzer.md` | Анализ временных рядов (deep_dive) |
+| `reporter.md` | Генерация HTML отчетов |
+| `editor.md` | Финальная редактура (deep_dive) |
 
-### src/templates/ — Шаблоны отчетов
+### integrations/ — API интеграции
 
-| Папка | Описание |
-|-------|----------|
-| `pdf/report.html` | Jinja2 шаблон для PDF |
-| `excel/` | Excel шаблоны (placeholder) |
-| `pptx/` | PowerPoint шаблоны (placeholder) |
+| Модуль | APIs |
+|--------|------|
+| `core/` | Resource tracking (metrics, costs) |
+| `crypto/` | CoinGecko, BlockLens, DeFiLlama, L2Beat, Etherscan, TheGraph, Dune |
+| `stocks/` | yFinance, Finnhub, FRED, SEC EDGAR, FMP |
+| `research/` | Serper, arXiv, PubMed, Wikipedia, World Bank, IMF, Crunchbase |
+| `general/` | Wikidata |
+| `analytics/` | Series analyzer (trends, stats, anomalies) |
 
 ---
 
 ## State Machine Pipeline
 
 ```
-initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → reporting → complete
+ALL depths:
+initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → story_lining → visual_design → reporting → complete
+
+Deep Dive additions (depth: deep_dive):
+... → aggregation → [chart_analysis] → story_lining → visual_design → reporting → editing → complete
 ```
 
 Детальная схема:
@@ -138,7 +207,9 @@ Planning
 │                                     │
 │   Overview (Deep Research) ──┐      │
 │   Data ─────────────────────┤      │
-│   Research ─────────────────┘      │
+│   Research ─────────────────┤      │
+│   Literature ───────────────┤      │
+│   Fact Check ───────────────┘      │
 │           │                         │
 │           ▼                         │
 │   Questions Review                  │
@@ -155,7 +226,19 @@ Planning
 Aggregator
     │
     ▼
+[Chart Analysis] ← only if deep_dive + series/
+    │
+    ▼
+Story Liner (ALL depths)
+    │
+    ▼
+Visual Designer (ALL depths)
+    │
+    ▼
 Reporter
+    │
+    ▼
+[Editor] ← only if deep_dive
     │
     ▼
 <promise>COMPLETE</promise>
@@ -202,7 +285,11 @@ cd ralph/
 {
   "id": "research_20260119_143052_realty_income",
   "query": "Analyze Realty Income Corporation for investment",
+  "language": "en",
   "phase": "execution",
+  "domain": "finance",
+  "domain_secondary": "business",
+  "domain_confidence": "high",
 
   "tags": ["investment", "reit", "real-estate", "dividend"],
   "entities": [
@@ -211,11 +298,19 @@ cd ralph/
     {"name": "S&P 500", "type": "index"}
   ],
 
+  "preferences": {
+    "depth": "standard",
+    "tone": "neutral_business",
+    "style": "default",
+    "audience": "analysts",
+    "output_format": "html"
+  },
+
   "execution": {
     "iteration": 2,
     "max_iterations": 5,
-    "tasks_pending": ["d3", "r2"],
-    "tasks_completed": ["o1", "d1", "d2", "r1"]
+    "tasks_pending": ["d3", "r2", "l1"],
+    "tasks_completed": ["o1", "d1", "d2", "r1", "f1"]
   },
 
   "coverage": {
@@ -248,22 +343,36 @@ research_20260119_143052_realty_income/
 │   ├── plan.json
 │   ├── questions_plan.json
 │   ├── coverage.json
-│   └── aggregation.json
+│   ├── aggregation.json
+│   ├── citations.json
+│   ├── glossary.json
+│   ├── chart_data.json
+│   ├── charts_analyzed.json # (deep_dive only)
+│   ├── story.json           # Layout blueprint
+│   ├── visuals.json         # Infographic specs
+│   ├── editor_log.json      # (deep_dive only)
+│   └── metrics.json         # Resource tracking
 │
 ├── results/
 │   ├── overview_1.json
 │   ├── data_1.json
-│   └── research_1.json
+│   ├── research_1.json
+│   ├── literature_1.json
+│   ├── fact_check_1.json
+│   └── series/              # Time series data
+│       └── *.json
 │
 ├── questions/
 │   ├── overview_questions.json
 │   ├── data_questions.json
-│   └── research_questions.json
+│   ├── research_questions.json
+│   ├── literature_questions.json
+│   └── fact_check_questions.json
 │
 └── output/
-    ├── report.pdf
-    ├── report.xlsx
-    └── report.pptx
+    ├── report.html          # Primary output
+    ├── charts/              # Plotly charts (deep_dive)
+    └── visuals/             # Custom infographics
 ```
 
 ---
@@ -285,6 +394,18 @@ research_20260119_143052_realty_income/
 - Tags: investment, reit, tech, dividend, etc.
 - Entities: companies, sectors, indices, concepts
 
+### Quality Assurance
+- Source quality tiers (tier_1 → tier_5)
+- Data freshness tracking (fresh → outdated)
+- Triangulation of sources
+- Self-calculation verification
+
+### Resource Tracking
+- API call metrics (endpoint, duration, status)
+- LLM token estimation
+- Cost calculation per module
+- Session-level aggregation
+
 ---
 
 ## Placeholders для будущего
@@ -297,4 +418,4 @@ research_20260119_143052_realty_income/
 
 ---
 
-*Документ обновлен: 2026-01-19*
+*Документ обновлен: 2026-01-23*

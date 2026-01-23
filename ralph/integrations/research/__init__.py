@@ -13,6 +13,10 @@ Available integrations:
 - arxiv: Scientific papers (CS, ML, Finance, Crypto)
 - serper: Google Search API (requires SERPER_API_KEY)
 - pubmed: Medical/biomedical literature from NCBI
+- crunchbase: Company data, funding, investors (requires CRUNCHBASE_API_KEY)
+- sec_edgar: SEC filings (10-K, 10-Q, 8-K, 13F)
+- google_scholar: Academic papers, citations, author profiles
+- news_aggregator: Multi-source news aggregation
 
 Quick start:
     from integrations.research import worldbank, wikipedia, arxiv
@@ -25,6 +29,22 @@ Quick start:
 
     # Search arXiv papers
     papers = arxiv.search_papers("transformer attention")
+
+    # Search company data
+    from integrations.research import crunchbase
+    company = crunchbase.get_organization("coinbase")
+
+    # Get SEC filings
+    from integrations.research import sec_edgar
+    filings = sec_edgar.get_company_filings("COIN", filing_types=["10-K"])
+
+    # Search academic papers
+    from integrations.research import google_scholar
+    papers = google_scholar.search_papers("blockchain tokenization")
+
+    # Get news
+    from integrations.research import news_aggregator
+    news = news_aggregator.get_crypto_news()
 """
 
 from . import worldbank
@@ -37,6 +57,10 @@ from . import wikipedia
 from . import arxiv
 from . import serper
 from . import pubmed
+from . import crunchbase
+from . import sec_edgar
+from . import google_scholar
+from . import news_aggregator
 
 __all__ = [
     "worldbank",
@@ -49,6 +73,10 @@ __all__ = [
     "arxiv",
     "serper",
     "pubmed",
+    "crunchbase",
+    "sec_edgar",
+    "google_scholar",
+    "news_aggregator",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

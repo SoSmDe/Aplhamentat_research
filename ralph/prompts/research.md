@@ -78,11 +78,251 @@ verification:
    - Verify sources (authority, recency)
    - Note contradictions between sources
    - Assess confidence in conclusions
+   - Apply Source Quality Tier classification
+   - Apply Data Freshness scoring
 
 5. **Generate questions**
    - What remains unclear?
    - What data needed for confirmation?
    - What adjacent topics worth exploring?
+
+---
+
+### 6. Deep Article Analysis
+
+**Для ключевых источников — читай полную статью, не только snippet.**
+
+```yaml
+when_to_deep_read:
+  triggers:
+    - "Источник цитируется 3+ раз"
+    - "Первичный источник (SEC, company blog, research report)"
+    - "Содержит ключевые цифры для отчёта"
+    - "Единственный источник по теме"
+
+  process:
+    1. WebFetch полный URL
+    2. Извлечь ВСЕ релевантные факты (не только то что искал)
+    3. Найти quotes от экспертов
+    4. Проверить methodology (если research report)
+    5. Записать дату публикации и автора
+
+  extract_template:
+    article_url: "https://..."
+    title: "..."
+    author: "..."
+    publication_date: "..."
+    key_facts:
+      - fact: "..."
+        quote: "exact quote from article"
+        location: "paragraph 3"
+    expert_quotes:
+      - person: "John Smith, CEO"
+        quote: "..."
+        context: "..."
+    methodology: "How they got their numbers"
+    limitations: "What they didn't cover"
+    related_links: ["URLs mentioned in article"]
+```
+
+### 7. Quote Extraction Rules
+
+**Извлекай и атрибутируй цитаты правильно.**
+
+```yaml
+quote_rules:
+  when_to_quote:
+    - "Expert opinion from named person"
+    - "Official statement from company"
+    - "Unique insight not found elsewhere"
+    - "Controversial or bold claim"
+
+  format:
+    short_quote: "Up to 15 words → inline in quotes"
+    long_quote: "Paraphrase + cite original"
+    block_quote: "For statements > 30 words, use blockquote"
+
+  attribution:
+    required: "Name, Title, Company"
+    format: '"Quote text" — Name, Title at Company'
+    example: '"Tokenization will reach $10T by 2030" — Larry Fink, CEO BlackRock'
+
+  verification:
+    - "Quote must exist EXACTLY in source (minor punctuation OK)"
+    - "Context must not change meaning"
+    - "If paraphrasing — don't use quotation marks"
+
+  # ❌ WRONG
+  wrong_examples:
+    - "Larry Fink said tokenization is important"  # No quote, no source
+    - '"This is huge" - some analyst'  # No name/title
+
+  # ✅ CORRECT
+  correct_examples:
+    - 'BlackRock CEO Larry Fink stated: "We believe tokenization of financial assets will be the next evolution" [1]'
+    - 'According to Fink, tokenization represents "the next generation for markets" (BlackRock Letter to Shareholders, 2024)'
+```
+
+---
+
+### 8. Source Quality Tiers
+
+**Классифицируй каждый источник по уровню достоверности.**
+
+```yaml
+source_quality_tiers:
+  tier_1_primary:
+    description: "Первичные официальные источники"
+    examples:
+      - "SEC filings (10-K, 10-Q, 8-K)"
+      - "Company official blog/newsroom"
+      - "Central bank publications"
+      - "On-chain data (Etherscan, BlockLens)"
+      - "Academic peer-reviewed papers"
+      - "Official government statistics"
+    weight: 1.0
+    auto_confidence: "high"
+
+  tier_2_authoritative:
+    description: "Авторитетные вторичные источники"
+    examples:
+      - "Major research firms (McKinsey, Gartner, Messari)"
+      - "Major news (Bloomberg, Reuters, FT)"
+      - "Industry reports with methodology"
+      - "Named analyst reports"
+      - "Conference presentations by companies"
+    weight: 0.8
+    auto_confidence: "high|medium"
+
+  tier_3_credible:
+    description: "Проверенные отраслевые источники"
+    examples:
+      - "Industry publications (CoinDesk, The Block)"
+      - "Expert blogs with track record"
+      - "Trade association data"
+      - "Aggregator sites (DeFiLlama, CoinGecko)"
+    weight: 0.6
+    auto_confidence: "medium"
+
+  tier_4_secondary:
+    description: "Вторичные перепубликации"
+    examples:
+      - "General news citing other sources"
+      - "Aggregator articles"
+      - "Social media from verified accounts"
+      - "Wikipedia (as starting point only)"
+    weight: 0.4
+    auto_confidence: "medium|low"
+
+  tier_5_unverified:
+    description: "Непроверенные источники"
+    examples:
+      - "Anonymous reports"
+      - "Forum posts"
+      - "Unverified social media"
+      - "Promotional content"
+    weight: 0.2
+    auto_confidence: "low"
+    note: "Use only if no other source available"
+
+  usage_rules:
+    - "Prefer tier_1/tier_2 for key claims"
+    - "tier_3 OK for supporting context"
+    - "tier_4 needs verification from higher tier"
+    - "tier_5 flag as unverified in output"
+
+  output_format:
+    source_tier: "tier_1|tier_2|tier_3|tier_4|tier_5"
+    tier_reason: "Why this classification"
+```
+
+### 9. Data Freshness Tracking
+
+**Оценивай актуальность данных относительно контекста исследования.**
+
+```yaml
+data_freshness_scoring:
+  principle: "Актуальность данных влияет на confidence"
+
+  freshness_tiers:
+    fresh:
+      age: "< 30 days"
+      indicator: "🟢"
+      confidence_modifier: 1.0
+      note: "Current, fully relevant"
+
+    recent:
+      age: "30-90 days"
+      indicator: "🟡"
+      confidence_modifier: 0.9
+      note: "Recent, check for updates"
+
+    dated:
+      age: "90-180 days"
+      indicator: "🟠"
+      confidence_modifier: 0.7
+      note: "May need verification"
+
+    stale:
+      age: "180-365 days"
+      indicator: "🔴"
+      confidence_modifier: 0.5
+      note: "Use with caution, seek newer data"
+
+    outdated:
+      age: "> 365 days"
+      indicator: "⚫"
+      confidence_modifier: 0.3
+      note: "Historical context only"
+
+  context_adjustments:
+    # Для разных типов данных разные требования к свежести
+    fast_moving:
+      examples: ["crypto prices", "market sentiment", "TVL", "trading volumes"]
+      freshness_multiplier: 2.0  # 30 days → effectively 60 days old
+      note: "Данные устаревают быстро"
+
+    moderate:
+      examples: ["market size", "company revenue", "user counts"]
+      freshness_multiplier: 1.0  # Standard aging
+      note: "Квартальные обновления нормальны"
+
+    slow_changing:
+      examples: ["regulatory frameworks", "technology standards", "academic research"]
+      freshness_multiplier: 0.5  # 30 days → effectively 15 days old
+      note: "Данные остаются актуальными дольше"
+
+  output_requirements:
+    for_each_source:
+      publication_date: "ISO date"
+      freshness_tier: "fresh|recent|dated|stale|outdated"
+      freshness_indicator: "🟢|🟡|🟠|🔴|⚫"
+      data_context: "fast_moving|moderate|slow_changing"
+
+    for_each_finding:
+      data_date: "When the data is from"
+      freshness_note: "If stale/outdated, note this"
+
+  verification_workflow:
+    1. Extract publication_date from source
+    2. Calculate age in days
+    3. Apply context_adjustment multiplier
+    4. Assign freshness_tier
+    5. Adjust confidence accordingly
+    6. If stale/outdated → search for newer source
+
+  example:
+    source: "Messari RWA Report"
+    publication_date: "2025-10-15"
+    current_date: "2026-01-22"
+    age_days: 99
+    data_context: "moderate"
+    freshness_tier: "dated"
+    freshness_indicator: "🟠"
+    action: "Use, but note data is ~3 months old; check for Q4 updates"
+```
+
+---
 
 ## Output
 
@@ -99,6 +339,7 @@ Save to `results/research_{N}.json`:
         "finding": "string",
         "type": "fact|opinion|analysis",
         "confidence": "high|medium|low",
+        "confidence_indicator": "●●●|●●○|●○○",
         "citation_ids": ["c1", "c2"]
       }
     ],
@@ -116,6 +357,27 @@ Save to `results/research_{N}.json`:
         "topic": "string",
         "view_1": {"position": "string", "citation_id": "c1"},
         "view_2": {"position": "string", "citation_id": "c2"}
+      }
+    ],
+    "deep_reads": [
+      {
+        "url": "https://...",
+        "title": "Article title",
+        "author": "Author name",
+        "publication_date": "2025-01-15",
+        "read_depth": "full|partial",
+        "facts_extracted": 12,
+        "methodology_found": "Description of how they calculated numbers",
+        "limitations_noted": "What the article didn't cover",
+        "expert_quotes": [
+          {
+            "person": "Larry Fink",
+            "title": "CEO, BlackRock",
+            "quote": "Tokenization will be the next evolution in markets",
+            "context": "Speaking at Davos 2025 panel on digital assets"
+          }
+        ],
+        "related_urls": ["https://..."]
       }
     ]
   },
@@ -137,6 +399,15 @@ Save to `results/research_{N}.json`:
       "url": "string",
       "date": "ISO date",
       "credibility": "high|medium|low",
+      "source_tier": "tier_1|tier_2|tier_3|tier_4|tier_5",
+      "tier_reason": "Why this classification",
+      "freshness": {
+        "publication_date": "ISO date",
+        "freshness_tier": "fresh|recent|dated|stale|outdated",
+        "freshness_indicator": "🟢|🟡|🟠|🔴|⚫",
+        "data_context": "fast_moving|moderate|slow_changing",
+        "confidence_modifier": 0.7
+      },
       "accessed_at": "ISO timestamp"
     }
   ],

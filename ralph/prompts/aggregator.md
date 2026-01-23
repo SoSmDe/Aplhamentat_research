@@ -130,6 +130,425 @@ numbers_to_verify:
   - Counts (700+ companies, 1,793 competitors)
 ```
 
+### 2.6. 🔺 Triangulation: Multi-Source Verification
+
+**Каждый ключевой факт должен быть подтверждён 2+ независимыми источниками.**
+
+```yaml
+triangulation_rules:
+  key_facts:
+    - Market size numbers
+    - Growth rates (CAGR, YoY)
+    - Company valuations
+    - Regulatory dates
+    - Funding amounts
+
+  process:
+    1. Для каждого key_finding найди все citations
+    2. Проверь: есть ли 2+ НЕЗАВИСИМЫХ источника?
+    3. Независимые = разные организации (не перепечатки)
+
+  scoring:
+    high_confidence:
+      criteria: "3+ независимых источника согласны"
+      indicator: "●●●"
+      action: "Использовать как факт"
+
+    medium_confidence:
+      criteria: "2 источника ИЛИ 1 первичный (SEC, официальный)"
+      indicator: "●●○"
+      action: "Использовать с оговоркой"
+
+    low_confidence:
+      criteria: "1 вторичный источник"
+      indicator: "●○○"
+      action: "Отметить как unverified или удалить"
+
+  contradictions:
+    when_sources_disagree:
+      1. Записать оба значения
+      2. Указать источники для каждого
+      3. Дать свою оценку какой вероятнее
+      4. Добавить в секцию "Противоречия в данных"
+
+  example:
+    finding: "RWA market size $30B"
+    sources:
+      - InvestAX Report (Q3 2025) → "$30B"
+      - RWA.xyz Dashboard → "$28.5B"
+      - DeFiLlama → "$31.2B"
+    verdict: "●●● High confidence: $28.5-31.2B, используем $30B"
+
+  example_contradiction:
+    finding: "Securitize market share"
+    sources:
+      - 4Pillars → "42%"
+      - Messari → "38%"
+    verdict: "●●○ Medium confidence: 38-42%, разница в методологии подсчёта"
+```
+
+### 2.7. 🧮 Self-Calculation Priority
+
+**Если данные можно рассчитать самостоятельно — рассчитай, не полагайся на вторичные источники.**
+
+```yaml
+self_calculation_rules:
+  principle: "Calculated > Cited"
+
+  when_to_calculate:
+    on_chain_metrics:
+      - "MVRV заявлен как 4.0 → проверь через BlockLens get_holder_valuation"
+      - "LTH/STH ratio → рассчитай через BlockLens get_holder_supply"
+      - "SOPR → проверь через BlockLens get_holder_profit"
+      note: "BlockLens = наш проект, считаем как первичный источник"
+
+    current_prices:
+      - "Цена актива в новости могла устареть"
+      - "Всегда бери текущую цену с CoinGecko или BlockLens"
+      - "Отмечай дату данных из источника vs текущая дата"
+
+    calculated_metrics:
+      - "Market cap = price × circulating supply"
+      - "Dominance = asset_mcap / total_mcap"
+      - "TVL change = (new - old) / old × 100%"
+
+  verification_workflow:
+    1. Встретил числовое утверждение в источнике
+    2. Проверь: можно ли это рассчитать/получить из API?
+    3. Если да → вызови API, сравни с заявленным
+    4. Если расхождение > 5% → отметь в contradictions
+
+  api_priority:
+    blocklens: "BTC on-chain (MVRV, SOPR, LTH/STH) — PRIMARY"
+    coingecko: "Цены, market cap — PRIMARY"
+    defillama: "TVL, DeFi metrics — PRIMARY"
+    sec_edgar: "Financial filings — PRIMARY"
+    news_sources: "SECONDARY — verify with APIs"
+
+  example:
+    source_claim: "BTC MVRV достиг 4.0, сигнализируя о перегреве"
+    verification:
+      1. Call: "python cli/fetch.py blocklens get_holder_valuation"
+      2. Result: {"lth_mvrv": 2.42, "sth_mvrv": 0.98}
+      3. Verdict: "❌ Источник устарел. Текущий LTH MVRV = 2.42"
+    action: "Использовать актуальные данные BlockLens, отметить расхождение"
+```
+
+### 2.8. 👤 Extract Expert Quotes
+
+**Извлеки цитаты экспертов из deep_reads в research результатах.**
+
+```yaml
+expert_quotes_extraction:
+  source: "results/research_*.json → output.deep_reads[].expert_quotes"
+
+  process:
+    1. Scan all research results for deep_reads array
+    2. Extract expert_quotes from each deep_read
+    3. Deduplicate quotes from same person
+    4. Group by topic/theme relevance
+    5. Prioritize quotes from authoritative figures
+
+  output_to:
+    aggregation.json: "expert_testimony"
+    format:
+      - person: "Full name"
+        title: "Position, Company"
+        quote: "Exact quote text"
+        context: "When/where said"
+        topic: "Related topic from Brief"
+        source_url: "Article URL"
+
+  selection_criteria:
+    prioritize:
+      - "C-level executives of major companies"
+      - "Industry analysts with named reports"
+      - "Regulators and policymakers"
+      - "Academic researchers with citations"
+    deprioritize:
+      - "Anonymous sources"
+      - "Generic analyst opinions"
+      - "Outdated quotes (>1 year old)"
+
+  example:
+    input_from_research:
+      deep_reads:
+        - url: "https://forbes.com/article..."
+          expert_quotes:
+            - person: "Larry Fink"
+              title: "CEO, BlackRock"
+              quote: "Tokenization will be the next evolution"
+              context: "Davos 2025"
+
+    output_to_aggregation:
+      expert_testimony:
+        - person: "Larry Fink"
+          title: "CEO, BlackRock"
+          quote: "Tokenization will be the next evolution"
+          context: "Davos 2025"
+          topic: "RWA Tokenization"
+          source_url: "https://forbes.com/article..."
+          weight: "high"
+```
+
+Save extracted quotes to `aggregation.json` → `expert_testimony` array.
+
+### 2.9. 📊 Source Quality Validation
+
+**Проверь и агрегируй quality tiers из всех research результатов.**
+
+```yaml
+source_quality_validation:
+  input: "sources[].source_tier from all result files"
+
+  validation_rules:
+    # Пересчитай confidence с учётом source tier
+    confidence_recalculation:
+      formula: "base_confidence × tier_weight × freshness_modifier"
+
+      tier_weights:
+        tier_1: 1.0
+        tier_2: 0.8
+        tier_3: 0.6
+        tier_4: 0.4
+        tier_5: 0.2
+
+      example:
+        base_confidence: "high"  # Agent said high
+        source_tier: "tier_4"    # But source is secondary
+        tier_weight: 0.4
+        recalculated: "medium"   # Downgrade confidence
+
+    # Флагай claims опирающиеся только на low-tier sources
+    quality_warnings:
+      - condition: "Key claim supported only by tier_4/tier_5"
+        action: "Flag in contradictions_found"
+        message: "Low source quality"
+
+      - condition: "High confidence claim from tier_3+ only"
+        action: "Downgrade to medium"
+        message: "Insufficient source authority"
+
+  aggregation:
+    # Создай summary по качеству источников
+    output:
+      source_quality_summary:
+        total_sources: 25
+        by_tier:
+          tier_1: 5
+          tier_2: 8
+          tier_3: 7
+          tier_4: 4
+          tier_5: 1
+        quality_score: 0.72  # Weighted average
+        quality_grade: "B"   # A (>0.8), B (0.6-0.8), C (0.4-0.6), D (<0.4)
+        warnings: ["3 claims rely on tier_4+ sources only"]
+
+  grade_thresholds:
+    A: "> 0.8 — Excellent source quality"
+    B: "0.6-0.8 — Good source quality"
+    C: "0.4-0.6 — Moderate, needs improvement"
+    D: "< 0.4 — Poor, reliability concerns"
+
+  fallback_strategy:
+    # Если source_tier отсутствует в результате агента
+    when_missing_tier:
+      rule: "Infer tier from credibility + type fields"
+      mapping:
+        high_credibility:
+          filing: "tier_1"
+          academic: "tier_1"
+          official: "tier_1"
+          report: "tier_2"
+          news: "tier_2"
+          website: "tier_3"
+          other: "tier_3"
+        medium_credibility:
+          filing: "tier_2"
+          academic: "tier_2"
+          report: "tier_3"
+          news: "tier_3"
+          website: "tier_4"
+          other: "tier_4"
+        low_credibility:
+          any: "tier_5"
+
+      action: "Log warning in source_quality_summary.warnings"
+      message: "N sources missing tier classification, inferred from credibility"
+```
+
+### 2.10. ⏰ Data Freshness Aggregation
+
+**Агрегируй freshness data и выдели устаревшие данные.**
+
+```yaml
+data_freshness_aggregation:
+  input: "sources[].freshness from all result files"
+
+  process:
+    1. Collect all freshness data from sources
+    2. Group by freshness_tier
+    3. Identify stale/outdated critical data
+    4. Calculate overall freshness score
+    5. Generate freshness warnings
+
+  freshness_summary:
+    output:
+      data_freshness:
+        average_age_days: 45
+        by_tier:
+          fresh: 10      # 🟢
+          recent: 8      # 🟡
+          dated: 5       # 🟠
+          stale: 2       # 🔴
+          outdated: 0    # ⚫
+        freshness_score: 0.85
+        freshness_grade: "A"
+
+        stale_data_alerts:
+          - claim: "Market size $30B"
+            source: "Messari Report Q3"
+            age_days: 120
+            freshness_tier: "dated"
+            recommendation: "Verify with newer source"
+
+        critical_outdated:
+          # Data older than 180 days for fast_moving context
+          - claim: "BTC dominance 45%"
+            source: "CoinGecko snapshot"
+            age_days: 200
+            action: "MUST refresh — crypto data stale"
+
+  grade_thresholds:
+    A: "> 0.8 — Mostly fresh data"
+    B: "0.6-0.8 — Some dated sources"
+    C: "0.4-0.6 — Multiple stale sources"
+    D: "< 0.4 — Significant freshness issues"
+
+  confidence_impact:
+    # Применяй freshness к final confidence
+    rule: "If source freshness_tier is stale/outdated, cap confidence at medium"
+
+    example:
+      claim: "ETF inflows reached $10B"
+      source_freshness: "stale"
+      agent_confidence: "high"
+      final_confidence: "medium"  # Capped due to stale data
+      note: "Data from 6 months ago, verify current figures"
+```
+
+### 2.11. 📈 Structured Metric Analysis (for Time Series)
+
+**Для каждого time series в `results/series/` проведи полный анализ через CLI.**
+
+```yaml
+structured_analysis_workflow:
+  trigger: "Если есть results/series/*.json файлы"
+
+  step_1_run_full_analysis:
+    # Для каждого series файла вызови full_analysis
+    command: |
+      python cli/fetch.py analytics full_analysis '{"file":"results/series/BTC_MVRV.json"}'
+
+    returns:
+      - quantitative: "mean, std, percentiles, current value"
+      - position: "where in range (bottom/lower/middle/upper/top)"
+      - trends: "30d and 90d direction with confidence"
+      - volatility: "regime (low/normal/high/extreme)"
+      - historical: "ATH distance, ATL gain"
+      - signals: "breakout, anomalies, regime_changes"
+      - interpretation: "auto-generated signal (bullish/bearish/neutral)"
+
+  step_2_interpret_results:
+    # Используй результаты для написания insights
+    template: |
+      **{metric_name}** ({current_value})
+      - Позиция: {position.in_range} диапазона ({position.range_position_pct}%)
+      - Относительно среднего: {position.vs_mean}% {position.vs_mean_text}
+      - Тренд 30д: {trends.trend_30d}, 90д: {trends.trend_90d}
+      - Волатильность: {volatility.regime}
+      - До ATH: {historical.drawdown_pct}%
+      - Сигнал: {interpretation.signal} ({interpretation.confidence})
+
+  step_3_cross_check:
+    # Сравни метрики между собой
+    command: |
+      python cli/fetch.py analytics correlation '{"file1":"results/series/BTC_price.json","file2":"results/series/BTC_MVRV.json"}'
+
+    check_for:
+      - "Корреляция между ценой и индикатором"
+      - "Дивергенции (цена растёт, индикатор падает)"
+      - "Lead/lag (что опережает)"
+
+  step_4_find_contradictions:
+    # Если один индикатор bullish, другой bearish
+    example:
+      price_trend: "up"
+      mvrv_interpretation: "overvalued (bearish)"
+      contradiction: "Цена растёт, но MVRV показывает перегрев"
+      resolution: "Рекомендуется осторожность несмотря на рост цены"
+```
+
+**CLI команды для анализа:**
+
+```bash
+# Полный анализ одной метрики (РЕКОМЕНДУЕТСЯ)
+python cli/fetch.py analytics full_analysis '{"file":"results/series/BTC_MVRV.json"}'
+
+# Корреляция между метриками
+python cli/fetch.py analytics correlation '{"file1":"series/A.json","file2":"series/B.json"}'
+
+# Найти противоречия в наборе метрик (если есть несколько)
+# Сначала получи interpretations из full_analysis для каждой метрики
+# Затем сравни signals между собой
+```
+
+**Обязательные поля в aggregation.json:**
+
+```json
+{
+  "metric_analyses": [
+    {
+      "metric": "BTC_LTH_MVRV",
+      "file": "series/BTC_LTH_MVRV.json",
+      "current_value": 2.42,
+      "analysis": {
+        "position": "upper (85th percentile)",
+        "vs_mean": "+15% above average",
+        "trend_30d": "up (moderate)",
+        "trend_90d": "up (strong)",
+        "volatility": "normal",
+        "ath_distance": "-8% from ATH"
+      },
+      "interpretation": {
+        "signal": "neutral",
+        "confidence": "medium",
+        "summary": "MVRV elevated but not extreme. Uptrend continues but approaching overheated zone."
+      },
+      "cross_checks": [
+        {
+          "vs_metric": "BTC_price",
+          "correlation": 0.85,
+          "divergence": false,
+          "note": "Price and MVRV moving together"
+        }
+      ]
+    }
+  ],
+
+  "metric_contradictions": [
+    {
+      "metrics": ["BTC_LTH_MVRV", "BTC_STH_MVRV"],
+      "observation": "LTH в прибыли (MVRV 2.4), STH в убытке (MVRV 0.98)",
+      "interpretation": "Разные когорты в разных состояниях — типично для коррекции в бычьем рынке",
+      "net_signal": "cautiously_bullish"
+    }
+  ]
+}
+```
+
+---
+
 ### 3. Extract Glossary Terms
 Automatically identify and define terms:
 ```yaml
@@ -148,6 +567,88 @@ glossary_extraction:
 ```
 
 Save to `state/glossary.json`
+
+### 3.5. 🎨 Auto-Detect Visualizations
+
+**Сканируй все данные и определи что МОЖНО и НУЖНО визуализировать.**
+
+```yaml
+pipeline_note:
+  aggregator_role: "Создать ВСЕ возможные charts в chart_data.json"
+  story_liner_role: "Выбрать какие charts показать и ГДЕ разместить"
+  reporter_role: "Отрендерить выбранные charts по story.json"
+
+  # Aggregator создаёт 20 charts → Story Liner выбирает 12 → Reporter рендерит 12
+```
+
+```yaml
+detection_rules:
+  # Если есть N элементов для сравнения → chart
+  comparison_trigger:
+    condition: "3+ items с числовыми значениями"
+    chart_type: "bar"
+    examples:
+      - "Market share: Company A 40%, B 30%, C 20%"
+      - "Pricing tiers: Basic $25K, Pro $100K, Enterprise $500K"
+
+  # Если есть временной ряд → line chart
+  time_series_trigger:
+    condition: "Значения по датам/периодам"
+    chart_type: "line"
+    examples:
+      - "Market size: 2023 $8B, 2024 $15B, 2025 $30B"
+      - "Q1: $2B, Q2: $3B, Q3: $4B"
+
+  # Если есть доли от целого → pie/donut
+  composition_trigger:
+    condition: "Части составляют 100% или целое"
+    chart_type: "pie"
+    examples:
+      - "Ethereum 65%, Other 35%"
+      - "Breakdown by region: US 40%, EU 35%, APAC 25%"
+
+  # Если есть сравнение характеристик → table или radar
+  feature_comparison_trigger:
+    condition: "Несколько entities с множеством атрибутов"
+    chart_type: "comparison_table or radar"
+    examples:
+      - "Platform A vs B vs C по 5 критериям"
+
+  # Если есть процесс/этапы → timeline или flowchart
+  process_trigger:
+    condition: "Последовательные шаги или события"
+    chart_type: "timeline"
+    examples:
+      - "2023: Launch, 2024: Series A, 2025: IPO"
+
+  # Если есть 2x2 или категоризация → matrix
+  matrix_trigger:
+    condition: "Два измерения для классификации"
+    chart_type: "quadrant"
+    examples:
+      - "Risk vs Return"
+      - "Cost vs Time to Market"
+
+minimum_charts_by_depth:
+  executive: 4-6
+  standard: 8-12
+  comprehensive: 12-16
+  deep_dive: 16-20
+
+auto_generate:
+  # Всегда генерировать если данные позволяют:
+  mandatory:
+    - "Market size over time (если есть)"
+    - "Competitive landscape comparison"
+    - "Pricing comparison"
+
+  # Генерировать если есть данные:
+  optional:
+    - "Geographic breakdown"
+    - "Segment breakdown"
+    - "Growth rates comparison"
+    - "Feature matrix"
+```
 
 ### 4. Check Consistency
 - Find contradictions between sources
@@ -246,10 +747,10 @@ chart_completeness:
     - "All numeric summaries → have corresponding chart"
 
   minimum_charts:
-    executive: 3
-    standard: 6
-    comprehensive: 10
-    deep_dive: 12+
+    executive: 4-6
+    standard: 8-12
+    comprehensive: 12-16
+    deep_dive: 16-20
 
   # ❌ WRONG - missing charts
   data_files: 7 with visualizable data
@@ -297,6 +798,15 @@ For each scope item from Brief:
       "insight": "Key finding",
       "confidence": "high|medium|low",
       "confidence_indicator": "●●●",
+      "triangulation": {
+        "sources_count": 3,
+        "sources": ["Source1", "Source2", "Source3"],
+        "values_reported": ["$30B", "$28.5B", "$31.2B"],
+        "variance": "low|medium|high",
+        "verdict": "Confirmed across sources",
+        "self_calculated": false,
+        "calculation_source": null
+      },
       "supporting_data": ["reference to data"],
       "citation_ids": ["[1]", "[2]"],
       "importance": "high|medium"
@@ -336,11 +846,32 @@ For each scope item from Brief:
     }
   ],
 
+  "expert_testimony": [
+    {
+      "person": "Larry Fink",
+      "title": "CEO, BlackRock",
+      "quote": "Tokenization will be the next evolution in markets",
+      "context": "Davos 2025 panel",
+      "topic": "RWA Tokenization",
+      "source_url": "https://forbes.com/...",
+      "citation_id": "[5]",
+      "weight": "high|medium|low"
+    }
+  ],
+
   "contradictions_found": [
     {
-      "topic": "string",
-      "source_a": {"claim": "...", "citation": "[1]"},
-      "source_b": {"claim": "...", "citation": "[2]"},
+      "topic": "Securitize market share",
+      "source_a": {"value": "42%", "source": "4Pillars", "citation": "[1]"},
+      "source_b": {"value": "38%", "source": "Messari", "citation": "[2]"},
+      "likely_reason": "Different methodology|Outdated data|Different scope",
+      "self_check": {
+        "attempted": true,
+        "api_used": "defillama",
+        "calculated_value": "40%",
+        "calculation_date": "2026-01-22"
+      },
+      "recommendation": "Report as 38-42% range",
       "resolution": "How to interpret"
     }
   ],
@@ -363,12 +894,50 @@ For each scope item from Brief:
     "risks_to_monitor": ["risk1", "risk2"]
   },
 
+  "source_quality_summary": {
+    "total_sources": 25,
+    "by_tier": {
+      "tier_1": 5,
+      "tier_2": 8,
+      "tier_3": 7,
+      "tier_4": 4,
+      "tier_5": 1
+    },
+    "quality_score": 0.72,
+    "quality_grade": "B",
+    "warnings": ["3 claims rely on tier_4+ sources only"]
+  },
+
+  "data_freshness": {
+    "average_age_days": 45,
+    "by_tier": {
+      "fresh": 10,
+      "recent": 8,
+      "dated": 5,
+      "stale": 2,
+      "outdated": 0
+    },
+    "freshness_score": 0.85,
+    "freshness_grade": "A",
+    "stale_data_alerts": [
+      {
+        "claim": "Market size $30B",
+        "source": "Messari Report Q3",
+        "age_days": 120,
+        "freshness_tier": "dated",
+        "recommendation": "Verify with newer source"
+      }
+    ]
+  },
+
   "metadata": {
     "total_rounds": 3,
     "total_tasks": 15,
     "sources_count": 25,
     "glossary_terms_count": 12,
-    "charts_prepared": 4
+    "charts_prepared": 4,
+    "quality_grade": "B",
+    "freshness_grade": "A"
   }
 }
 ```
@@ -425,7 +994,39 @@ For each scope item from Brief:
       "source_citation": "[1]"
     }
   ],
-  "total": 4
+  "auto_detected": [
+    {
+      "data_source": "section s2, paragraph 3",
+      "raw_text": "Securitize 42%, Ondo 26%, Franklin 12%",
+      "suggested_chart": {
+        "type": "pie",
+        "title": "Market Share: Tokenized Treasuries",
+        "data": {
+          "labels": ["Securitize", "Ondo", "Franklin", "Other"],
+          "values": [42, 26, 12, 20]
+        }
+      },
+      "confidence": "high|medium|low",
+      "status": "created|pending|skipped",
+      "skip_reason": null
+    }
+  ],
+  "visualization_coverage": {
+    "visualizable_data_points": 15,
+    "charts_created": 12,
+    "coverage_pct": 80,
+    "by_type": {
+      "comparison": {"found": 5, "charted": 4},
+      "time_series": {"found": 3, "charted": 3},
+      "composition": {"found": 4, "charted": 3},
+      "process": {"found": 2, "charted": 1},
+      "matrix": {"found": 1, "charted": 1}
+    },
+    "missing_mandatory": [],
+    "depth_target": 12,
+    "meets_target": true
+  },
+  "total": 12
 }
 ```
 

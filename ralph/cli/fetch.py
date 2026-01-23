@@ -13,6 +13,12 @@ Examples:
     python fetch.py defillama get_protocol_tvl '{"protocol":"aave"}'
     python fetch.py yfinance get_price_history '{"symbol":"BTC-USD","start":"2024-01-01"}'
 
+Analytics (series analysis):
+    python fetch.py analytics analyze '{"file":"results/series/BTC_MVRV.json"}'
+    python fetch.py analytics basic_stats '{"file":"results/series/BTC_price.json"}'
+    python fetch.py analytics trend_direction '{"file":"results/series/BTC_price.json","window":30}'
+    python fetch.py analytics correlation '{"file1":"results/series/BTC_price.json","file2":"results/series/BTC_MVRV.json"}'
+
 Output:
     JSON to stdout on success
     {"error": "message"} on failure
@@ -30,6 +36,27 @@ if sys.platform == "win32":
 # Add ralph directory to path for imports
 RALPH_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, RALPH_DIR)
+
+# Import and enable resource tracking
+try:
+    from integrations.core.http_wrapper import patch_requests
+    from integrations.core.tracker import tracker
+    from integrations.core.pricing import calculate_api_cost
+
+    # Apply HTTP tracking patch
+    patch_requests()
+
+    # Initialize tracker from environment variables
+    _SESSION_ID = os.environ.get("RALPH_SESSION_ID")
+    _STATE_DIR = os.environ.get("RALPH_STATE_DIR")
+    if _SESSION_ID and _STATE_DIR:
+        tracker.start_session(_SESSION_ID, _STATE_DIR)
+
+    _TRACKING_ENABLED = True
+except ImportError:
+    # Tracking module not available - continue without it
+    _TRACKING_ENABLED = False
+    tracker = None
 
 
 # Module mapping: short name -> full import path
@@ -57,9 +84,16 @@ MODULES = {
     "arxiv": "integrations.research.arxiv",
     "serper": "integrations.research.serper",
     "pubmed": "integrations.research.pubmed",
+    "crunchbase": "integrations.research.crunchbase",
+    "sec_edgar": "integrations.research.sec_edgar",
+    "google_scholar": "integrations.research.google_scholar",
+    "news_aggregator": "integrations.research.news_aggregator",
 
     # General
     "wikidata": "integrations.general.wikidata",
+
+    # Analytics
+    "analytics": "integrations.analytics.series_analyzer",
 }
 
 
@@ -72,10 +106,11 @@ Usage:
     python fetch.py <module> <method> [args_json]
 
 Available modules:
-    Crypto:   coingecko, blocklens, defillama, l2beat, etherscan, thegraph, dune
-    Stocks:   yfinance, finnhub, fred, sec, fmp
-    Research: worldbank, imf, wikipedia, arxiv, serper, pubmed
-    General:  wikidata
+    Crypto:    coingecko, blocklens, defillama, l2beat, etherscan, thegraph, dune
+    Stocks:    yfinance, finnhub, fred, sec, fmp
+    Research:  worldbank, imf, wikipedia, arxiv, serper, pubmed, crunchbase, sec_edgar, google_scholar, news_aggregator
+    General:   wikidata
+    Analytics: analytics (series analysis for chart data)
 
 Examples:
     python fetch.py coingecko get_price '["bitcoin"]'
@@ -83,6 +118,13 @@ Examples:
     python fetch.py blocklens get_holder_supply '{"start_date":"2024-01-01","limit":365}'
     python fetch.py yfinance get_price_history '{"symbol":"SPY","start":"2024-01-01"}'
     python fetch.py defillama get_l2_comparison
+
+Analytics (series analysis):
+    python fetch.py analytics basic_stats '{"file":"results/series/BTC_price.json"}'
+    python fetch.py analytics trend_direction '{"file":"results/series/BTC_price.json","window":30}'
+    python fetch.py analytics correlation '{"file1":"results/series/BTC_price.json","file2":"results/series/BTC_MVRV.json"}'
+    python fetch.py analytics detect_anomalies '{"file":"results/series/BTC_price.json","column":"value","z_threshold":2.5}'
+    python fetch.py analytics volatility_regime '{"file":"results/series/BTC_price.json","column":"value"}'
 
 To list methods for a module:
     python fetch.py <module> --list
@@ -101,6 +143,67 @@ def list_methods(module_name: str) -> None:
         print(json.dumps({"module": module_name, "methods": methods}))
     except Exception as e:
         print(json.dumps({"error": f"Failed to import {module_name}: {str(e)}"}))
+
+
+def load_series_data(file_path: str, column: str = None) -> list:
+    """Load time series data from JSON file.
+
+    Handles multiple formats:
+    1. {"values": [...], "labels": [...]} - returns values
+    2. [{"date": "...", "value": 100}, ...] - extracts column values
+    3. Raw list [100, 101, 102] - returns as-is
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    # Handle different data formats
+    if isinstance(data, list):
+        # Check if list of dicts (e.g., [{"date": "...", "value": 100}])
+        if data and isinstance(data[0], dict) and column:
+            return [item.get(column, 0) for item in data if column in item]
+        return data
+    elif isinstance(data, dict):
+        # Standard series format: {"values": [...], "labels": [...]}
+        for key in ["values", "data", "series", "results"]:
+            if key in data:
+                values = data[key]
+                # If values is list of dicts, extract column
+                if values and isinstance(values[0], dict) and column:
+                    return [item.get(column, 0) for item in values if column in item]
+                return values
+        # Return dict as-is if no known key found
+        return data
+    return data
+
+
+def load_series_with_dates(file_path: str) -> tuple:
+    """Load series data with both values and dates/labels."""
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    values = []
+    dates = []
+
+    if isinstance(data, list):
+        if data and isinstance(data[0], dict):
+            # List of dicts: [{"date": "...", "value": 100}]
+            for item in data:
+                if "value" in item:
+                    values.append(item["value"])
+                    dates.append(item.get("date", item.get("date_processed", "")))
+        else:
+            values = data
+    elif isinstance(data, dict):
+        values = data.get("values", data.get("data", []))
+        dates = data.get("labels", data.get("dates", []))
+
+    return values, dates
 
 
 def call_method(module_name: str, method_name: str, args_json: str = None) -> None:
@@ -129,21 +232,41 @@ def call_method(module_name: str, method_name: str, args_json: str = None) -> No
         else:
             args = None
 
-        # Call method with appropriate argument passing
-        # - None: no args
-        # - List: pass as first positional arg (e.g., get_price(["bitcoin"]))
-        # - Dict: pass as kwargs (e.g., get_price_history(coin_id="bitcoin", days=30))
-        # - Other: pass as single arg
-        if args is None:
-            result = method()
-        elif isinstance(args, list):
-            # Pass list as first argument (don't unpack!)
-            # This is for functions like get_price(coin_ids: List[str])
-            result = method(args)
-        elif isinstance(args, dict):
-            result = method(**args)
+        # Special handling for analytics module - load data from files
+        if module_name == "analytics" and isinstance(args, dict):
+            # Handle file-based analytics calls
+            if "file" in args:
+                file_path = args.pop("file")
+                column = args.pop("column", None)
+                # Load data with optional column extraction
+                data = load_series_data(file_path, column)
+                result = method(data, **args)
+            elif "file1" in args and "file2" in args:
+                # Correlation between two series
+                column1 = args.pop("column1", None)
+                column2 = args.pop("column2", None)
+                data1 = load_series_data(args.pop("file1"), column1)
+                data2 = load_series_data(args.pop("file2"), column2)
+                result = method(data1, data2, **args)
+            else:
+                # Pass args as-is for functions not requiring file loading
+                result = method(**args)
         else:
-            result = method(args)
+            # Standard call handling for other modules
+            # - None: no args
+            # - List: pass as first positional arg (e.g., get_price(["bitcoin"]))
+            # - Dict: pass as kwargs (e.g., get_price_history(coin_id="bitcoin", days=30))
+            # - Other: pass as single arg
+            if args is None:
+                result = method()
+            elif isinstance(args, list):
+                # Pass list as first argument (don't unpack!)
+                # This is for functions like get_price(coin_ids: List[str])
+                result = method(args)
+            elif isinstance(args, dict):
+                result = method(**args)
+            else:
+                result = method(args)
 
         # Output result
         print(json.dumps(result, default=str, ensure_ascii=False))
@@ -186,8 +309,17 @@ def main():
     # Get optional args
     args_json = sys.argv[3] if len(sys.argv) > 3 else None
 
-    # Call the method
-    call_method(module_name, method_name, args_json)
+    # Set tracking context
+    if _TRACKING_ENABLED and tracker:
+        tracker.set_context(task_type=f"{module_name}.{method_name}")
+
+    try:
+        # Call the method
+        call_method(module_name, method_name, args_json)
+    finally:
+        # End tracking session and save metrics
+        if _TRACKING_ENABLED and tracker and tracker.is_active:
+            tracker.end_session()
 
 
 if __name__ == "__main__":

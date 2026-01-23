@@ -75,6 +75,106 @@ why_full_urls:
    - What conflicting information needs resolution?
    - What additional verification is needed?
 
+---
+
+## Source Quality Tiers
+
+**Классифицируй источники верификации по уровню достоверности.**
+
+```yaml
+source_quality_tiers:
+  tier_1_primary:
+    description: "Официальные первичные источники"
+    examples:
+      - "Official company/government websites"
+      - "SEC filings, regulatory documents"
+      - "Peer-reviewed academic papers"
+    weight: 1.0
+
+  tier_2_authoritative:
+    description: "Авторитетные справочные источники"
+    examples:
+      - "Wikidata (structured, curated)"
+      - "Major encyclopedias"
+      - "Authoritative databases"
+    weight: 0.8
+
+  tier_3_credible:
+    description: "Проверенные справочные источники"
+    examples:
+      - "Wikipedia (curated but user-editable)"
+      - "Industry databases"
+      - "Established news archives"
+    weight: 0.6
+
+  tier_4_secondary:
+    description: "Вторичные источники"
+    examples:
+      - "General web search results"
+      - "Blog posts"
+      - "Social media from verified accounts"
+    weight: 0.4
+
+  tier_5_unverified:
+    description: "Непроверенные источники"
+    examples:
+      - "Unverified web pages"
+      - "Forum posts"
+      - "Anonymous sources"
+    weight: 0.2
+
+  mapping_from_source_type:
+    official: "tier_1"
+    wikidata: "tier_2"
+    wikipedia: "tier_3"
+    website: "tier_3 or tier_4"
+```
+
+---
+
+## Data Freshness Tracking
+
+**Оценивай актуальность данных для верификации.**
+
+```yaml
+freshness_tiers:
+  fresh:
+    age: "< 30 days"
+    indicator: "🟢"
+    confidence_modifier: 1.0
+    note: "Current, fully reliable"
+
+  recent:
+    age: "30-90 days"
+    indicator: "🟡"
+    confidence_modifier: 0.9
+    note: "Recent, check for updates"
+
+  dated:
+    age: "90-180 days"
+    indicator: "🟠"
+    confidence_modifier: 0.7
+    note: "May need re-verification"
+
+  stale:
+    age: "180-365 days"
+    indicator: "🔴"
+    confidence_modifier: 0.5
+    note: "Use with caution"
+
+  outdated:
+    age: "> 365 days"
+    indicator: "⚫"
+    confidence_modifier: 0.3
+    note: "Historical context only"
+
+wikipedia_freshness:
+  note: "Check 'last_updated' field from Wikipedia API"
+  rule: "If article updated within 30 days → fresh"
+```
+
+---
+
 ## Output
 
 Save to `results/fact_check_{N}.json`:
@@ -91,6 +191,7 @@ Save to `results/fact_check_{N}.json`:
         "claim": "Original claim text",
         "verdict": "verified|likely_accurate|unverified|disputed|false",
         "confidence": "high|medium|low",
+        "confidence_indicator": "●●●|●●○|●○○",
         "evidence": [
           {
             "source": "Wikipedia",
@@ -143,6 +244,15 @@ Save to `results/fact_check_{N}.json`:
       "url": "string",
       "date": "ISO date",
       "credibility": "high|medium|low",
+      "source_tier": "tier_1|tier_2|tier_3|tier_4|tier_5",
+      "tier_reason": "Why this classification (e.g., 'Wikidata structured data')",
+      "freshness": {
+        "publication_date": "ISO date",
+        "last_updated": "ISO date (for Wikipedia)",
+        "freshness_tier": "fresh|recent|dated|stale|outdated",
+        "freshness_indicator": "🟢|🟡|🟠|🔴|⚫",
+        "confidence_modifier": 0.9
+      },
       "accessed_at": "ISO timestamp"
     }
   ],

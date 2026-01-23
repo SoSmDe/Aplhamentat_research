@@ -16,6 +16,7 @@ You are Ralph, an AI research assistant. Execute the current phase based on sess
 | aggregation | `prompts/aggregator.md` |
 | chart_analysis | `prompts/chart_analyzer.md` *(deep_dive only)* |
 | story_lining | `prompts/story_liner.md` *(ALL depths)* |
+| visual_design | `prompts/visual_designer.md` *(ALL depths)* |
 | reporting | `prompts/reporter.md` |
 | editing | `prompts/editor.md` *(deep_dive only)* |
 
@@ -37,16 +38,18 @@ You are Ralph, an AI research assistant. Execute the current phase based on sess
 ## State Machine
 
 ```
-ALL depths (story_lining now runs for everyone):
-initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → story_lining → reporting → complete
+ALL depths (story_lining and visual_design run for everyone):
+initial_research → brief_builder → planning → execution ⟷ questions_review → aggregation → story_lining → visual_design → reporting → complete
 
 Deep Dive additions (depth: deep_dive):
-... → aggregation → [chart_analysis] → story_lining → reporting → editing → complete
+... → aggregation → [chart_analysis] → story_lining → visual_design → reporting → editing → complete
                           ↑
                 only if results/series/ exists
 ```
 
-**Key change:** `story_lining` (Layout Planner) runs for ALL depths, not just deep_dive.
+**Key changes:**
+- `story_lining` (Layout Planner) runs for ALL depths
+- `visual_design` (Custom Infographics) runs for ALL depths, after story_lining
 
 ---
 
@@ -176,12 +179,32 @@ else:
 - `state/charts_analyzed.json` (if exists, deep_dive only)
 - Template file based on style
 **Save**: `state/story.json` (layout instructions for Reporter)
-**Next phase**: `reporting`
+**Next phase**: `visual_design`
 
 **Output varies by depth:**
 - executive/standard: Simple layout (sections, metrics, charts)
 - comprehensive: Layout + themes
 - deep_dive: Full narrative arc + themes + chart analysis integration
+
+---
+
+### phase: "visual_design" *(ALL depths)*
+
+**Action**: Generate custom infographics (SWOT, timelines, comparison matrices, etc.)
+**Prompt**: Load `prompts/visual_designer.md`
+**Input**:
+- `state/story.json` (narrative structure)
+- `state/aggregation.json` (data sources)
+- `state/chart_data.json` (existing charts to avoid duplication)
+- Template CONFIG for styling
+**Save**: `state/visuals.json`, `output/visuals/*.html|svg`
+**Next phase**: `reporting`
+
+**Visual count by depth:**
+- executive: 2-4 visuals (KPI cards, comparison matrix)
+- standard: 4-6 visuals (+ timeline, SWOT)
+- comprehensive: 6-10 visuals (+ quadrants, funnels)
+- deep_dive: 8-15 visuals (all types)
 
 ---
 
@@ -191,8 +214,9 @@ else:
 **Prompt**: Load `prompts/reporter.md`
 **Templates**: `templates/`
 **Input**:
-- ALL depths: `state/aggregation.json` + `state/story.json` (layout blueprint)
+- ALL depths: `state/aggregation.json` + `state/story.json` + `state/visuals.json`
 - Deep dive additionally: `state/charts_analyzed.json`
+- Custom infographics: `output/visuals/*.html|svg`
 **Save**: `output/report.html` (+ `output/report.pdf`, `output/report.xlsx` if requested)
 **Next phase logic**:
 ```
@@ -290,6 +314,7 @@ research_XXXXX/
 │   ├── chart_data.json
 │   ├── charts_analyzed.json  # (deep_dive only, if series/ exists)
 │   ├── story.json            # (ALL depths — layout blueprint)
+│   ├── visuals.json          # (ALL depths — custom infographics specs)
 │   └── editor_log.json       # (deep_dive only, editor changes log)
 ├── results/
 │   ├── overview_1.json
@@ -310,6 +335,10 @@ research_XXXXX/
     ├── report.html           # Primary output
     ├── charts/               # (deep_dive only, rendered charts)
     │   ├── c1_lth_supply.html
+    │   └── ...
+    ├── visuals/              # (ALL depths — custom infographics)
+    │   ├── v1_swot_matrix.html
+    │   ├── v2_timeline.svg
     │   └── ...
     ├── report.pdf            # (if requested)
     └── report.xlsx           # (if requested)

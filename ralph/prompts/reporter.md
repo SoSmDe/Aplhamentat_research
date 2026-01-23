@@ -349,9 +349,36 @@ Snippets are in `ralph/templates/html/snippets.html`. Extract the snippet betwee
 2. For each metric from aggregation.json:
    - Replace {{VALUE}} with metric value
    - Replace {{LABEL}} with metric name
-   - Replace {{CITATION_ID}} with source number
+   - Replace {{CITATION_ID}} with source number ← ОБЯЗАТЕЛЬНО!
 3. Wrap in METRICS_GRID snippet
 ```
+
+### ⚠️ CRITICAL: Metrics MUST Have Citations
+
+**КАЖДАЯ метрика в hero section ДОЛЖНА иметь ссылку на источник.**
+
+```yaml
+# ❌ WRONG - metrics without citations
+hero_metrics:
+  - value: "AED 50 млрд"
+    label: "Баланс банка"
+    # No citation - WHERE IS THIS FROM?
+
+# ✅ CORRECT - every metric has citation
+hero_metrics:
+  - value: "AED 50 млрд"
+    label: "Баланс банка"
+    citation_id: 1  # Links to [1] in sources
+
+# HTML output:
+<div class="metric-value">AED 50 млрд<sup><a href="#ref-1" class="citation">[1]</a></sup></div>
+```
+
+**Rules:**
+1. Find citation_id from `aggregation.json → data_highlights` or `key_metrics`
+2. If metric has no source → DO NOT include it in hero section
+3. Use METRIC_CARD snippet which includes `{{CITATION_ID}}` placeholder
+4. Citation links to Sources section at bottom of report
 
 **Example: Building Charts**
 ```
@@ -642,7 +669,9 @@ backBtn.addEventListener('click', () => {
 - `state/glossary.json` (term definitions)
 - `state/chart_data.json` (chart configurations)
 - **`state/story.json`** *(layout structure from Story Liner — sections, hero_metrics, chart_placements)*
+- **`state/visuals.json`** *(custom infographics from Visual Designer — visual_placements, if exists)*
 - `results/series/*.json` (time series data files)
+- `output/visuals/*.html|svg` *(rendered infographics — SWOT, timeline, comparison matrix, etc.)*
 - `ralph/templates/{style}/base.html` (template based on story.json → template.path)
 
 **Additional for deep_dive:**
@@ -793,6 +822,78 @@ report.html: 12 charts  # story_liner selected only 7!
 
 ---
 
+### 🎨 Visual Integration (from visuals.json)
+
+**Visual Designer creates custom infographics. Reporter embeds them alongside Plotly charts.**
+
+```yaml
+visual_source: state/visuals.json → visual_placements[]
+visual_files: output/visuals/*.html|svg
+types: swot_matrix, comparison_matrix, timeline, quadrant, kpi_cards, funnel, checklist
+
+# Visual Designer runs for ALL depths (after story_lining)
+executive: 2-4 visuals
+standard: 4-6 visuals
+comprehensive: 6-10 visuals
+deep_dive: 8-15 visuals
+```
+
+**Embedding methods:**
+
+```yaml
+html_visuals:
+  # For SWOT, comparison matrix, KPI cards, checklist
+  method: "Include HTML directly in report"
+  location: "After specified section (like charts)"
+  wrapper: |
+    <div class="visual-container">
+      <div class="visual-title">{{title}}</div>
+      <div class="visual-wrapper">
+        {{content_from_rendered_file}}
+      </div>
+      <p class="visual-callout">{{callout}}</p>
+    </div>
+
+svg_visuals:
+  # For timeline, quadrant, funnel, process_flow
+  method: "Embed as img or inline SVG"
+  wrapper: |
+    <div class="visual-container">
+      <div class="visual-title">{{title}}</div>
+      <div class="visual-wrapper">
+        <img src="visuals/{{filename}}" alt="{{title}}" class="visual-svg">
+      </div>
+      <p class="visual-callout">{{callout}}</p>
+    </div>
+```
+
+**Reporter workflow with visuals:**
+
+```yaml
+1. Read story.json → get chart_placements
+2. Read visuals.json → get visual_placements
+3. For each section in story.json.sections:
+   - Render section content from aggregation
+   - Check chart_placements for charts after this section
+   - Check visual_placements for visuals after this section
+   - Embed charts (Plotly)
+   - Embed visuals (HTML/SVG from output/visuals/)
+4. Continue to next section
+```
+
+**Checklist для визуалов:**
+1. Читай `visuals.json → visual_placements[]`
+2. Загружай rendered файлы из `output/visuals/`
+3. Встраивай после указанной секции
+4. Добавляй `callout` из visuals.json
+5. Количество визуалов = количество visual_placements
+
+**Если visuals.json не существует:**
+- Пропусти visual integration
+- Генерируй отчёт только с charts
+
+---
+
 ### 🚨 Chart.js → Plotly Format Conversion
 
 **`chart_data.json` использует Chart.js формат. Конвертируй в Plotly:**
@@ -892,7 +993,21 @@ Use `METRIC_CARD` snippet from templates. **❌ Never put label on top.**
 
 **1. Units in headers:** Always include units → `Ann. Return (%)`, `Price ($)`, `Market Cap ($B)`
 
-**2. Numeric alignment:** Right-align numbers, use `class="numeric"` from template CSS.
+**2. Uniform alignment:** All cells left-aligned. **DO NOT use `class="numeric"`** — it breaks visual consistency.
+
+```yaml
+table_alignment:
+  # ❌ WRONG - mixed alignment breaks readability
+  <td>Начальная стоимость</td>
+  <td class="numeric">$25K-500K</td>  # Right-aligned - INCONSISTENT!
+
+  # ✅ CORRECT - all cells same alignment
+  <td>Начальная стоимость</td>
+  <td>$25K-500K</td>  # Left-aligned like all other cells
+  <td>$800K-3M+</td>
+```
+
+**3. Simple `<td>` only:** Never add classes to table cells. Keep tables visually clean and uniform.
 
 ---
 
@@ -1142,9 +1257,39 @@ For each section from story.json.sections:
 
 ### Phase 5: Back Matter (from story.json)
 - **Glossary**: if `story.json.glossary.include: true` → from glossary.json
-- **Methodology**: if in components
 - **Sources**: if `story.json.sources.include: true` → from citations.json
 - ~~Limitations and disclaimers~~ — **SKIP for Warp style** (no disclaimers!)
+- ~~Methodology section~~ — **SKIP** (internal pipeline details should NOT be in report)
+
+### ⚠️ Methodology Section: DO NOT INCLUDE
+
+**НИКОГДА не включай секцию "Методология исследования" с деталями pipeline.**
+
+```yaml
+# ❌ WRONG - internal details exposed to client
+methodology_section:
+  - "10 Задач выполнено"           # Internal task count
+  - "Фазы исследования: initial_research → planning → ..."  # Pipeline phases
+  - "Sources count: 34"             # OK separately in Sources section
+  - "Quality Grade: A"              # OK separately if needed
+
+# ✅ CORRECT - skip methodology section entirely
+# OR show ONLY external-facing info:
+external_facing_info:
+  - Source quality grades (A/B/C/D) → put in Sources section header
+  - Data freshness grades → put in Sources section header
+  - Source count → implicit from Sources list length
+
+# DO NOT show:
+forbidden_in_reports:
+  - Internal task IDs (o1, d1, r1...)
+  - Task count ("Задач выполнено")
+  - Pipeline phases ("initial_research → planning → execution...")
+  - Iteration counts
+  - Coverage percentages (internal metric)
+```
+
+**Reasoning:** These are internal implementation details of the research pipeline. The client doesn't need to know how many tasks were executed or what phases the system went through. They only care about the research quality and findings.
 
 ---
 
